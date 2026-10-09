@@ -57,6 +57,8 @@ body {
 }
 
 .container {
+    display: flex;
+    flex-direction: column;
     width: min(100%, 480px);
     min-height: 100vh;
     margin: 0 auto;
@@ -64,6 +66,18 @@ body {
 }
 
 .app-header { text-align: center; padding: 12px 0 30px; }
+.app-footer {
+    margin-top: auto;
+    padding: 22px 4px 4px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.65;
+    letter-spacing: .15px;
+    text-align: center;
+}
+.app-footer span { display: block; }
+.app-footer .footer-credit { color: #8eaa9b; font-weight: 600; }
 .app-mark {
     display: grid;
     place-items: center;
