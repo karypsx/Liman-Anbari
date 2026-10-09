@@ -69,7 +69,7 @@ body {
 
 .app-header { text-align: center; padding: 12px 0 30px; }
 .app-footer {
-    margin-top: auto;
+    margin-top: 16px;
     padding: 22px 4px 4px;
     border-top: 1px solid var(--line);
     color: var(--muted);
