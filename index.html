@@ -5,12 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#121212">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=3">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
+    <div id="splash-screen" class="splash-screen" role="status" aria-label="Liman Anbarı açılır">
+        <div class="splash-content">
+            <div class="splash-art" aria-hidden="true">
+                <span class="splash-orbit splash-orbit-one"></span>
+                <span class="splash-orbit splash-orbit-two"></span>
+                <img class="splash-logo" src="images/liman-logo-splash.png" alt="">
+                <span class="splash-scanline"></span>
+            </div>
+            <h2 class="splash-title">Liman Anbarı</h2>
+            <p class="splash-subtitle">QR ilə rəf axtarışı</p>
+            <div class="splash-progress" aria-hidden="true"><span></span></div>
+        </div>
+    </div>
+
     <main class="container">
         <header class="app-header">
             <div class="app-mark" aria-hidden="true">📦</div>
@@ -53,6 +67,6 @@
 
         <p id="data-status" class="message" role="status" hidden></p>
     </main>
-    <script src="script.js?v=2"></script>
+    <script src="script.js?v=3"></script>
 </body>
 </html>
