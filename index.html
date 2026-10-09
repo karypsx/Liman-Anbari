@@ -3,30 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anbar Sistemi</title>
+    <meta name="theme-color" content="#121212">
+    <title>Liman Anbarı</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <!-- QR Kod oxuyucu kitabxanası -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- CSV oxuyucu kitabxanası -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>📦 Liman Anbarı</h1>
-        
-        <!-- QR Kamera ekranı bura gələcək -->
-        <div id="reader" width="100%"></div>
-        
-        <!-- Nəticələrin çıxacağı yer -->
-        <div id="result-container">
-            <h2 id="ref-title">Rəf oxudulmayıb</h2>
-            <ul id="product-list">
-                <!-- Mallar bura JS vasitəsilə əlavə olunacaq -->
-            </ul>
-        </div>
-    </div>
+    <main class="container">
+        <header class="app-header">
+            <div class="app-mark" aria-hidden="true">📦</div>
+            <h1>Liman Anbarı</h1>
+            <p>Rəf kodunu oxudub malları tapın</p>
+        </header>
 
+        <section id="home-view" class="view">
+            <div class="intro-card">
+                <div class="scan-symbol" aria-hidden="true">⌗</div>
+                <h2>Rəfi yoxlamağa hazırsınız?</h2>
+                <p>Arxa kameranı açmaq və rəfin QR kodunu oxutmaq üçün düyməyə basın.</p>
+                <button id="start-scan" class="primary-button" type="button">
+                    <span aria-hidden="true">▦</span> Rəfi skan et
+                </button>
+            </div>
+        </section>
+
+        <section id="scan-view" class="view" hidden>
+            <div class="section-heading">
+                <h2>QR kodu çərçivəyə salın</h2>
+                <p>Arxa kamera istifadə olunur</p>
+            </div>
+            <div id="reader" aria-label="QR kod skaneri"></div>
+            <p id="scan-error" class="message error-message" role="alert" hidden></p>
+            <button id="cancel-scan" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
+        </section>
+
+        <section id="result-view" class="view" hidden>
+            <div class="result-card">
+                <div class="success-mark" aria-hidden="true">✓</div>
+                <p class="eyebrow">SKAN NƏTİCƏSİ</p>
+                <h2 id="ref-title">Rəf</h2>
+                <ul id="product-list" class="product-list"></ul>
+            </div>
+            <button id="return-home" class="primary-button" type="button">
+                <span aria-hidden="true">⌂</span> Ana səhifəyə qayıt
+            </button>
+        </section>
+
+        <p id="data-status" class="message" role="status" hidden></p>
+    </main>
     <script src="script.js"></script>
 </body>
 </html>
