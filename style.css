@@ -51,7 +51,6 @@ button { font: inherit; }
 body {
     margin: 0;
     min-height: 100vh;
-    min-height: 100dvh;
     background: radial-gradient(ellipse at top, #193126 0%, var(--bg) 58%);
     color: var(--text);
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -62,14 +61,13 @@ body {
     flex-direction: column;
     width: min(100%, 480px);
     min-height: 100vh;
-    min-height: 100dvh;
     margin: 0 auto;
     padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
 }
 
 .app-header { text-align: center; padding: 12px 0 30px; }
 .app-footer {
-    margin-top: 16px;
+    margin-top: auto;
     padding: 22px 4px 4px;
     border-top: 1px solid var(--line);
     color: var(--muted);
@@ -195,35 +193,6 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 @keyframes haloPulse { 0% { opacity: 0; transform: scale(.72); } 65% { opacity: .8; } 100% { opacity: 0; transform: scale(1.12); } }
 @keyframes splashExit { to { opacity: 0; visibility: hidden; } }
 
-#scan-view:not([hidden]) ~ .app-footer,
-#result-view:not([hidden]) ~ .app-footer { display: none; }
-
-@media (max-height: 760px) {
-    .container { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-    .app-header { padding: 2px 0 8px; }
-    .app-mark { width: 40px; height: 40px; margin-bottom: 6px; border-radius: 14px; font-size: 20px; }
-    h1 { font-size: 20px; }
-    .app-header p { margin-top: 4px; font-size: 11px; }
-    .intro-card { padding: 14px 14px 13px; }
-    .scan-symbol { width: 48px; height: 48px; margin-bottom: 8px; border-radius: 16px; font-size: 34px; }
-    .intro-card h2 { font-size: 17px; }
-    .intro-card p { margin: 5px auto 10px; font-size: 12px; line-height: 1.35; }
-    .primary-button { min-height: 44px; padding: 9px 12px; }
-    .app-footer { padding: 7px 2px 0; font-size: 8.5px; line-height: 1.3; }
-}
-
-@media (max-height: 640px) {
-    .container { padding-top: max(4px, env(safe-area-inset-top)); padding-bottom: max(4px, env(safe-area-inset-bottom)); }
-    .app-header { padding-bottom: 5px; }
-    .app-mark { width: 34px; height: 34px; margin-bottom: 4px; font-size: 17px; }
-    h1 { font-size: 18px; }
-    .intro-card { padding: 10px 12px; }
-    .scan-symbol { width: 40px; height: 40px; margin-bottom: 6px; font-size: 29px; }
-    .intro-card h2 { font-size: 16px; }
-    .intro-card p { margin: 4px auto 8px; font-size: 11px; }
-    .primary-button { min-height: 40px; padding: 7px 10px; }
-    .app-footer { padding-top: 5px; font-size: 8px; }
-}
 @media (prefers-reduced-motion: reduce) {
     .splash-screen { animation-duration: .1s; animation-delay: 1.1s; }
     .splash-screen *, .splash-screen::before, .splash-screen::after { animation-duration: .1s !important; animation-delay: 0s !important; }
