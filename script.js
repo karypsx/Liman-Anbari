@@ -137,3 +137,10 @@ async function returnHome() {
 document.getElementById("start-scan").addEventListener("click", startScan);
 document.getElementById("cancel-scan").addEventListener("click", returnHome);
 document.getElementById("return-home").addEventListener("click", returnHome);
+
+const splashScreen = document.getElementById("splash-screen");
+if (splashScreen) {
+    splashScreen.addEventListener("animationend", function (event) {
+        if (event.animationName === "splashExit") splashScreen.remove();
+    });
+}
