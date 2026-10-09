@@ -4,21 +4,21 @@
   "display": "standalone",
   "name": "LimanAnbarı",
   "orientation": "any",
-  "scope": "/",
+  "scope": "/Liman-Anbari/",
   "short_name": "LimanAnbarı",
-  "start_url": "/",
+  "start_url": "/Liman-Anbari/",
   "theme_color": "#ffffff",
   "id": "liman-anbari",
   "description": "Liman anbarı üçün QR kodla mal axtarış sistemi.",
   "lang": "az",
   "icons": [
     {
-     "src": "images/ikon-192.png",
+      "src": "/Liman-Anbari/images/ikon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "images/ikon-512.png",
+      "src": "/Liman-Anbari/images/ikon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
