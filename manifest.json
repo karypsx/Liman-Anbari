@@ -1,15 +1,14 @@
 {
-  "name": "Liman Anbarı",
-  "short_name": "Anbar",
-  "start_url": "./index.html",
+  "background_color": "#ffffff",
+  "dir": "ltr",
   "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#4CAF50",
-  "icons": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/2875/2875878.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "name": "LimanAnbarı",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "LimanAnbarı",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "liman-anbari",
+  "description": "Liman anbarı üçün QR kodla mal axtarış sistemi.",
+  "lang": "az"
 }
