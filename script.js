@@ -1,5 +1,5 @@
-// Buraya Google Sheets CSV linkini yerləşdir.
-const googleSheetsCSVLink = "SƏNİN_GOOGLE_SHEETS_CSV_LİNKİN_BURAYA";
+// Buraya Google Sheets-də "Anbar Qalığı" vərəqinin CSV linkini yerləşdir.
+const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRQEdxU0-ynOkMOnAxPNIzDgjmlkt1bGtsOpciw6FVMbqpAmZji7Uy9scU5buOSA/pub?gid=2100305226&single=true&output=csv";
 
 let anbarData = [];
 let scanner = null;
@@ -19,14 +19,59 @@ function showView(view) {
     dataStatus.hidden = true;
 }
 
+function normalizeCell(value) {
+    return String(value ?? "")
+        .replace(/^\uFEFF/, "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLocaleLowerCase("az-AZ");
+}
+
+function getInventoryRows(rows) {
+    // Anbar Qalığı vərəqində başlıq cədvəlin əvvəlində deyil; onu adı ilə tapırıq.
+    const headerIndex = rows.findIndex(row => {
+        if (!Array.isArray(row)) return false;
+        const cells = row.map(normalizeCell);
+        return cells.some(value => value === "malın adı və təsviri" || value === "malın adı")
+            && cells.some(value => value === "cari qalıq" || value === "say")
+            && cells.some(value => value === "rəflər" || value === "rəf");
+    });
+
+    if (headerIndex < 0) {
+        return { data: [], error: "CSV-də Malın Adı və Təsviri, Cari Qalıq və Rəflər başlıqları tapılmadı." };
+    }
+
+    const headers = rows[headerIndex].map(normalizeCell);
+    const nameIndex = headers.findIndex(value => value === "malın adı və təsviri" || value === "malın adı");
+    const quantityIndex = headers.findIndex(value => value === "cari qalıq" || value === "say");
+    const shelfIndex = headers.findIndex(value => value === "rəflər" || value === "rəf");
+
+    const data = rows.slice(headerIndex + 1)
+        .filter(Array.isArray)
+        .map(row => ({
+            "Rəf": String(row[shelfIndex] ?? "").trim(),
+            "Malın Adı": String(row[nameIndex] ?? "").trim(),
+            "Say": String(row[quantityIndex] ?? "").trim()
+        }))
+        .filter(item => item["Malın Adı"] !== "");
+
+    return { data, error: "" };
+}
+
 // Cədvəl məlumatlarını arxa planda yüklə.
 if (googleSheetsCSVLink && !googleSheetsCSVLink.includes("BURAYA") && window.Papa) {
     Papa.parse(googleSheetsCSVLink, {
         download: true,
-        header: true,
-        skipEmptyLines: true,
+        header: false,
+        skipEmptyLines: false,
         complete: function (results) {
-            anbarData = results.data || [];
+            const parsed = getInventoryRows(results.data || []);
+            anbarData = parsed.data;
+            if (parsed.error) {
+                dataStatus.textContent = parsed.error;
+                dataStatus.hidden = false;
+                return;
+            }
             console.log("Anbar məlumatları yükləndi.");
         },
         error: function () {
