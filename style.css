@@ -59,7 +59,7 @@ body {
 .container {
     display: flex;
     flex-direction: column;
-    width: min(100%, 480px);
+    width: min(100%, 380px);
     min-height: 70vh;
     margin: 0 auto;
     padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
