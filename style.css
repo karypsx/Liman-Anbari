@@ -259,6 +259,8 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 @media (max-width: 600px) and (min-height: 700px) {
     body { height: auto; min-height: 100dvh; overflow-x: hidden; overflow-y: auto; }
     .container { height: auto; min-height: calc(100dvh - 24px); padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+@media (max-width: 600px) and (min-height: 700px) {
+    html, body { overscroll-behavior-y: contain; }
     body { height: auto; min-height: calc(100svh - 24px); overflow-x: hidden; overflow-y: auto; }
     .container { height: auto; min-height: calc(100svh - 24px); padding-bottom: max(4px, env(safe-area-inset-bottom)); }
 }
@@ -278,6 +280,7 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
     .splash-screen { animation-duration: .1s; animation-delay: 1.1s; }
     .splash-screen *, .splash-screen::before, .splash-screen::after { animation-duration: .1s !important; animation-delay: 0s !important; }
 }
+
 
 
 
