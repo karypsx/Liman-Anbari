@@ -258,6 +258,9 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
     body { height: 100dvh; overflow: hidden; }
     .container { height: 100dvh; min-height: 100dvh; }
     .app-footer {
+    body:has(#home-view:not([hidden])) { height: 100dvh; overflow: hidden; }
+    body:has(#home-view:not([hidden])) .container { height: 100dvh; min-height: 100dvh; }
+    body:has(#home-view:not([hidden])) .app-footer {
         position: fixed;
         z-index: 5;
         right: auto;
