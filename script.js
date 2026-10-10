@@ -9,13 +9,47 @@ let scanHandled = false;
 const homeView = document.getElementById("home-view");
 const scanView = document.getElementById("scan-view");
 const resultView = document.getElementById("result-view");
+const distributionView = document.getElementById("distribution-view");
 const scanError = document.getElementById("scan-error");
 const dataStatus = document.getElementById("data-status");
+const menuToggle = document.getElementById("menu-toggle");
+const appMenu = document.getElementById("app-menu");
+
+function closeMenu() {
+    appMenu.hidden = true;
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.setAttribute("aria-label", "Menyunu aç");
+}
+
+menuToggle.addEventListener("click", function () {
+    const opening = appMenu.hidden;
+    appMenu.hidden = !opening;
+    menuToggle.setAttribute("aria-expanded", String(opening));
+    menuToggle.setAttribute("aria-label", opening ? "Menyunu bağla" : "Menyunu aç");
+});
+
+appMenu.addEventListener("click", async function (event) {
+    const button = event.target.closest("[data-menu-view]");
+    if (!button) return;
+    await stopScanner();
+    scanHandled = false;
+    showView(button.dataset.menuView);
+    closeMenu();
+});
+
+document.addEventListener("click", function (event) {
+    if (!event.target.closest(".app-menu-wrap")) closeMenu();
+});
+
+document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") closeMenu();
+});
 
 function showView(view) {
     homeView.hidden = view !== "home";
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
+    distributionView.hidden = view !== "distribution";
     dataStatus.hidden = true;
 }
 
@@ -182,6 +216,7 @@ async function returnHome() {
 document.getElementById("start-scan").addEventListener("click", startScan);
 document.getElementById("cancel-scan").addEventListener("click", returnHome);
 document.getElementById("return-home").addEventListener("click", returnHome);
+document.getElementById("distribution-home").addEventListener("click", returnHome);
 
 const splashScreen = document.getElementById("splash-screen");
 if (splashScreen) {
