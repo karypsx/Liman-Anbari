@@ -15,6 +15,7 @@ const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
 const appMenu = document.getElementById("app-menu");
 const menuBackdrop = document.getElementById("menu-backdrop");
+document.body.classList.add("home-screen");
 
 // Tətbiq daxilində mətnin seçilib köçürülməsini və kontekst menyusunu bağla.
 ["copy", "cut", "contextmenu", "selectstart", "dragstart"].forEach(eventName => {
@@ -56,6 +57,7 @@ document.addEventListener("keydown", function (event) {
 });
 
 function showView(view) {
+    document.body.classList.toggle("home-screen", view === "home");
     homeView.hidden = view !== "home";
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
