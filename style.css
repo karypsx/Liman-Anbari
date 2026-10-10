@@ -11,7 +11,7 @@
     --orange: #ffb55e;
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 button { font: inherit; }
 [hidden] { display: none !important; }
 
@@ -66,10 +66,11 @@ body {
     padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
 }
 
+.menu-backdrop { position: fixed; z-index: 15; inset: 0; background: rgba(4,10,8,.22); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
 .app-menu-wrap { position: absolute; z-index: 20; top: max(14px, env(safe-area-inset-top)); right: 16px; }
 .top-label {
     position: absolute;
-    z-index: 20;
+    z-index: 1;
     top: max(14px, env(safe-area-inset-top));
     left: 16px;
     display: flex;
@@ -97,6 +98,9 @@ body {
     box-shadow: 0 8px 20px rgba(0,0,0,.18);
 }
 .menu-toggle span { display: block; width: 20px; height: 2px; border-radius: 2px; background: var(--text); }
+.menu-toggle:hover, .menu-toggle:focus-visible, .menu-toggle[aria-expanded="true"] { border-color: rgba(57,201,130,.55); background: #1d392c; outline: none; }
+.menu-toggle:hover span, .menu-toggle:focus-visible span, .menu-toggle[aria-expanded="true"] span { background: #8df0b7; }
+.menu-toggle:active { transform: scale(.94); }
 .app-menu {
     position: absolute;
     top: 54px;
@@ -111,7 +115,9 @@ body {
     box-shadow: 0 16px 38px rgba(0,0,0,.38);
 }
 .app-menu button { min-height: 46px; padding: 10px 12px; border: 0; border-radius: 10px; color: var(--text); background: transparent; text-align: left; cursor: pointer; }
-.app-menu button:active, .app-menu button:hover { background: var(--panel-soft); }
+.app-menu button { transition: background .16s ease, color .16s ease, transform .12s ease; }
+.app-menu button:hover, .app-menu button:focus-visible { color: #bafbd3; background: #254c37; outline: none; }
+.app-menu button:active { color: #e4fff0; background: #2d6848; transform: scale(.98); }
 
 .app-header { text-align: center; padding: 60px 0 30px; }
 .app-footer {
