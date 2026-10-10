@@ -255,7 +255,10 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 }
 
 @media (max-width: 600px) {
+    body { height: 100dvh; overflow: hidden; }
     .container {
+        height: 100dvh;
+        min-height: 0;
         padding-top: max(12px, env(safe-area-inset-top));
         padding-bottom: max(8px, env(safe-area-inset-bottom));
     }
