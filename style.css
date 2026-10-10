@@ -257,12 +257,22 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 }
 
 @media (max-width: 600px) and (min-height: 700px) {
-    body { height: auto; min-height: 100dvh; overflow-x: hidden; overflow-y: auto; }
-    .container { height: auto; min-height: calc(100dvh - 24px); padding-bottom: max(4px, env(safe-area-inset-bottom)); }
-@media (max-width: 600px) and (min-height: 700px) {
-    html, body { overscroll-behavior-y: contain; }
-    body { height: auto; min-height: calc(100svh - 24px); overflow-x: hidden; overflow-y: auto; }
-    .container { height: auto; min-height: calc(100svh - 1px); padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+    html, body {
+        overscroll-behavior-y: contain;
+    }
+
+    body {
+        height: auto;
+        min-height: calc(100svh - 24px);
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .container {
+        height: auto;
+        min-height: calc(100svh - 1px);
+        padding-bottom: max(4px, env(safe-area-inset-bottom));
+    }
 }
 
 @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
