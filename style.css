@@ -127,8 +127,9 @@ body {
 
 .app-header { text-align: center; padding: 60px 0 30px; }
 .app-footer {
+    position: relative;
     margin-top: auto;
-    padding: 22px 4px 4px;
+    padding: 18px 4px 4px;
     border-top: 1px solid var(--line);
     color: var(--muted);
     font-size: 10px;
@@ -242,16 +243,17 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 .empty-result { display: block; color: var(--muted); }
 #return-home { margin-top: 16px; }
 .app-footer .footer-version {
-    display: flex;
-    align-items: center;
-    width: fit-content;
-    margin: 9px 0 0 auto;
-    padding: 3px 0;
-    color: #6be5a0;
-    font-size: 11px;
-    font-weight: 750;
-    letter-spacing: .35px;
-    text-shadow: 0 0 12px rgba(57,201,130,.22);
+    position: absolute;
+    top: 5px;
+    right: 4px;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    color: #7f8d86;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: .15px;
+    text-shadow: none;
 }
 
 @media (max-width: 600px) and (min-height: 700px) {
