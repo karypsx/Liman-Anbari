@@ -51,6 +51,7 @@ button { font: inherit; }
 body {
     margin: 0;
     min-height: 100vh;
+    min-height: 100dvh;
     background: radial-gradient(ellipse at top, #193126 0%, var(--bg) 58%);
     color: var(--text);
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -62,6 +63,7 @@ body {
     flex-direction: column;
     width: min(100%, 480px);
     min-height: 100vh;
+    min-height: 100dvh;
     margin: 0 auto;
     padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
 }
@@ -250,6 +252,35 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
     font-weight: 750;
     letter-spacing: .35px;
     text-shadow: 0 0 12px rgba(57,201,130,.22);
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding-top: max(18px, env(safe-area-inset-top));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+    .app-header { padding: 54px 0 20px; }
+    .app-mark { width: 54px; height: 54px; margin-bottom: 8px; }
+    h1 { font-size: 24px; }
+    .intro-card { padding: 22px 18px 20px; }
+    .scan-symbol { width: 64px; height: 64px; margin-bottom: 14px; border-radius: 21px; font-size: 42px; }
+    .intro-card p { margin: 8px auto 16px; font-size: 13px; line-height: 1.45; }
+    .primary-button { min-height: 50px; padding: 11px 16px; }
+    .app-footer { padding: 14px 4px 0; line-height: 1.45; }
+    .app-footer .footer-version { margin-top: 4px; padding: 2px 0; }
+}
+
+@media (max-width: 600px) and (max-height: 760px) {
+    .app-header { padding: 48px 0 14px; }
+    .app-mark { width: 48px; height: 48px; border-radius: 16px; font-size: 24px; }
+    h1 { font-size: 22px; }
+    .app-header p { margin-top: 4px; font-size: 13px; }
+    .intro-card { padding: 17px 16px 16px; }
+    .scan-symbol { width: 54px; height: 54px; margin-bottom: 10px; border-radius: 18px; font-size: 36px; }
+    .intro-card h2 { font-size: 18px; }
+    .intro-card p { margin: 6px auto 12px; font-size: 12px; line-height: 1.4; }
+    .primary-button { min-height: 46px; padding: 9px 14px; }
+    .app-footer { padding-top: 10px; font-size: 9px; }
 }
 
 @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
