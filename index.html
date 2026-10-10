@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#121212">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=12">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -26,6 +26,16 @@
     </div>
 
     <main class="container">
+        <div class="top-label">Anbar İdarəetməsi</div>
+        <div class="app-menu-wrap">
+            <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Menyunu aç" aria-expanded="false" aria-controls="app-menu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav id="app-menu" class="app-menu" aria-label="Əsas menyu" hidden>
+                <button type="button" data-menu-view="home">Ana səhifə</button>
+                <button type="button" data-menu-view="distribution">Paylama jurnalı</button>
+            </nav>
+        </div>
         <header class="app-header">
             <div class="app-mark" aria-hidden="true">📦</div>
             <h1>Liman Anbarı</h1>
@@ -41,6 +51,19 @@
                     <span aria-hidden="true">▦</span> Rəfi skan et
                 </button>
             </div>
+        </section>
+
+        <section id="distribution-view" class="view" hidden>
+            <div class="section-heading">
+                <h2>Paylama jurnalı</h2>
+                <p>Paylama qeydləri burada görünəcək</p>
+            </div>
+            <div class="result-card">
+                <ul id="distribution-list" class="product-list">
+                    <li class="empty-result">Jurnal hələ cədvələ qoşulmayıb. Qoşulduqdan sonra malın adı, miqdarı, alan şəxs və tarix burada görünəcək.</li>
+                </ul>
+            </div>
+            <button id="distribution-home" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
         </section>
 
         <section id="scan-view" class="view" hidden>
@@ -69,8 +92,14 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
+            <span class="footer-version">Versiya 1.2</span>
         </footer>
     </main>
-    <script src="script.js?v=4"></script>
+    <script src="script.js?v=9"></script>
 </body>
 </html>
+
+
+
+
+
