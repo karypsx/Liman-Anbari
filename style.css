@@ -57,6 +57,7 @@ body {
 }
 
 .container {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: min(100%, 480px);
@@ -65,7 +66,54 @@ body {
     padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
 }
 
-.app-header { text-align: center; padding: 12px 0 30px; }
+.app-menu-wrap { position: absolute; z-index: 20; top: max(14px, env(safe-area-inset-top)); right: 16px; }
+.top-label {
+    position: absolute;
+    z-index: 20;
+    top: max(14px, env(safe-area-inset-top));
+    left: 16px;
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    color: #c8f8dc;
+    font-size: 13px;
+    font-weight: 750;
+    letter-spacing: .2px;
+    text-shadow: 0 0 16px rgba(57,201,130,.2);
+}
+.menu-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    color: var(--text);
+    background: rgba(21,31,28,.96);
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0,0,0,.18);
+}
+.menu-toggle span { display: block; width: 20px; height: 2px; border-radius: 2px; background: var(--text); }
+.app-menu {
+    position: absolute;
+    top: 54px;
+    right: 0;
+    display: grid;
+    gap: 4px;
+    width: 205px;
+    padding: 7px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #17231e;
+    box-shadow: 0 16px 38px rgba(0,0,0,.38);
+}
+.app-menu button { min-height: 46px; padding: 10px 12px; border: 0; border-radius: 10px; color: var(--text); background: transparent; text-align: left; cursor: pointer; }
+.app-menu button:active, .app-menu button:hover { background: var(--panel-soft); }
+
+.app-header { text-align: center; padding: 60px 0 30px; }
 .app-footer {
     margin-top: auto;
     padding: 22px 4px 4px;
@@ -181,6 +229,18 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 .count-badge { flex: none; padding: 6px 9px; border-radius: 9px; color: #d6ffea; background: #20563c; font-size: 13px; font-weight: 700; }
 .empty-result { display: block; color: var(--muted); }
 #return-home { margin-top: 16px; }
+.app-footer .footer-version {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    margin: 9px 0 0 auto;
+    padding: 3px 0;
+    color: #6be5a0;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .35px;
+    text-shadow: 0 0 12px rgba(57,201,130,.22);
+}
 
 @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes logoArrive { 0% { opacity: 0; transform: translateY(18px) scale(.72) rotate(-5deg); filter: blur(8px); } 70% { opacity: 1; transform: translateY(-3px) scale(1.04) rotate(1deg); filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); filter: blur(0); } }
