@@ -96,6 +96,9 @@ body {
     background: rgba(21,31,28,.96);
     cursor: pointer;
     box-shadow: 0 8px 20px rgba(0,0,0,.18);
+    appearance: none;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
 }
 .menu-toggle span { display: block; width: 20px; height: 2px; border-radius: 2px; background: var(--text); }
 .menu-toggle:hover, .menu-toggle:focus-visible, .menu-toggle[aria-expanded="true"] { border-color: rgba(57,201,130,.55); background: #1d392c; outline: none; }
@@ -116,6 +119,7 @@ body {
 }
 .app-menu button { min-height: 46px; padding: 10px 12px; border: 0; border-radius: 10px; color: var(--text); background: transparent; text-align: left; cursor: pointer; }
 .app-menu button { transition: background .16s ease, color .16s ease, transform .12s ease; }
+.app-menu button:focus { outline: none; -webkit-tap-highlight-color: transparent; }
 .app-menu button:hover, .app-menu button:focus-visible { color: #bafbd3; background: #254c37; outline: none; }
 .app-menu button:active { color: #e4fff0; background: #2d6848; transform: scale(.98); }
 
