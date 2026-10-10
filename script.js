@@ -230,6 +230,29 @@ document.getElementById("cancel-scan").addEventListener("click", returnHome);
 document.getElementById("return-home").addEventListener("click", returnHome);
 document.getElementById("distribution-home").addEventListener("click", returnHome);
 
+// Boş sahəyə toxunanda yüngül, dekorativ qabarcıq effekti.
+document.addEventListener("click", function (event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (!target.matches("body, .container, .app-header, .view, .app-footer")) return;
+    if (target.closest("button, a, input, textarea, select, nav, .intro-card, .result-card, .section-heading, #reader, .menu-backdrop")) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    for (let i = 0; i < 5; i++) {
+        const bubble = document.createElement("span");
+        const size = 5 + Math.random() * 8;
+        bubble.className = "tap-bubble";
+        bubble.setAttribute("aria-hidden", "true");
+        bubble.style.setProperty("--bubble-x", `${event.clientX + (Math.random() - .5) * 34}px`);
+        bubble.style.setProperty("--bubble-y", `${event.clientY + (Math.random() - .5) * 14}px`);
+        bubble.style.setProperty("--bubble-size", `${size}px`);
+        bubble.style.setProperty("--bubble-drift", `${(Math.random() - .5) * 54}px`);
+        bubble.style.setProperty("--bubble-duration", `${650 + Math.random() * 450}ms`);
+        document.body.appendChild(bubble);
+        bubble.addEventListener("animationend", () => bubble.remove(), { once: true });
+    }
+});
+
 const splashScreen = document.getElementById("splash-screen");
 if (splashScreen) {
     splashScreen.addEventListener("animationend", function (event) {
