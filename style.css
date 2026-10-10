@@ -62,8 +62,8 @@ body {
     display: flex;
     flex-direction: column;
     width: min(100%, 480px);
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 70vh;
+    min-height: 70dvh;
     margin: 0 auto;
     padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
 }
