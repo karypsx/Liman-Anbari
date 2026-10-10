@@ -14,9 +14,16 @@ const scanError = document.getElementById("scan-error");
 const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
 const appMenu = document.getElementById("app-menu");
+const menuBackdrop = document.getElementById("menu-backdrop");
+
+// Tətbiq daxilində mətnin seçilib köçürülməsini və kontekst menyusunu bağla.
+["copy", "cut", "contextmenu", "selectstart", "dragstart"].forEach(eventName => {
+    document.addEventListener(eventName, event => event.preventDefault());
+});
 
 function closeMenu() {
     appMenu.hidden = true;
+    menuBackdrop.hidden = true;
     menuToggle.setAttribute("aria-expanded", "false");
     menuToggle.setAttribute("aria-label", "Menyunu aç");
 }
@@ -24,9 +31,12 @@ function closeMenu() {
 menuToggle.addEventListener("click", function () {
     const opening = appMenu.hidden;
     appMenu.hidden = !opening;
+    menuBackdrop.hidden = !opening;
     menuToggle.setAttribute("aria-expanded", String(opening));
     menuToggle.setAttribute("aria-label", opening ? "Menyunu bağla" : "Menyunu aç");
 });
+
+menuBackdrop.addEventListener("click", closeMenu);
 
 appMenu.addEventListener("click", async function (event) {
     const button = event.target.closest("[data-menu-view]");
