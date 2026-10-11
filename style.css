@@ -225,8 +225,12 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 .journal-access-card h3 { margin: 0; font-size: 17px; }
 .journal-access-card > p:not(.journal-status) { max-width: 300px; margin: 7px auto 15px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .journal-access-card .primary-button { min-height: 48px; }
+.journal-access-card .issue-goods-button { min-height: 46px; margin-top: 10px; border-color: rgba(57,201,130,.24); color: #a8f0c3; background: rgba(57,201,130,.08); }
 .journal-status { min-height: 16px; margin: 11px 0 0; color: #91b6a0; font-size: 10px; line-height: 1.45; }
 .journal-status-error { color: #ffaaa4; }
+.action-toast { position: fixed; z-index: 120; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 16px)); width: max-content; max-width: min(90vw, 360px); padding: 13px 18px; border: 1px solid rgba(112,220,157,.3); border-radius: 14px; color: #e9fff0; background: rgba(21,36,29,.96); box-shadow: 0 12px 32px rgba(0,0,0,.38); font-size: 13px; font-weight: 650; text-align: center; transform: translate(-50%, 0); animation: toast-pop .2s ease-out both; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.action-toast[hidden] { display: none; }
+@keyframes toast-pop { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .distribution-entry { position: relative; display: block; overflow: hidden; padding: 14px; border: 1px solid rgba(106,153,128,.32); border-left: 3px solid var(--green); border-radius: 15px; background: linear-gradient(145deg, rgba(27,42,35,.98), rgba(17,27,23,.98)); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
 .distribution-entry-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .distribution-item { display: grid; gap: 4px; min-width: 0; }
