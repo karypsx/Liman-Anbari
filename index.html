@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=26">
+    <link rel="stylesheet" href="style.css?v=27">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -68,6 +68,7 @@
                 <h3>Paylama qeydləri</h3>
                 <p>Son qeydlər tətbiqin özündə göstərilir.</p>
                 <button id="refresh-distribution" class="primary-button" type="button">Jurnalı yenilə</button>
+                <button id="issue-goods" class="secondary-button issue-goods-button" type="button">＋ Mal ver</button>
                 <p id="distribution-status" class="journal-status" role="status" aria-live="polite">Jurnal yüklənir…</p>
             </div>
             <div id="distribution-results" class="result-card" hidden>
@@ -138,8 +139,9 @@
             <span class="footer-version">Versiya 1.29</span>
         </footer>
     </main>
+    <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     <script src="app-config.js?v=3"></script>
-    <script src="script.js?v=20"></script>
+    <script src="script.js?v=21"></script>
 </body>
 </html>
 
