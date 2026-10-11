@@ -17,8 +17,18 @@ const distributionList = document.getElementById("distribution-list");
 const distributionConnectButton = document.getElementById("connect-distribution");
 let distributionTokenClient = null;
 let distributionAccessToken = null;
-let distributionSpreadsheetId = null;
-let distributionFileMimeType = null;
+const distributionFileStorageKey = "liman-anbari-distribution-file-v1";
+function readSavedDistributionFile() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(distributionFileStorageKey) || "null");
+        return saved && typeof saved.id === "string" && saved.id ? saved : null;
+    } catch (error) {
+        return null;
+    }
+}
+const savedDistributionFile = readSavedDistributionFile();
+let distributionSpreadsheetId = savedDistributionFile?.id || null;
+let distributionFileMimeType = savedDistributionFile?.mimeType || "";
 const scanError = document.getElementById("scan-error");
 const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
@@ -311,6 +321,14 @@ function openDistributionPicker() {
                         if (!pickedFile?.id) return;
                         distributionSpreadsheetId = pickedFile.id;
                         distributionFileMimeType = pickedFile.mimeType || "";
+                        try {
+                            localStorage.setItem(distributionFileStorageKey, JSON.stringify({
+                                id: distributionSpreadsheetId,
+                                mimeType: distributionFileMimeType
+                            }));
+                        } catch (error) {
+                            // Fayl seçilibsə, yaddaş bağlı olsa belə cari sessiyada işləsin.
+                        }
                         loadDistributionRows(distributionAccessToken);
                     } else if (data.action === window.google.picker.Action.CANCEL) {
                         distributionStatus.textContent = "Cədvəl seçilmədi. Jurnalı görmək üçün Google cədvəlini seçin.";
