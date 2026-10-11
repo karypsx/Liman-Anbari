@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#121212">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=23">
+    <link rel="stylesheet" href="style.css?v=24">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -35,6 +35,7 @@
             <nav id="app-menu" class="app-menu" aria-label="Əsas menyu" hidden>
                 <button type="button" data-menu-view="home">Ana səhifə</button>
                 <button type="button" data-menu-view="distribution">Paylama jurnalı</button>
+                <button type="button" data-menu-view="about">Tətbiq haqqında</button>
             </nav>
         </div>
         <header class="app-header">
@@ -67,6 +68,37 @@
             <button id="distribution-home" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
         </section>
 
+        <section id="about-view" class="view" hidden>
+            <div class="about-card">
+                <div class="about-hero">
+                    <div class="about-icon" aria-hidden="true">i</div>
+                    <p class="about-kicker">TƏTBİQ HAQQINDA</p>
+                    <h2>Liman Anbarı</h2>
+                    <p class="about-intro">Anbar rəflərindəki malları QR kodla tez tapmaq və gündəlik işi daha rahat idarə etmək üçün hazırlanıb.</p>
+                    <span class="about-version">Versiya <strong>1.22</strong></span>
+                </div>
+                <div class="about-details">
+                    <div class="about-detail">
+                        <span class="about-detail-icon" aria-hidden="true">✦</span>
+                        <div><span class="about-label">HAZIRLANMA İLİ</span><strong>2026</strong></div>
+                    </div>
+                    <div class="about-detail">
+                        <span class="about-detail-icon" aria-hidden="true">↻</span>
+                        <div><span class="about-label">SON YENİLƏNMƏ</span><strong>11 oktyabr 2026</strong></div>
+                    </div>
+                    <div class="about-detail">
+                        <span class="about-detail-icon" aria-hidden="true">♙</span>
+                        <div><span class="about-label">HAZIRLAYAN</span><strong>Ceyhun</strong></div>
+                    </div>
+                    <div class="about-purpose">
+                        <span class="about-label">MƏQSƏD</span>
+                        <p>Rəf kodunu skan edib həmin rəfdəki malları və mövcud sayını asanlıqla görmək.</p>
+                    </div>
+                </div>
+            </div>
+            <button id="about-home" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
+        </section>
+
         <section id="scan-view" class="view" hidden>
             <div class="section-heading">
                 <h2>QR kodu çərçivəyə salın</h2>
@@ -93,10 +125,10 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.21</span>
+            <span class="footer-version">Versiya 1.22</span>
         </footer>
     </main>
-    <script src="script.js?v=13"></script>
+    <script src="script.js?v=14"></script>
 </body>
 </html>
 
