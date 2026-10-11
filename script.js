@@ -17,6 +17,9 @@ const distributionStatus = document.getElementById("distribution-status");
 const distributionResults = document.getElementById("distribution-results");
 const distributionList = document.getElementById("distribution-list");
 const distributionRefreshButton = document.getElementById("refresh-distribution");
+const issueGoodsButton = document.getElementById("issue-goods");
+const actionToast = document.getElementById("action-toast");
+let actionToastTimer;
 const scanError = document.getElementById("scan-error");
 const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
@@ -270,6 +273,14 @@ async function loadDistributionJournal() {
 }
 
 distributionRefreshButton.addEventListener("click", loadDistributionJournal);
+issueGoodsButton.addEventListener("click", function () {
+    actionToast.textContent = "Mal vermək funksiyası hələ aktiv deyil.";
+    actionToast.hidden = false;
+    clearTimeout(actionToastTimer);
+    actionToastTimer = setTimeout(() => {
+        actionToast.hidden = true;
+    }, 2600);
+});
 
 function normalizeJournalHeader(value) {
     return String(value || "").trim().toLocaleLowerCase("az-AZ").replace(/\s+/g, " ");
