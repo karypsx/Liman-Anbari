@@ -61,14 +61,14 @@
         <section id="distribution-view" class="view" hidden>
             <div class="section-heading">
                 <h2>Paylama jurnalı</h2>
-                <p>Jurnal yalnız Google hesabınızla açılır</p>
+            <p>Paylama qeydləri burada avtomatik göstərilir</p>
             </div>
             <div class="journal-access-card">
-                <div class="journal-lock" aria-hidden="true">⌑</div>
-                <h3>Məxfi giriş</h3>
-                <p>Paylama qeydlərini görmək üçün cədvələ icazəsi olan Google hesabı ilə daxil olun.</p>
-                <button id="connect-distribution" class="primary-button" type="button" hidden>Yenidən cəhd et</button>
-                <p id="distribution-status" class="journal-status" role="status" aria-live="polite">Cədvəli ilk dəfə seçin; sonra bu cihazda avtomatik açılacaq.</p>
+                <div class="journal-lock" aria-hidden="true">↻</div>
+                <h3>Paylama qeydləri</h3>
+                <p>Son qeydlər tətbiqin özündə göstərilir.</p>
+                <button id="refresh-distribution" class="primary-button" type="button">Jurnalı yenilə</button>
+                <p id="distribution-status" class="journal-status" role="status" aria-live="polite">Jurnal yüklənir…</p>
             </div>
             <div id="distribution-results" class="result-card" hidden>
                 <ul id="distribution-list" class="product-list">
@@ -85,7 +85,7 @@
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
                     <p class="about-intro">Anbar rəflərindəki malları QR kodla tez tapmaq və gündəlik işi daha rahat idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.27</strong></span>
+                    <span class="about-version">Versiya <strong>1.28</strong></span>
                 </div>
                 <div class="about-details">
                     <div class="about-detail">
@@ -135,11 +135,11 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.27</span>
+            <span class="footer-version">Versiya 1.28</span>
         </footer>
     </main>
     <script src="app-config.js?v=3"></script>
-    <script src="script.js?v=18"></script>
+    <script src="script.js?v=19"></script>
 </body>
 </html>
 
