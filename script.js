@@ -10,6 +10,7 @@ const homeView = document.getElementById("home-view");
 const scanView = document.getElementById("scan-view");
 const resultView = document.getElementById("result-view");
 const distributionView = document.getElementById("distribution-view");
+const aboutView = document.getElementById("about-view");
 const scanError = document.getElementById("scan-error");
 const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
@@ -62,6 +63,7 @@ function showView(view) {
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
     distributionView.hidden = view !== "distribution";
+    aboutView.hidden = view !== "about";
     dataStatus.hidden = true;
 }
 
@@ -229,6 +231,7 @@ document.getElementById("start-scan").addEventListener("click", startScan);
 document.getElementById("cancel-scan").addEventListener("click", returnHome);
 document.getElementById("return-home").addEventListener("click", returnHome);
 document.getElementById("distribution-home").addEventListener("click", returnHome);
+document.getElementById("about-home").addEventListener("click", returnHome);
 
 // Boş sahəyə toxunanda yüngül, dekorativ qabarcıq effekti.
 document.addEventListener("click", function (event) {
