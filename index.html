@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#121212">
+    <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=24">
+    <link rel="stylesheet" href="style.css?v=25">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div id="splash-screen" class="splash-screen" role="status" aria-label="Liman Anbarı açılır">
@@ -58,11 +61,18 @@
         <section id="distribution-view" class="view" hidden>
             <div class="section-heading">
                 <h2>Paylama jurnalı</h2>
-                <p>Paylama qeydləri burada görünəcək</p>
+                <p>Jurnal yalnız Google hesabınızla açılır</p>
             </div>
-            <div class="result-card">
+            <div class="journal-access-card">
+                <div class="journal-lock" aria-hidden="true">⌑</div>
+                <h3>Məxfi giriş</h3>
+                <p>Paylama qeydlərini görmək üçün cədvələ icazəsi olan Google hesabı ilə daxil olun.</p>
+                <button id="connect-distribution" class="primary-button" type="button">Google hesabı ilə daxil ol</button>
+                <p id="distribution-status" class="journal-status" role="status" aria-live="polite">Jurnal məlumatları Google hesabınızdan oxunur; tətbiq onları saxlamır.</p>
+            </div>
+            <div id="distribution-results" class="result-card" hidden>
                 <ul id="distribution-list" class="product-list">
-                    <li class="empty-result">Jurnal hələ cədvələ qoşulmayıb. Qoşulduqdan sonra malın adı, miqdarı, alan şəxs və tarix burada görünəcək.</li>
+                    <li class="empty-result">Jurnal yüklənir…</li>
                 </ul>
             </div>
             <button id="distribution-home" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
@@ -75,7 +85,7 @@
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
                     <p class="about-intro">Anbar rəflərindəki malları QR kodla tez tapmaq və gündəlik işi daha rahat idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.22</strong></span>
+                    <span class="about-version">Versiya <strong>1.25</strong></span>
                 </div>
                 <div class="about-details">
                     <div class="about-detail">
@@ -125,12 +135,14 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.22</span>
+            <span class="footer-version">Versiya 1.25</span>
         </footer>
     </main>
-    <script src="script.js?v=14"></script>
+    <script src="app-config.js?v=1"></script>
+    <script src="script.js?v=16"></script>
 </body>
 </html>
+
 
 
 
