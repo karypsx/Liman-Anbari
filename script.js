@@ -290,7 +290,7 @@ function renderDistributionRows(rows) {
     }
 
     const headers = rows[headerIndex].map(normalizeJournalHeader);
-    const column = needle => headers.findIndex(value => value.includes(needle));
+    const column = (...needles) => headers.findIndex(value => needles.some(needle => value.includes(needle)));
     const indexes = {
         date: column("tarix"),
         code: column("malın kodu"),
@@ -298,7 +298,7 @@ function renderDistributionRows(rows) {
         quantity: column("verilən miqdar"),
         unit: column("ölçü vahidi"),
         department: column("hansı şöbəyə verildi"),
-        recipient: column("mal götürən işçi")
+        recipient: column("malı götürən işçi", "mal götürən işçi", "işçi (ad, soyad)")
     };
     const records = rows.slice(headerIndex + 1).filter(row =>
         String(row[indexes.name] || "").trim() || String(row[indexes.code] || "").trim()
@@ -332,11 +332,20 @@ function renderDistributionRows(rows) {
 
         const details = document.createElement("div");
         details.className = "distribution-details";
-        [row[indexes.date], row[indexes.department], row[indexes.recipient]]
-            .filter(value => value && String(value).trim())
-            .forEach(value => {
+        [
+            ["Tarix", row[indexes.date]],
+            ["Şöbə", row[indexes.department]],
+            ["Götürən işçi", row[indexes.recipient]]
+        ].filter(([, value]) => value && String(value).trim())
+            .forEach(([label, value]) => {
                 const detail = document.createElement("span");
-                detail.textContent = value;
+                detail.className = "distribution-detail";
+                const detailLabel = document.createElement("span");
+                detailLabel.className = "distribution-detail-label";
+                detailLabel.textContent = label + ":";
+                const detailValue = document.createElement("span");
+                detailValue.textContent = value;
+                detail.append(detailLabel, detailValue);
                 details.appendChild(detail);
             });
         entry.append(top, details);
