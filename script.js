@@ -58,13 +58,15 @@ menuToggle.addEventListener("click", function () {
 
 menuBackdrop.addEventListener("click", closeMenu);
 
-appMenu.addEventListener("click", async function (event) {
+appMenu.addEventListener("click", function (event) {
     const button = event.target.closest("[data-menu-view]");
     if (!button) return;
-    await stopScanner();
     scanHandled = false;
-    showView(button.dataset.menuView);
+    void stopScanner();
+    const targetView = button.dataset.menuView;
+    showView(targetView);
     closeMenu();
+    if (targetView === "distribution") connectDistributionJournal();
 });
 
 document.addEventListener("click", function (event) {
@@ -253,15 +255,15 @@ document.getElementById("about-home").addEventListener("click", returnHome);
 distributionConnectButton.addEventListener("click", connectDistributionJournal);
 
 function connectDistributionJournal() {
+    distributionConnectButton.hidden = true;
+    distributionStatus.classList.remove("journal-status-error");
     const config = window.APP_CONFIG || {};
     if (!config.googleOAuthClientId || !config.googlePickerApiKey || !config.googleCloudProjectNumber) {
-        distributionStatus.textContent = "Məxfi girişi aktiv etmək üçün app-config.js faylında Google OAuth Client ID, API Key və layihə nömrəsi yazılmalıdır.";
-        distributionStatus.classList.add("journal-status-error");
+        showDistributionError("Google giriş sazlamaları tapılmadı. Bir az sonra yenidən cəhd edin.");
         return;
     }
     if (!window.google?.accounts?.oauth2) {
-        distributionStatus.textContent = "Google giriş xidməti yüklənmədi. İnternet bağlantısını yoxlayıb yenidən cəhd edin.";
-        distributionStatus.classList.add("journal-status-error");
+        showDistributionError("Google giriş xidməti yüklənmədi. Yenidən cəhd edin.");
         return;
     }
 
@@ -276,15 +278,26 @@ function connectDistributionJournal() {
         scope: "https://www.googleapis.com/auth/drive.file",
         callback: function (response) {
             if (response.error || !response.access_token) {
-                distributionStatus.textContent = "Google hesabına giriş alınmadı. Yenidən cəhd edin.";
-                distributionStatus.classList.add("journal-status-error");
+                showDistributionError("Google icazəsi alınmadı. Yenidən cəhd edin.");
                 return;
             }
             distributionAccessToken = response.access_token;
-            openDistributionPicker();
+            if (distributionSpreadsheetId) loadDistributionRows(distributionAccessToken);
+            else openDistributionPicker();
+        },
+        error_callback: function () {
+            showDistributionError("Google giriş pəncərəsi açıla bilmədi. Yenidən cəhd edin.");
         }
     });
-    distributionTokenClient.requestAccessToken({ prompt: "select_account" });
+    distributionStatus.textContent = "Paylama jurnalı açılır…";
+    distributionTokenClient.requestAccessToken({ prompt: "" });
+}
+
+function showDistributionError(message) {
+    distributionStatus.textContent = message;
+    distributionStatus.classList.add("journal-status-error");
+    distributionConnectButton.textContent = "Yenidən cəhd et";
+    distributionConnectButton.hidden = false;
 }
 
 function openDistributionPicker() {
@@ -292,8 +305,7 @@ function openDistributionPicker() {
     distributionStatus.classList.remove("journal-status-error");
     distributionStatus.textContent = "Google Drive-dan paylama cədvəlini seçin…";
     if (!window.gapi?.load) {
-        distributionStatus.textContent = "Google fayl seçicisi yüklənmədi. İnternet bağlantısını yoxlayın.";
-        distributionStatus.classList.add("journal-status-error");
+        showDistributionError("Google fayl seçicisi yüklənmədi. Yenidən cəhd edin.");
         return;
     }
 
@@ -331,15 +343,14 @@ function openDistributionPicker() {
                         }
                         loadDistributionRows(distributionAccessToken);
                     } else if (data.action === window.google.picker.Action.CANCEL) {
-                        distributionStatus.textContent = "Cədvəl seçilmədi. Jurnalı görmək üçün Google cədvəlini seçin.";
+                        showDistributionError("Cədvəl seçilmədi. Jurnalı görmək üçün yenidən cəhd edin.");
                     }
                 })
                 .build();
             picker.setVisible(true);
         },
         onerror: function () {
-            distributionStatus.textContent = "Google fayl seçicisi açıla bilmədi. Google Cloud API sazlamalarını yoxlayın.";
-            distributionStatus.classList.add("journal-status-error");
+            showDistributionError("Google fayl seçicisi açıla bilmədi. Yenidən cəhd edin.");
         }
     });
 }
@@ -387,8 +398,7 @@ async function loadDistributionRows(accessToken) {
         distributionResults.hidden = false;
         distributionStatus.textContent = "Jurnal yeniləndi · " + new Date().toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" });
     } catch (error) {
-        distributionStatus.textContent = error.message || "Jurnalı yükləmək olmadı. Giriş icazəsini və seçilmiş faylı yoxlayın.";
-        distributionStatus.classList.add("journal-status-error");
+        showDistributionError(error.message || "Jurnalı yükləmək olmadı. İcazəni yoxlayıb yenidən cəhd edin.");
         console.error("Paylama jurnalı yüklənmədi:", error);
     }
 }
