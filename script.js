@@ -1,5 +1,7 @@
 // Buraya Google Sheets-də "Anbar Qalığı" vərəqinin CSV linkini yerləşdir.
 const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRQEdxU0-ynOkMOnAxPNIzDgjmlkt1bGtsOpciw6FVMbqpAmZji7Uy9scU5buOSA/pub?gid=2100305226&single=true&output=csv";
+// Yalnız yayımlanmış Paylanma Jurnalı vərəqinin oxu linkidir.
+const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRQ8IkV-no07gBJ5lYIbw6Z08grP5x6yDNEyIEHcuFcogn6adp_j-gCFdYfNjWK4sGPirROqeHIbkUN/pub?gid=1515607991&single=true&output=csv";
 
 let anbarData = [];
 let scanner = null;
@@ -14,21 +16,7 @@ const aboutView = document.getElementById("about-view");
 const distributionStatus = document.getElementById("distribution-status");
 const distributionResults = document.getElementById("distribution-results");
 const distributionList = document.getElementById("distribution-list");
-const distributionConnectButton = document.getElementById("connect-distribution");
-let distributionTokenClient = null;
-let distributionAccessToken = null;
-const distributionFileStorageKey = "liman-anbari-distribution-file-v1";
-function readSavedDistributionFile() {
-    try {
-        const saved = JSON.parse(localStorage.getItem(distributionFileStorageKey) || "null");
-        return saved && typeof saved.id === "string" && saved.id ? saved : null;
-    } catch (error) {
-        return null;
-    }
-}
-const savedDistributionFile = readSavedDistributionFile();
-let distributionSpreadsheetId = savedDistributionFile?.id || null;
-let distributionFileMimeType = savedDistributionFile?.mimeType || "";
+const distributionRefreshButton = document.getElementById("refresh-distribution");
 const scanError = document.getElementById("scan-error");
 const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
@@ -66,7 +54,7 @@ appMenu.addEventListener("click", function (event) {
     const targetView = button.dataset.menuView;
     showView(targetView);
     closeMenu();
-    if (targetView === "distribution") connectDistributionJournal();
+    if (targetView === "distribution") loadDistributionJournal();
 });
 
 document.addEventListener("click", function (event) {
@@ -252,156 +240,36 @@ document.getElementById("cancel-scan").addEventListener("click", returnHome);
 document.getElementById("return-home").addEventListener("click", returnHome);
 document.getElementById("distribution-home").addEventListener("click", returnHome);
 document.getElementById("about-home").addEventListener("click", returnHome);
-distributionConnectButton.addEventListener("click", connectDistributionJournal);
-
-function connectDistributionJournal() {
-    distributionConnectButton.hidden = true;
-    distributionStatus.classList.remove("journal-status-error");
-    const config = window.APP_CONFIG || {};
-    if (!config.googleOAuthClientId || !config.googlePickerApiKey || !config.googleCloudProjectNumber) {
-        showDistributionError("Google giriş sazlamaları tapılmadı. Bir az sonra yenidən cəhd edin.");
-        return;
-    }
-    if (!window.google?.accounts?.oauth2) {
-        showDistributionError("Google giriş xidməti yüklənmədi. Yenidən cəhd edin.");
-        return;
-    }
-
-    if (distributionAccessToken) {
-        if (distributionSpreadsheetId) loadDistributionRows(distributionAccessToken);
-        else openDistributionPicker();
-        return;
-    }
-
-    distributionTokenClient = window.google.accounts.oauth2.initTokenClient({
-        client_id: config.googleOAuthClientId,
-        scope: "https://www.googleapis.com/auth/drive.file",
-        callback: function (response) {
-            if (response.error || !response.access_token) {
-                showDistributionError("Google icazəsi alınmadı. Yenidən cəhd edin.");
-                return;
-            }
-            distributionAccessToken = response.access_token;
-            if (distributionSpreadsheetId) loadDistributionRows(distributionAccessToken);
-            else openDistributionPicker();
-        },
-        error_callback: function () {
-            showDistributionError("Google giriş pəncərəsi açıla bilmədi. Yenidən cəhd edin.");
-        }
-    });
-    distributionStatus.textContent = "Paylama jurnalı açılır…";
-    distributionTokenClient.requestAccessToken({ prompt: "" });
-}
-
 function showDistributionError(message) {
     distributionStatus.textContent = message;
     distributionStatus.classList.add("journal-status-error");
-    distributionConnectButton.textContent = "Yenidən cəhd et";
-    distributionConnectButton.hidden = false;
 }
 
-function openDistributionPicker() {
-    const config = window.APP_CONFIG || {};
-    distributionStatus.classList.remove("journal-status-error");
-    distributionStatus.textContent = "Google Drive-dan paylama cədvəlini seçin…";
-    if (!window.gapi?.load) {
-        showDistributionError("Google fayl seçicisi yüklənmədi. Yenidən cəhd edin.");
-        return;
-    }
-
-    window.gapi.load("picker", {
-        callback: function () {
-            const spreadsheetMimeTypes = [
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "application/vnd.ms-excel",
-                "application/vnd.google-apps.spreadsheet"
-            ].join(",");
-            const driveView = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
-                .setIncludeFolders(false)
-                .setSelectFolderEnabled(false)
-                .setMimeTypes(spreadsheetMimeTypes);
-            const picker = new window.google.picker.PickerBuilder()
-                .addView(driveView)
-                .setOAuthToken(distributionAccessToken)
-                .setDeveloperKey(config.googlePickerApiKey)
-                .setAppId(config.googleCloudProjectNumber)
-                .setLocale("az")
-                .setTitle("Paylanma Jurnalı cədvəlini seçin")
-                .setCallback(function (data) {
-                    if (data.action === window.google.picker.Action.PICKED) {
-                        const pickedFile = data.docs && data.docs[0];
-                        if (!pickedFile?.id) return;
-                        distributionSpreadsheetId = pickedFile.id;
-                        distributionFileMimeType = pickedFile.mimeType || "";
-                        try {
-                            localStorage.setItem(distributionFileStorageKey, JSON.stringify({
-                                id: distributionSpreadsheetId,
-                                mimeType: distributionFileMimeType
-                            }));
-                        } catch (error) {
-                            // Fayl seçilibsə, yaddaş bağlı olsa belə cari sessiyada işləsin.
-                        }
-                        loadDistributionRows(distributionAccessToken);
-                    } else if (data.action === window.google.picker.Action.CANCEL) {
-                        showDistributionError("Cədvəl seçilmədi. Jurnalı görmək üçün yenidən cəhd edin.");
-                    }
-                })
-                .build();
-            picker.setVisible(true);
-        },
-        onerror: function () {
-            showDistributionError("Google fayl seçicisi açıla bilmədi. Yenidən cəhd edin.");
-        }
-    });
-}
-
-async function loadDistributionRows(accessToken) {
+async function loadDistributionJournal() {
+    const csvUrl = distributionPublicCsvUrl;
     distributionStatus.classList.remove("journal-status-error");
     distributionStatus.textContent = "Paylama jurnalı yüklənir…";
     distributionResults.hidden = true;
+    if (!csvUrl || !window.Papa) {
+        showDistributionError("Paylama jurnalı bağlantısı qurulmayıb.");
+        return;
+    }
     try {
-        let rows;
-        if (distributionFileMimeType === "application/vnd.google-apps.spreadsheet") {
-            const range = "'Paylanma Jurnalı'!A1:H";
-            const endpoint = "https://sheets.googleapis.com/v4/spreadsheets/"
-                + encodeURIComponent(distributionSpreadsheetId)
-                + "/values/" + encodeURIComponent(range)
-                + "?valueRenderOption=FORMATTED_VALUE";
-            const response = await fetch(endpoint, {
-                headers: { Authorization: "Bearer " + accessToken }
-            });
-            const result = await response.json();
-            if (!response.ok) {
-                if (response.status === 401) distributionAccessToken = null;
-                throw new Error(result.error?.message || "Google cədvəli oxuya bilmədi.");
-            }
-            rows = result.values || [];
-        } else {
-            if (!window.XLSX) throw new Error("Excel faylını oxuma xidməti yüklənmədi. İnternet bağlantısını yoxlayın.");
-            const endpoint = "https://www.googleapis.com/drive/v3/files/"
-                + encodeURIComponent(distributionSpreadsheetId) + "?alt=media";
-            const response = await fetch(endpoint, {
-                headers: { Authorization: "Bearer " + accessToken }
-            });
-            if (!response.ok) {
-                if (response.status === 401) distributionAccessToken = null;
-                throw new Error("Drive-dakı Excel faylı oxuna bilmədi (" + response.status + ").");
-            }
-            const workbook = window.XLSX.read(await response.arrayBuffer(), { type: "array", cellDates: true });
-            const sheetName = workbook.SheetNames.find(name => normalizeJournalHeader(name).includes("paylanma jurnalı"));
-            if (!sheetName) throw new Error("Excel faylında “Paylanma Jurnalı” vərəqi tapılmadı.");
-            rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
-                header: 1, raw: false, defval: "", blankrows: false
-            });
-        }
-        renderDistributionRows(rows);
+        const response = await fetch(csvUrl, { cache: "no-store" });
+        if (!response.ok) throw new Error("Jurnal linkindən məlumat almaq olmadı.");
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: false });
+        if (parsed.errors?.length && !parsed.data?.length) throw new Error("Jurnal məlumatları oxuna bilmədi.");
+        renderDistributionRows(parsed.data || []);
         distributionResults.hidden = false;
         distributionStatus.textContent = "Jurnal yeniləndi · " + new Date().toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" });
     } catch (error) {
-        showDistributionError(error.message || "Jurnalı yükləmək olmadı. İcazəni yoxlayıb yenidən cəhd edin.");
+        showDistributionError(error.message || "Jurnalı yükləmək olmadı. İnternet bağlantısını yoxlayın.");
         console.error("Paylama jurnalı yüklənmədi:", error);
     }
 }
+
+distributionRefreshButton.addEventListener("click", loadDistributionJournal);
 
 function normalizeJournalHeader(value) {
     return String(value || "").trim().toLocaleLowerCase("az-AZ").replace(/\s+/g, " ");
