@@ -1,7 +1,7 @@
 // Buraya Google Sheets-də "Anbar Qalığı" vərəqinin CSV linkini yerləşdir.
 const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfCMNK83THtC25qXuflEhQlBJkBydNhc2HiO9-mMxoaUwc_L_-DOmGMBuhziArtQ/pub?gid=493222049&single=true&output=csv";
 // Yalnız yayımlanmış Paylanma Jurnalı vərəqinin oxu linkidir.
-const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRQ8IkV-no07gBJ5lYIbw6Z08grP5x6yDNEyIEHcuFcogn6adp_j-gCFdYfNjWK4sGPirROqeHIbkUN/pub?gid=1515607991&single=true&output=csv";
+const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfCMNK83THtC25qXuflEhQlBJkBydNhc2HiO9-mMxoaUwc_L_-DOmGMBuhziArtQ/pub?gid=5100302&single=true&output=csv";
 
 let anbarData = [];
 let scanner = null;
