@@ -95,7 +95,7 @@ body {
     align-items: center;
     min-height: 46px;
     color: #c8f8dc;
-    font-size: 13px;
+    font-size: 17px;
     font-weight: 750;
     letter-spacing: .2px;
     text-shadow: 0 0 16px rgba(57,201,130,.2);
@@ -383,8 +383,6 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 
 
 
-
-
 .app-mark img {
     width: 39px;
     height: 39px;
@@ -398,3 +396,13 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 }
 
 
+
+.top-label {
+    gap: 7px;
+}
+
+.top-label-icon {
+    width: 21px;
+    height: 21px;
+    object-fit: contain;
+}
