@@ -383,3 +383,18 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 
 
 
+
+
+.app-mark img {
+    width: 39px;
+    height: 39px;
+    object-fit: contain;
+}
+
+.scan-symbol img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+}
+
+
