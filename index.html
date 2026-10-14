@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=27">
+    <link rel="stylesheet" href="style.css?v=54">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -15,23 +15,40 @@
 </head>
 <body>
     <div id="splash-screen" class="splash-screen" role="status" aria-label="Liman Anbarı açılır">
-        <div class="splash-content">
-            <div class="splash-art" aria-hidden="true">
-                <span class="splash-orbit splash-orbit-one"></span>
-                <span class="splash-orbit splash-orbit-two"></span>
-                <img class="splash-logo" src="images/liman-logo-splash.png" alt="">
-                <span class="splash-scanline"></span>
-            </div>
-            <h2 class="splash-title">Liman Anbarı</h2>
-            <p class="splash-subtitle">QR ilə rəf axtarışı</p>
-            <div class="splash-progress" aria-hidden="true"><span></span></div>
+        <div class="splash-topline" aria-hidden="true">
+            <span class="splash-brandline"><span class="splash-brand-dot"></span>LİMAN <i></i> ANBAR SİSTEMİ</span>
+            <span class="splash-top-status">SİSTEM YÜKLƏNİR</span>
         </div>
+        <div class="splash-content">
+            <div class="splash-hero">
+                <div class="splash-art" aria-hidden="true">
+                    <span class="splash-scanner-frame">
+                        <i class="splash-frame-corner corner-tl"></i>
+                        <i class="splash-frame-corner corner-tr"></i>
+                        <i class="splash-frame-corner corner-bl"></i>
+                        <i class="splash-frame-corner corner-br"></i>
+                    </span>
+                    <span class="splash-logo-float"><img class="splash-logo" src="images/liman-logo-splash.png" alt=""></span>
+                    <span class="splash-scan-beam"></span>
+                </div>
+                <div class="splash-copy">
+                    <p class="splash-kicker"><span></span> ANBAR İDARƏETMƏ SİSTEMİ</p>
+                    <h2 class="splash-title"><span>Liman</span><span class="splash-title-accent">Anbarı</span></h2>
+                    <p class="splash-subtitle">QR ilə rəf axtarışı və paylama qeydləri</p>
+                    <div class="splash-loading">
+                        <div class="splash-progress" aria-hidden="true"><span></span></div>
+                        <div class="splash-progress-meta"><span class="splash-loading-note">İş sahəsi hazırlanır</span><span class="splash-progress-index">01 / 01</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="splash-footer" aria-hidden="true"><span>ANBAR</span><i></i><span>PAYLAMA</span><i></i><span>QR AXTARIŞI</span></div>
     </div>
 
     <main class="container">
         <div class="top-label">
-    <img class="top-label-icon" src="images/manage-icon.png" alt="">
-    <span>Anbar İdarəetməsi</span>
+    <span class="top-label-brand" aria-hidden="true"><img class="top-label-icon" src="images/app-mark.png" alt=""></span>
+    <span class="top-label-title">Anbar İdarəetməsi</span>
 </div>
         <div id="menu-backdrop" class="menu-backdrop" hidden></div>
         <div class="app-menu-wrap">
@@ -53,48 +70,117 @@
         </header>
 
         <section id="home-view" class="view">
-            <div class="intro-card">
-                <div class="scan-symbol" aria-hidden="true">
-    <img src="images/scan-icon.png" alt="">
-</div>
-                <h2>Rəfi yoxlamağa hazırsınız?</h2>
-                <p>Arxa kameranı açmaq və rəfin QR kodunu oxutmaq üçün düyməyə basın.</p>
-                <button id="start-scan" class="primary-button" type="button">
-                    <span aria-hidden="true">▦</span> Rəfi skan et
-                </button>
-            </div>
+            <section class="home-dashboard" aria-label="Günün paneli">
+                <div class="dashboard-topline">
+                    <div class="dashboard-date-wrap">
+                        <span class="dashboard-kicker"><span class="dashboard-live-dot"></span> CANLI İCMAL</span>
+                        <time id="dashboard-date" class="dashboard-date"></time>
+                    </div>
+                    <div class="dashboard-clock-wrap">
+                        <time id="dashboard-clock" class="dashboard-clock" aria-label="Canlı saat">--:--:--</time>
+                        <span class="dashboard-clock-label">YERLİ SAAT</span>
+                    </div>
+                </div>
+                <h2 class="dashboard-title">Günün icmalı</h2>
+                <div class="dashboard-stats" aria-label="Bu günün paylama xülasəsi">
+                    <div class="dashboard-stat"><strong id="dashboard-record-count">—</strong><span>paylama qeydi</span></div>
+                    <div class="dashboard-stat"><strong id="dashboard-quantity-total">—</strong><span>verilən miqdar</span></div>
+                </div>
+            </section>
+            <button id="start-scan" class="home-scan-launch" type="button">
+                <span class="home-scan-launch-icon" aria-hidden="true"><img src="images/scan-icon.png" alt=""></span>
+                <span class="home-scan-launch-copy">
+                    <span class="home-scan-kicker">SÜRƏTLİ AXTARIŞ</span>
+                    <strong>Rəfi skan et</strong>
+                    <small>QR kodu oxudub malın yerini tap</small>
+                </span>
+                <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
+            </button>
+            <section class="home-recent-section" aria-label="Son verilən mallar">
+                <div class="home-recent-heading">
+                    <div>
+                        <h2>Son verilənlər</h2>
+                    </div>
+                    <button id="recent-distribution-open" class="recent-open-button" type="button" aria-label="Paylama jurnalına bax">Hamısına bax <span aria-hidden="true">›</span></button>
+                </div>
+                <ul id="recent-distribution-list" class="recent-distribution-list" aria-live="polite">
+                    <li class="recent-empty">Son qeydlər yüklənir…</li>
+                </ul>
+            </section>
         </section>
 
-        <section id="distribution-view" class="view" hidden>
-            <div class="section-heading">
-                <h2>Paylama jurnalı</h2>
-            <p>Paylama qeydləri burada avtomatik göstərilir</p>
+        <section id="distribution-view" class="view distribution-view" hidden>
+            <div class="journal-page-heading">
+                <div class="journal-page-kicker"><span class="dashboard-live-dot"></span> MALLARIN TARİXÇƏSİ</div>
+                <div class="journal-heading-row">
+                    <div>
+                        <h2>Paylama jurnalı</h2>
+                        <p>Verilən malları, tarixləri və alan işçiləri izləyin.</p>
+                    </div>
+                </div>
             </div>
-            <div class="journal-access-card">
-                <div class="journal-lock" aria-hidden="true">↻</div>
-                <h3>Paylama qeydləri</h3>
-                <p>Son qeydlər tətbiqin özündə göstərilir.</p>
-                <button id="refresh-distribution" class="primary-button" type="button">Jurnalı yenilə</button>
-                <button id="issue-goods" class="secondary-button issue-goods-button" type="button">＋ Mal ver</button>
-                <p id="distribution-status" class="journal-status" role="status" aria-live="polite">Jurnal yüklənir…</p>
+            <div class="journal-toolbar">
+                <div class="journal-status-row">
+                    <span class="journal-status-label">JURNALIN VƏZİYYƏTİ</span>
+                    <p id="distribution-status" class="journal-status" role="status" aria-live="polite">Jurnal yüklənir…</p>
+                </div>
+                <div class="journal-actions">
+                    <button id="refresh-distribution" class="primary-button" type="button"><span aria-hidden="true">↻</span> Yenilə</button>
+                    <button id="issue-goods" class="secondary-button issue-goods-button" type="button"><span aria-hidden="true">＋</span> Mal ver</button>
+                </div>
             </div>
-            <div id="distribution-results" class="result-card" hidden>
+            <form id="distribution-search-form" class="distribution-search" role="search">
+                <label class="visually-hidden" for="distribution-search-input">Paylama jurnalında axtar</label>
+                <div class="distribution-search-field"><span aria-hidden="true">⌕</span><input id="distribution-search-input" type="search" placeholder="Mal, kod, işçi, şöbə və ya tarix axtar…" autocomplete="off"></div>
+                <button class="primary-button" type="submit">Axtar <span aria-hidden="true">→</span></button>
+                <button id="distribution-search-clear" class="secondary-button" type="button" aria-label="Axtarışı təmizlə"><span aria-hidden="true">×</span> Təmizlə</button>
+            </form>
+            <div class="journal-results-heading"><span>PAYLAMA QEYDLƏRİ</span><strong id="journal-match-count">—</strong></div>
+            <div id="distribution-results" class="journal-results-panel" hidden>
                 <ul id="distribution-list" class="product-list">
                     <li class="empty-result">Jurnal yüklənir…</li>
                 </ul>
             </div>
-            <button id="distribution-home" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
         </section>
 
-        <section id="about-view" class="view" hidden>
+        <section id="about-view" class="view about-view" hidden>
+            <div class="about-page-kicker"><span class="dashboard-live-dot"></span> LİMAN ANBARI · TƏTBİQ</div>
             <div class="about-card">
                 <div class="about-hero">
                     <div class="about-icon" aria-hidden="true">i</div>
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
-                    <p class="about-intro">Anbar rəflərindəki malları QR kodla tez tapmaq və gündəlik işi daha rahat idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.32</strong></span>
+                    <p class="about-intro">QR rəf kodunu skan edib malların yerini və sayını tapmaq, paylama qeydlərini isə bir yerdən izləmək üçün hazırlanıb.</p>
+                    <span class="about-version">Versiya <strong>1.40</strong></span>
                 </div>
+                <section class="about-feature-section" aria-labelledby="about-features-title">
+                    <div class="about-section-heading">
+                        <div>
+                            <span class="about-label">GÜNDƏLİK İŞ ÜÇÜN</span>
+                            <h3 id="about-features-title">Tətbiqin imkanları</h3>
+                        </div>
+                        <span class="about-feature-count" aria-hidden="true">04</span>
+                    </div>
+                    <div class="about-feature-grid">
+                        <article class="about-feature-card">
+                            <span class="about-feature-icon" aria-hidden="true">⌗</span>
+                            <div><h4>QR ilə rəf axtarışı</h4><p>Rəf kodunu oxudub oradakı malları və mövcud sayını görün.</p></div>
+                        </article>
+                        <article class="about-feature-card">
+                            <span class="about-feature-icon" aria-hidden="true">▤</span>
+                            <div><h4>Paylama jurnalı</h4><p>Verilən malları, miqdarları, tarixləri və alan işçiləri izləyin.</p></div>
+                        </article>
+                        <article class="about-feature-card">
+                            <span class="about-feature-icon" aria-hidden="true">⌕</span>
+                            <div><h4>Rahat axtarış</h4><p>Mal adına, koda, işçiyə, şöbəyə və tarixə görə axtarın.</p></div>
+                        </article>
+                        <article class="about-feature-card">
+                            <span class="about-feature-icon" aria-hidden="true">◷</span>
+                            <div><h4>Canlı günün icmalı</h4><p>Saatı, tarixi və bugünkü paylama sayını izləyin; yeni gün başlayanda icmal yenilənir.</p></div>
+                        </article>
+                    </div>
+                    <p class="about-feature-note">Jurnalı açanda və ya “Yenilə” düyməsinə basanda qeydləri təzələyin.</p>
+                </section>
                 <div class="about-details">
                     <div class="about-detail">
                         <span class="about-detail-icon" aria-hidden="true">✦</span>
@@ -102,7 +188,7 @@
                     </div>
                     <div class="about-detail">
                         <span class="about-detail-icon" aria-hidden="true">↻</span>
-                        <div><span class="about-label">SON YENİLƏNMƏ</span><strong>11 oktyabr 2026</strong></div>
+                        <div><span class="about-label">SON YENİLƏNMƏ</span><strong>15 oktyabr 2026</strong></div>
                     </div>
                     <div class="about-detail">
                         <span class="about-detail-icon" aria-hidden="true">♙</span>
@@ -110,21 +196,40 @@
                     </div>
                     <div class="about-purpose">
                         <span class="about-label">MƏQSƏD</span>
-                        <p>Rəf kodunu skan edib həmin rəfdəki malları və mövcud sayını asanlıqla görmək.</p>
+                        <p>Rəf axtarışını, günün paylama icmalını və malların verilmə tarixçəsini bir tətbiqdə toplamaq.</p>
                     </div>
                 </div>
             </div>
             <button id="about-home" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
         </section>
 
-        <section id="scan-view" class="view" hidden>
-            <div class="section-heading">
-                <h2>QR kodu çərçivəyə salın</h2>
-                <p>Arxa kamera istifadə olunur</p>
+        <section id="scan-view" class="view scan-view" hidden>
+            <div class="scan-page-heading">
+                <div class="scan-page-kicker"><span class="dashboard-live-dot"></span> QR İLƏ AXTARIŞ</div>
+                <div class="scan-page-heading-row">
+                    <div>
+                        <h2>Rəfi skan et</h2>
+                        <p>QR kodunu kameraya tutub rəf məlumatlarını açın.</p>
+                    </div>
+                    <span class="scan-page-icon" aria-hidden="true"><img src="images/scan-icon.png" alt=""></span>
+                </div>
             </div>
-            <div id="reader" aria-label="QR kod skaneri"></div>
+            <div class="scan-camera-card">
+                <div class="scan-camera-topline">
+                    <span class="scan-camera-label">KAMERA SKANERİ</span>
+                    <span id="scan-camera-status" class="scan-camera-status"><i></i> Kamera hazırlanır</span>
+                </div>
+                <div class="scan-camera-window">
+                    <div id="reader" aria-label="QR kod skaneri"></div>
+                    <span class="scan-camera-sweep" aria-hidden="true"></span>
+                </div>
+                <div class="scan-camera-hint">
+                    <span class="scan-hint-icon" aria-hidden="true">i</span>
+                    <p>Rəf kodunu çərçivəyə yaxınlaşdırın. Kod oxunan kimi məlumatlar açılacaq.</p>
+                </div>
+            </div>
             <p id="scan-error" class="message error-message" role="alert" hidden></p>
-            <button id="cancel-scan" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
+            <button id="cancel-scan" class="scan-back-button secondary-button" type="button"><span aria-hidden="true">←</span> Ana səhifəyə qayıt</button>
         </section>
 
         <section id="result-view" class="view" hidden>
@@ -143,12 +248,12 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.32</span>
+            <span class="footer-version">Versiya 1.40</span>
         </footer>
     </main>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     <script src="app-config.js?v=3"></script>
-    <script src="script.js?v=21"></script>
+    <script src="script.js?v=28"></script>
 </body>
 </html>
 
