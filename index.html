@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=54">
+    <link rel="stylesheet" href="style.css?v=57">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -52,12 +52,15 @@
 </div>
         <div id="menu-backdrop" class="menu-backdrop" hidden></div>
         <div class="app-menu-wrap">
+            <button id="login-placeholder" class="login-placeholder" type="button">Daxil ol</button>
             <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Menyunu aç" aria-expanded="false" aria-controls="app-menu">
                 <span></span><span></span><span></span>
             </button>
             <nav id="app-menu" class="app-menu" aria-label="Əsas menyu" hidden>
                 <button type="button" data-menu-view="home">Ana səhifə</button>
                 <button type="button" data-menu-view="distribution">Paylama jurnalı</button>
+                <button type="button" data-menu-inactive="Sahə ölçümü">Sahə ölçümü</button>
+                <button type="button" data-menu-inactive="Xatırlatmalar">Xatırlatmalar</button>
                 <button type="button" data-menu-view="about">Tətbiq haqqında</button>
             </nav>
         </div>
@@ -253,7 +256,7 @@
     </main>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     <script src="app-config.js?v=3"></script>
-    <script src="script.js?v=28"></script>
+    <script src="script.js?v=30"></script>
 </body>
 </html>
 
