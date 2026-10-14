@@ -4,6 +4,11 @@ const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTg
 const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=2059277788&single=true&output=csv";
 
 let anbarData = [];
+let distributionRecords = [];
+let distributionColumnIndexes = {};
+let distributionLoading = false;
+let distributionRefreshQueued = false;
+let dashboardDayKey = "";
 let scanner = null;
 let scannerRunning = false;
 let scanHandled = false;
@@ -17,10 +22,20 @@ const distributionStatus = document.getElementById("distribution-status");
 const distributionResults = document.getElementById("distribution-results");
 const distributionList = document.getElementById("distribution-list");
 const distributionRefreshButton = document.getElementById("refresh-distribution");
+const distributionSearchForm = document.getElementById("distribution-search-form");
+const distributionSearchInput = document.getElementById("distribution-search-input");
+const distributionSearchClear = document.getElementById("distribution-search-clear");
+const journalMatchCount = document.getElementById("journal-match-count");
+const recentDistributionList = document.getElementById("recent-distribution-list");
+const dashboardDate = document.getElementById("dashboard-date");
+const dashboardClock = document.getElementById("dashboard-clock");
+const dashboardRecordCount = document.getElementById("dashboard-record-count");
+const dashboardQuantityTotal = document.getElementById("dashboard-quantity-total");
 const issueGoodsButton = document.getElementById("issue-goods");
 const actionToast = document.getElementById("action-toast");
 let actionToastTimer;
 const scanError = document.getElementById("scan-error");
+const scanCameraStatus = document.getElementById("scan-camera-status");
 const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
 const appMenu = document.getElementById("app-menu");
@@ -70,6 +85,9 @@ document.addEventListener("keydown", function (event) {
 
 function showView(view) {
     document.body.classList.toggle("home-screen", view === "home");
+    document.body.classList.toggle("scan-screen", view === "scan");
+    document.body.classList.toggle("distribution-screen", view === "distribution");
+    document.body.classList.toggle("about-screen", view === "about");
     homeView.hidden = view !== "home";
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
@@ -162,6 +180,7 @@ async function startScan() {
     scanHandled = false;
     scanError.hidden = true;
     scanError.textContent = "";
+    scanCameraStatus.textContent = "Kamera hazırlanır";
     showView("scan");
 
     // Skaner görünən olduqdan sonra kameranı başladırıq.
@@ -182,8 +201,10 @@ async function startScan() {
             function () { /* Kod tapılana qədər skan etməyə davam et. */ }
         );
         scannerRunning = true;
+        scanCameraStatus.textContent = "Kamera aktivdir";
     } catch (error) {
         scannerRunning = false;
+        scanCameraStatus.textContent = "Kamera açılmadı";
         scanError.textContent = "Arxa kameranı açmaq mümkün olmadı. Kamera icazəsini yoxlayıb yenidən cəhd edin.";
         scanError.hidden = false;
         console.error(error);
@@ -241,20 +262,33 @@ async function returnHome() {
 document.getElementById("start-scan").addEventListener("click", startScan);
 document.getElementById("cancel-scan").addEventListener("click", returnHome);
 document.getElementById("return-home").addEventListener("click", returnHome);
-document.getElementById("distribution-home").addEventListener("click", returnHome);
 document.getElementById("about-home").addEventListener("click", returnHome);
+document.getElementById("recent-distribution-open").addEventListener("click", () => {
+    showView("distribution");
+    loadDistributionJournal();
+});
 function showDistributionError(message) {
     distributionStatus.textContent = message;
     distributionStatus.classList.add("journal-status-error");
+    journalMatchCount.textContent = "—";
+    renderRecentMessage("Paylama məlumatları yüklənmədi.");
+    dashboardRecordCount.textContent = "—";
+    dashboardQuantityTotal.textContent = "—";
 }
 
 async function loadDistributionJournal() {
+    if (distributionLoading) {
+        distributionRefreshQueued = true;
+        return;
+    }
+    distributionLoading = true;
     const csvUrl = distributionPublicCsvUrl;
     distributionStatus.classList.remove("journal-status-error");
     distributionStatus.textContent = "Paylama jurnalı yüklənir…";
     distributionResults.hidden = true;
     if (!csvUrl || !window.Papa) {
         showDistributionError("Paylama jurnalı bağlantısı qurulmayıb.");
+        distributionLoading = false;
         return;
     }
     try {
@@ -269,10 +303,31 @@ async function loadDistributionJournal() {
     } catch (error) {
         showDistributionError(error.message || "Jurnalı yükləmək olmadı. İnternet bağlantısını yoxlayın.");
         console.error("Paylama jurnalı yüklənmədi:", error);
+    } finally {
+        distributionLoading = false;
+        if (distributionRefreshQueued) {
+            distributionRefreshQueued = false;
+            void loadDistributionJournal();
+        }
     }
 }
 
 distributionRefreshButton.addEventListener("click", loadDistributionJournal);
+distributionSearchForm.addEventListener("submit", event => {
+    event.preventDefault();
+    renderFilteredDistribution();
+});
+distributionSearchClear.addEventListener("click", () => {
+    distributionSearchInput.value = "";
+    renderFilteredDistribution();
+    distributionSearchInput.focus();
+});
+distributionSearchInput.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+        distributionSearchInput.value = "";
+        renderFilteredDistribution();
+    }
+});
 issueGoodsButton.addEventListener("click", function () {
     actionToast.textContent = "Mal vermək funksiyası hələ aktiv deyil.";
     actionToast.hidden = false;
@@ -287,7 +342,7 @@ function normalizeJournalHeader(value) {
 }
 
 function renderDistributionRows(rows) {
-    distributionList.replaceChildren();
+    distributionRecords = [];
     const headerIndex = rows.findIndex(row => {
         const headers = row.map(normalizeJournalHeader);
         return headers.some(value => value.includes("tarix"))
@@ -296,13 +351,16 @@ function renderDistributionRows(rows) {
     });
 
     if (headerIndex < 0) {
+        journalMatchCount.textContent = "0";
+        distributionList.replaceChildren();
         appendJournalMessage("Paylanma Jurnalı vərəqində uyğun başlıq sətri tapılmadı.");
+        renderRecentMessage("Paylama məlumatları oxuna bilmədi.");
         return;
     }
 
     const headers = rows[headerIndex].map(normalizeJournalHeader);
     const column = (...needles) => headers.findIndex(value => needles.some(needle => value.includes(needle)));
-    const indexes = {
+    distributionColumnIndexes = {
         date: column("tarix"),
         code: column("malın kodu"),
         name: column("malın adı"),
@@ -311,16 +369,130 @@ function renderDistributionRows(rows) {
         department: column("hansı şöbəyə verildi"),
         recipient: column("malı götürən işçi", "mal götürən işçi", "işçi (ad, soyad)")
     };
-    const records = rows.slice(headerIndex + 1).filter(row =>
-        String(row[indexes.name] || "").trim() || String(row[indexes.code] || "").trim()
-    );
+    distributionRecords = rows.slice(headerIndex + 1).filter(row =>
+        String(row[distributionColumnIndexes.name] || "").trim() || String(row[distributionColumnIndexes.code] || "").trim()
+    ).reverse();
 
-    if (records.length === 0) {
+    if (distributionRecords.length === 0) {
+        journalMatchCount.textContent = "0";
+        distributionList.replaceChildren();
         appendJournalMessage("Paylama jurnalında hələ qeyd yoxdur.");
+        renderRecentMessage("Hələ paylama qeydi yoxdur.");
+        renderDailySummary();
         return;
     }
 
-    records.reverse().forEach(row => {
+    renderRecentDistribution();
+    renderDailySummary();
+    renderFilteredDistribution();
+}
+
+function parseJournalDate(value) {
+    const text = String(value || "").trim();
+    let match = text.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+    if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+
+    match = text.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/);
+    if (match) {
+        const first = Number(match[1]);
+        const second = Number(match[2]);
+        const month = text.includes(".") || first > 12 ? second : first;
+        const day = text.includes(".") || first > 12 ? first : second;
+        return new Date(Number(match[3]), month - 1, day);
+    }
+
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function renderDailySummary() {
+    const today = new Date();
+    const todaysRecords = distributionRecords.filter(row => {
+        const date = parseJournalDate(row[distributionColumnIndexes.date]);
+        return date && date.getFullYear() === today.getFullYear()
+            && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+    });
+    const total = todaysRecords.reduce((sum, row) => {
+        const value = Number.parseFloat(String(row[distributionColumnIndexes.quantity] || "0").replace(",", "."));
+        return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+    dashboardRecordCount.textContent = String(todaysRecords.length);
+    dashboardQuantityTotal.textContent = Number.isInteger(total) ? String(total) : total.toLocaleString("az-AZ", { maximumFractionDigits: 2 });
+}
+
+function updateDashboardClock() {
+    const now = new Date();
+    const dayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+    if (dashboardDayKey && dashboardDayKey !== dayKey) {
+        // Gün dəyişəndə xülasəni dərhal yenidən hesabla, sonra jurnalı təzələ.
+        renderDailySummary();
+        void loadDistributionJournal();
+    }
+    dashboardDayKey = dayKey;
+    dashboardClock.textContent = new Intl.DateTimeFormat("az-AZ", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+    }).format(now);
+    const dateText = new Intl.DateTimeFormat("az-AZ", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
+    }).format(now);
+    dashboardDate.textContent = dateText.charAt(0).toLocaleUpperCase("az-AZ") + dateText.slice(1);
+}
+
+function renderRecentMessage(message) {
+    recentDistributionList.replaceChildren();
+    const item = document.createElement("li");
+    item.className = "recent-empty";
+    item.textContent = message;
+    recentDistributionList.appendChild(item);
+}
+
+function renderRecentDistribution() {
+    recentDistributionList.replaceChildren();
+    distributionRecords.slice(0, 2).forEach(row => {
+        const item = document.createElement("li");
+        item.className = "recent-distribution-item";
+
+        const info = document.createElement("div");
+        info.className = "recent-distribution-info";
+        const name = document.createElement("strong");
+        name.textContent = row[distributionColumnIndexes.name] || "Adsız mal";
+        const recipient = document.createElement("span");
+        recipient.textContent = row[distributionColumnIndexes.recipient]
+            ? "Götürən: " + row[distributionColumnIndexes.recipient]
+            : (row[distributionColumnIndexes.code] || "Paylama qeydi");
+        info.append(name, recipient);
+
+        const quantity = document.createElement("span");
+        quantity.className = "recent-distribution-quantity";
+        quantity.textContent = (row[distributionColumnIndexes.quantity] || "0")
+            + (row[distributionColumnIndexes.unit] ? " " + row[distributionColumnIndexes.unit] : "");
+        item.append(info, quantity);
+        recentDistributionList.appendChild(item);
+    });
+}
+
+function normalizeSearchText(value) {
+    return String(value || "")
+        .toLocaleLowerCase("az-AZ")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+}
+
+function renderFilteredDistribution() {
+    distributionList.replaceChildren();
+    const query = normalizeSearchText(distributionSearchInput.value);
+    const matches = distributionRecords.filter(row =>
+        !query || row.some(value => normalizeSearchText(value).includes(query))
+    );
+    journalMatchCount.textContent = matches.length.toLocaleString("az-AZ");
+
+    if (matches.length === 0) {
+        appendJournalMessage("Axtarışınıza uyğun paylama qeydi tapılmadı.");
+        return;
+    }
+
+    matches.forEach(row => {
         const entry = document.createElement("li");
         entry.className = "distribution-entry";
         const top = document.createElement("div");
@@ -328,25 +500,25 @@ function renderDistributionRows(rows) {
         const item = document.createElement("div");
         item.className = "distribution-item";
         const name = document.createElement("strong");
-        name.textContent = row[indexes.name] || "Adsız mal";
+        name.textContent = row[distributionColumnIndexes.name] || "Adsız mal";
         item.appendChild(name);
-        if (row[indexes.code]) {
+        if (row[distributionColumnIndexes.code]) {
             const code = document.createElement("span");
             code.className = "distribution-code";
-            code.textContent = row[indexes.code];
+            code.textContent = row[distributionColumnIndexes.code];
             item.appendChild(code);
         }
         const quantity = document.createElement("span");
         quantity.className = "count-badge";
-        quantity.textContent = (row[indexes.quantity] || "0") + (row[indexes.unit] ? " " + row[indexes.unit] : "");
+        quantity.textContent = (row[distributionColumnIndexes.quantity] || "0") + (row[distributionColumnIndexes.unit] ? " " + row[distributionColumnIndexes.unit] : "");
         top.append(item, quantity);
 
         const details = document.createElement("div");
         details.className = "distribution-details";
         [
-            ["Tarix", row[indexes.date]],
-            ["Şöbə", row[indexes.department]],
-            ["Götürən işçi", row[indexes.recipient]]
+            ["Tarix", row[distributionColumnIndexes.date]],
+            ["Şöbə", row[distributionColumnIndexes.department]],
+            ["Götürən işçi", row[distributionColumnIndexes.recipient]]
         ].filter(([, value]) => value && String(value).trim())
             .forEach(([label, value]) => {
                 const detail = document.createElement("span");
@@ -400,3 +572,10 @@ if (splashScreen) {
         if (event.animationName === "splashExit") splashScreen.remove();
     });
 }
+
+loadDistributionJournal();
+updateDashboardClock();
+setInterval(updateDashboardClock, 1000);
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) updateDashboardClock();
+});
