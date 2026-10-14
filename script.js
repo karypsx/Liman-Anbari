@@ -38,6 +38,7 @@ const scanError = document.getElementById("scan-error");
 const scanCameraStatus = document.getElementById("scan-camera-status");
 const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
+const loginPlaceholder = document.getElementById("login-placeholder");
 const appMenu = document.getElementById("app-menu");
 const menuBackdrop = document.getElementById("menu-backdrop");
 document.body.classList.add("home-screen");
@@ -54,6 +55,15 @@ function closeMenu() {
     menuToggle.setAttribute("aria-label", "Menyunu aç");
 }
 
+function showActionToast(message) {
+    actionToast.textContent = message;
+    actionToast.hidden = false;
+    clearTimeout(actionToastTimer);
+    actionToastTimer = setTimeout(() => {
+        actionToast.hidden = true;
+    }, 2600);
+}
+
 menuToggle.addEventListener("click", function () {
     const opening = appMenu.hidden;
     appMenu.hidden = !opening;
@@ -65,6 +75,13 @@ menuToggle.addEventListener("click", function () {
 menuBackdrop.addEventListener("click", closeMenu);
 
 appMenu.addEventListener("click", function (event) {
+    const inactiveButton = event.target.closest("[data-menu-inactive]");
+    if (inactiveButton) {
+        closeMenu();
+        showActionToast(`${inactiveButton.dataset.menuInactive} bölməsi hələ aktiv deyil.`);
+        return;
+    }
+
     const button = event.target.closest("[data-menu-view]");
     if (!button) return;
     scanHandled = false;
@@ -329,12 +346,11 @@ distributionSearchInput.addEventListener("keydown", event => {
     }
 });
 issueGoodsButton.addEventListener("click", function () {
-    actionToast.textContent = "Mal vermək funksiyası hələ aktiv deyil.";
-    actionToast.hidden = false;
-    clearTimeout(actionToastTimer);
-    actionToastTimer = setTimeout(() => {
-        actionToast.hidden = true;
-    }, 2600);
+    showActionToast("Mal vermək funksiyası hələ aktiv deyil.");
+});
+
+loginPlaceholder.addEventListener("click", function () {
+    showActionToast("Daxil ol funksiyası hələ aktiv deyil.");
 });
 
 function normalizeJournalHeader(value) {
