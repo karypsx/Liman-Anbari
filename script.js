@@ -9,15 +9,57 @@ let distributionColumnIndexes = {};
 let distributionLoading = false;
 let distributionRefreshQueued = false;
 let dashboardDayKey = "";
+let areaMeasurementRecords = [];
 let scanner = null;
 let scannerRunning = false;
 let scanHandled = false;
+const areaMeasurementStorageKey = "liman-area-measurements-v1";
+const areaCloudMigrationKey = `${areaMeasurementStorageKey}-cloud-migrated-v1`;
+const areaCloudPendingKey = `${areaMeasurementStorageKey}-cloud-pending-v1`;
+const areaMeasurementsApiUrl = window.APP_CONFIG?.areaMeasurementsApiUrl || "";
+let areaCloudQueue = Promise.resolve();
+const reminderStorageKey = "liman-reminders-v1";
+let reminders = [];
+let reminderCheckTimer;
+let firebaseAuth = null;
+let firebaseDb = null;
+let firebaseMessaging = null;
+let currentAuthUser = null;
+let reminderSubscription = null;
 
 const homeView = document.getElementById("home-view");
 const scanView = document.getElementById("scan-view");
 const resultView = document.getElementById("result-view");
 const distributionView = document.getElementById("distribution-view");
+const areaMeasurementView = document.getElementById("area-measurement-view");
 const aboutView = document.getElementById("about-view");
+const remindersView = document.getElementById("reminders-view");
+const reminderForm = document.getElementById("reminder-form");
+const reminderTitleInput = document.getElementById("reminder-title");
+const reminderDateTimeInput = document.getElementById("reminder-datetime");
+const reminderList = document.getElementById("reminder-list");
+const reminderCount = document.getElementById("reminder-count");
+const reminderPermissionButton = document.getElementById("reminder-notification-enable");
+const reminderPermissionTitle = document.getElementById("reminder-permission-title");
+const reminderPermissionNote = document.getElementById("reminder-permission-note");
+const areaMeasurementForm = document.getElementById("area-measurement-form");
+const areaCompanyInput = document.getElementById("area-company");
+const areaVesselInput = document.getElementById("area-vessel");
+const areaMeasurementList = document.getElementById("area-measurement-list");
+const addAreaMeasurementButton = document.getElementById("add-area-measurement");
+const areaDateInput = document.getElementById("area-date");
+const areaNoteInput = document.getElementById("area-note");
+const areaCalculatedValue = document.getElementById("area-calculated-value");
+const areaRecordCount = document.getElementById("area-record-count");
+const areaTotalValue = document.getElementById("area-total-value");
+const areaRecordList = document.getElementById("area-record-list");
+const areaRecordDialog = document.getElementById("area-record-dialog");
+const areaRecordDialogContent = document.getElementById("area-record-dialog-content");
+const areaDialogCloseButton = document.getElementById("area-dialog-close");
+const areaDialogKicker = document.getElementById("area-dialog-kicker");
+let activeAreaRecordId = null;
+let pendingAreaDelete = null;
+let pendingReminderDelete = null;
 const distributionStatus = document.getElementById("distribution-status");
 const distributionResults = document.getElementById("distribution-results");
 const distributionList = document.getElementById("distribution-list");
@@ -41,6 +83,12 @@ const menuToggle = document.getElementById("menu-toggle");
 const loginPlaceholder = document.getElementById("login-placeholder");
 const appMenu = document.getElementById("app-menu");
 const menuBackdrop = document.getElementById("menu-backdrop");
+const accountDialog = document.getElementById("account-dialog");
+const accountLoginForm = document.getElementById("account-login-form");
+const accountEmailInput = document.getElementById("account-email");
+const accountPasswordInput = document.getElementById("account-password");
+const accountLoginError = document.getElementById("account-login-error");
+const accountDialogClose = document.getElementById("account-dialog-close");
 document.body.classList.add("home-screen");
 
 // Tətbiq daxilində mətnin seçilib köçürülməsini və kontekst menyusunu bağla.
@@ -87,9 +135,17 @@ appMenu.addEventListener("click", function (event) {
     scanHandled = false;
     void stopScanner();
     const targetView = button.dataset.menuView;
+    if (targetView === "reminders" && !currentAuthUser) {
+        closeMenu();
+        accountDialog.showModal();
+        showActionToast("Xatırlatmalar üçün hesabınıza daxil olun.");
+        return;
+    }
     showView(targetView);
     closeMenu();
     if (targetView === "distribution") loadDistributionJournal();
+    if (targetView === "area-measurement") renderAreaMeasurements();
+    if (targetView === "reminders") renderReminders();
 });
 
 document.addEventListener("click", function (event) {
@@ -104,14 +160,1354 @@ function showView(view) {
     document.body.classList.toggle("home-screen", view === "home");
     document.body.classList.toggle("scan-screen", view === "scan");
     document.body.classList.toggle("distribution-screen", view === "distribution");
+    document.body.classList.toggle("area-measurement-screen", view === "area-measurement");
+    document.body.classList.toggle("reminders-screen", view === "reminders");
     document.body.classList.toggle("about-screen", view === "about");
     homeView.hidden = view !== "home";
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
     distributionView.hidden = view !== "distribution";
+    areaMeasurementView.hidden = view !== "area-measurement";
+    remindersView.hidden = view !== "reminders";
     aboutView.hidden = view !== "about";
     dataStatus.hidden = true;
 }
+
+function initializeFirebaseAccount() {
+    const config = window.APP_CONFIG?.firebaseConfig;
+    if (!window.firebase || !config?.projectId) {
+        loginPlaceholder.textContent = "Daxil ol";
+        return;
+    }
+
+    try {
+        const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(config);
+        firebaseAuth = firebase.auth();
+        firebaseDb = firebase.firestore();
+        try { firebaseMessaging = firebase.messaging(app); } catch (_) { firebaseMessaging = null; }
+        firebaseAuth.onAuthStateChanged(user => {
+            currentAuthUser = user || null;
+            loginPlaceholder.textContent = user ? "Çıxış" : "Daxil ol";
+            if (reminderSubscription) {
+                reminderSubscription();
+                reminderSubscription = null;
+            }
+            if (!user) {
+                reminders = [];
+                renderReminders();
+                updateReminderPermissionState();
+                return;
+            }
+
+            reminders = loadReminders(user.uid);
+            renderReminders();
+            reminderSubscription = firebaseDb.collection("users").doc(user.uid)
+                .collection("reminders").orderBy("at", "asc")
+                .onSnapshot(snapshot => {
+                    reminders = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        const rawAt = data.at?.toDate ? data.at.toDate() : new Date(data.at);
+                        return { ...data, id: doc.id, at: rawAt.toISOString() };
+                    });
+                    saveReminders();
+                    renderReminders();
+                    checkDueReminders();
+                }, error => {
+                    console.error("Xatırlatmalar yüklənmədi", error);
+                    showActionToast("Xatırlatmaları yükləmək olmadı. İnterneti yoxlayın.");
+                });
+            updateReminderPermissionState();
+            if ("Notification" in window && Notification.permission === "granted") void syncPushToken(false);
+        });
+    } catch (error) {
+        console.error("Firebase başlatma xətası", error);
+        loginPlaceholder.textContent = "Daxil ol";
+    }
+}
+
+function reminderCacheKey(uid = currentAuthUser?.uid) {
+    return uid ? `${reminderStorageKey}-${uid}` : `${reminderStorageKey}-guest`;
+}
+
+function loadReminders(uid = currentAuthUser?.uid) {
+    if (!uid) return [];
+    try {
+        const saved = JSON.parse(localStorage.getItem(reminderCacheKey(uid)) || "[]");
+        return Array.isArray(saved) ? saved.filter(item => item && item.id && item.title && item.at) : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveReminders() {
+    if (!currentAuthUser) return false;
+    try {
+        localStorage.setItem(reminderCacheKey(), JSON.stringify(reminders));
+        return true;
+    } catch {
+        showActionToast("Xatırlatmanı bu cihazda saxlamaq mümkün olmadı.");
+        return false;
+    }
+}
+
+function localDateTimeInputValue(date = new Date()) {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+}
+
+function setReminderDateDefault() {
+    const now = new Date();
+    reminderDateTimeInput.min = localDateTimeInputValue(now);
+    if (!reminderDateTimeInput.value) {
+        const suggested = new Date(now.getTime() + 60 * 60 * 1000);
+        suggested.setSeconds(0, 0);
+        reminderDateTimeInput.value = localDateTimeInputValue(suggested);
+    }
+}
+
+function formatReminderDate(date) {
+    return new Intl.DateTimeFormat("az-AZ", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+}
+
+function formatReminderTime(date) {
+    return new Intl.DateTimeFormat("az-AZ", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date);
+}
+
+function renderReminders() {
+    if (!reminderList) return;
+    const now = Date.now();
+    const sorted = [...reminders].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+    const activeCount = sorted.filter(item => new Date(item.at).getTime() > now).length;
+    reminderCount.textContent = `${activeCount} aktiv`;
+    reminderList.replaceChildren();
+
+    if (!sorted.length) {
+        const empty = document.createElement("li");
+        empty.className = "reminder-empty";
+        empty.textContent = "Hələ xatırlatma əlavə edilməyib.";
+        reminderList.appendChild(empty);
+        return;
+    }
+
+    sorted.forEach(item => {
+        const eventDate = new Date(item.at);
+        const eventTime = eventDate.getTime();
+        if (Number.isNaN(eventTime)) return;
+        const card = document.createElement("li");
+        card.className = `reminder-card${eventTime <= now ? " is-past" : ""}`;
+
+        const timeBlock = document.createElement("div");
+        timeBlock.className = "reminder-time";
+        const time = document.createElement("strong");
+        time.textContent = formatReminderTime(eventDate);
+        const date = document.createElement("span");
+        date.textContent = formatReminderDate(eventDate);
+        timeBlock.append(time, date);
+
+        const copy = document.createElement("div");
+        copy.className = "reminder-card-copy";
+        const title = document.createElement("strong");
+        title.textContent = item.title;
+        const detail = document.createElement("p");
+        detail.textContent = `Vaxtı: ${formatReminderDate(eventDate)} · ${formatReminderTime(eventDate)}`;
+        const state = document.createElement("span");
+        state.className = "reminder-card-state";
+        if (eventTime <= now) state.textContent = "Vaxtı keçib";
+        else state.textContent = "10 dəq qalmış başlayır · hər 2 dəq";
+        copy.append(title, detail, state);
+
+        const remove = document.createElement("button");
+        remove.className = "reminder-delete";
+        remove.type = "button";
+        remove.dataset.reminderDelete = item.id;
+        remove.setAttribute("aria-label", `${item.title} xatırlatmasını sil`);
+        remove.textContent = "×";
+        card.append(timeBlock, copy, remove);
+        reminderList.appendChild(card);
+    });
+}
+
+function updateReminderPermissionState() {
+    if (!("Notification" in window)) {
+        reminderPermissionTitle.textContent = "Tətbiqdaxili xəbərdarlıq";
+        reminderPermissionNote.textContent = "Bu brauzerdə telefon bildirişi dəstəklənmir; tətbiq açıq olanda ekranda xəbərdarlıq görünəcək.";
+        reminderPermissionButton.textContent = "Dəstəklənmir";
+        reminderPermissionButton.disabled = true;
+        return;
+    }
+
+    reminderPermissionButton.disabled = !currentAuthUser;
+    if (!currentAuthUser) {
+        reminderPermissionTitle.textContent = "Hesaba daxil olun";
+        reminderPermissionNote.textContent = "Xatırlatma bildirişlərini bu hesabla qoşmaq üçün əvvəlcə daxil olun.";
+        reminderPermissionButton.textContent = "Daxil ol";
+        return;
+    }
+    if (Notification.permission === "granted") {
+        reminderPermissionTitle.textContent = "Telefon bildirişləri aktivdir";
+        reminderPermissionNote.textContent = "Bu cihaz hesabınıza qoşulub. Xatırlatma vaxtında bildiriş göndəriləcək.";
+        reminderPermissionButton.textContent = "Cihazı qoş";
+    } else if (Notification.permission === "denied") {
+        reminderPermissionTitle.textContent = "Bildiriş icazəsi bağlıdır";
+        reminderPermissionNote.textContent = "İcazəni telefonun və ya brauzerin tətbiq ayarlarından aça bilərsiniz.";
+        reminderPermissionButton.textContent = "Ayarlara baxın";
+    } else {
+        reminderPermissionTitle.textContent = "Telefon bildirişləri";
+        reminderPermissionNote.textContent = "İcazə verin ki, tətbiq açıq olduqda son 10 dəqiqədə bildirişlər gəlsin.";
+        reminderPermissionButton.textContent = "İcazəni aktiv et";
+    }
+}
+
+function showReminderToast(message) {
+    actionToast.textContent = `⏰ ${message}`;
+    actionToast.hidden = false;
+    clearTimeout(actionToastTimer);
+    actionToastTimer = setTimeout(() => { actionToast.hidden = true; }, 8000);
+}
+
+function reminderLastNotifiedSlot(item, eventTime) {
+    if (Number.isInteger(item.lastNotifiedSlot)) return item.lastNotifiedSlot;
+    if (!item.notifiedAt) return -1;
+
+    const notifiedTime = new Date(item.notifiedAt).getTime();
+    if (!Number.isFinite(notifiedTime)) return -1;
+    if (notifiedTime >= eventTime) return 4;
+
+    const firstNoticeTime = eventTime - 10 * 60 * 1000;
+    return Math.max(-1, Math.min(4, Math.floor((notifiedTime - firstNoticeTime) / (2 * 60 * 1000))));
+}
+
+function deliverReminder(item, slotIndex) {
+    const minutesRemaining = 10 - slotIndex * 2;
+    const body = `${minutesRemaining} dəqiqə qalıb: ${item.title}`;
+    showReminderToast(body);
+
+    if ("Notification" in window && Notification.permission === "granted") {
+        try {
+            const notification = new Notification("Liman Anbarı · Xatırlatma", {
+                body,
+                icon: "images/ikoon-192.png",
+                tag: `liman-reminder-${item.id}-${slotIndex}`
+            });
+            notification.onclick = () => {
+                window.focus();
+                showView("reminders");
+                renderReminders();
+                notification.close();
+            };
+        } catch {
+            // Ekrandakı xəbərdarlıq telefon bildirişi mümkün olmadıqda da qalır.
+        }
+    }
+}
+
+function checkDueReminders() {
+    if (!currentAuthUser) return;
+    const now = Date.now();
+    let changed = false;
+    reminders.forEach(item => {
+        const eventTime = new Date(item.at).getTime();
+        if (!Number.isFinite(eventTime)) return;
+
+        let lastSlot = reminderLastNotifiedSlot(item, eventTime);
+        if (!Number.isInteger(item.lastNotifiedSlot) && item.notifiedAt) {
+            item.lastNotifiedSlot = lastSlot;
+            changed = true;
+        }
+
+        const firstNoticeTime = eventTime - 10 * 60 * 1000;
+        if (now < firstNoticeTime || now >= eventTime) return;
+
+        const currentSlot = Math.min(4, Math.floor((now - firstNoticeTime) / (2 * 60 * 1000)));
+        if (currentSlot > lastSlot) {
+            item.lastNotifiedSlot = currentSlot;
+            item.notifiedAt = new Date(now).toISOString();
+            changed = true;
+            void firebaseDb.collection("users").doc(currentAuthUser.uid).collection("reminders")
+                .doc(item.id).set({
+                    lastNotifiedSlot: currentSlot,
+                    lastNotifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).catch(error => console.warn("Bildiriş vəziyyəti sinxronlaşmadı", error));
+            deliverReminder(item, currentSlot);
+        }
+    });
+    if (changed) {
+        saveReminders();
+        renderReminders();
+    }
+}
+
+reminderForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!reminderForm.reportValidity()) return;
+    if (!currentAuthUser || !firebaseDb) {
+        showActionToast("Xatırlatma əlavə etmək üçün əvvəlcə hesabınıza daxil olun.");
+        accountDialog.showModal();
+        return;
+    }
+
+    const title = reminderTitleInput.value.trim();
+    const eventDate = new Date(reminderDateTimeInput.value);
+    if (!title || Number.isNaN(eventDate.getTime()) || eventDate.getTime() <= Date.now()) {
+        showActionToast("Xatırlatma üçün gələcək tarix və saat seçin.");
+        return;
+    }
+
+    const record = {
+        title,
+        at: firebase.firestore.Timestamp.fromDate(eventDate),
+        lastNotifiedSlot: -1,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const submitButton = reminderForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    try {
+        await firebaseDb.collection("users").doc(currentAuthUser.uid).collection("reminders").add(record);
+        reminderForm.reset();
+        setReminderDateDefault();
+        showActionToast("Xatırlatma hesabınızda yadda saxlanıldı.");
+    } catch (error) {
+        console.error("Xatırlatma saxlanmadı", error);
+        showActionToast("Yadda saxlamaq olmadı. İnterneti yoxlayın.");
+    } finally {
+        submitButton.disabled = false;
+    }
+});
+
+reminderList.addEventListener("click", event => {
+    const button = event.target.closest("[data-reminder-delete]");
+    if (!button) return;
+    const item = reminders.find(reminder => reminder.id === button.dataset.reminderDelete);
+    if (!item) return;
+    pendingReminderDelete = item;
+    pendingAreaDelete = null;
+    activeAreaRecordId = null;
+    areaDialogKicker.textContent = "XATIRLATMA";
+    renderReminderDeleteConfirmation(item);
+    if (!areaRecordDialog.open) areaRecordDialog.showModal();
+});
+
+async function syncPushToken(requestPermission = true) {
+    if (!currentAuthUser || !firebaseDb) throw new Error("Hesaba daxil olun.");
+    if (!firebaseMessaging || !window.APP_CONFIG?.firebaseVapidPublicKey) throw new Error("Bildiriş xidməti hazır deyil.");
+    if (!("serviceWorker" in navigator)) throw new Error("Bu cihazda bildiriş xidməti dəstəklənmir.");
+
+    let permission = Notification.permission;
+    if (permission === "default" && requestPermission) permission = await Notification.requestPermission();
+    if (permission !== "granted") throw new Error(permission === "denied" ? "Bildiriş icazəsini cihaz ayarlarından açın." : "Bildiriş icazəsi verilmədi.");
+
+    const workerUrl = new URL("firebase-messaging-sw.js", document.baseURI);
+    const workerScope = new URL("./", document.baseURI).pathname;
+    const registration = await navigator.serviceWorker.register(workerUrl.href, { scope: workerScope });
+    const token = await firebaseMessaging.getToken({
+        vapidKey: window.APP_CONFIG.firebaseVapidPublicKey,
+        serviceWorkerRegistration: registration
+    });
+    if (!token) throw new Error("Bu cihaz üçün bildiriş açarı alınmadı.");
+
+    const tokenId = await notificationTokenId(token);
+    await firebaseDb.collection("users").doc(currentAuthUser.uid).collection("tokens").doc(tokenId).set({
+        token,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        userAgent: navigator.userAgent.slice(0, 250)
+    }, { merge: true });
+    localStorage.setItem(`liman-fcm-token-id-${currentAuthUser.uid}`, tokenId);
+    updateReminderPermissionState();
+}
+
+async function notificationTokenId(token) {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function removeCurrentDeviceToken() {
+    if (!currentAuthUser || !firebaseDb) return;
+    const tokenId = localStorage.getItem(`liman-fcm-token-id-${currentAuthUser.uid}`);
+    if (!tokenId) return;
+    await firebaseDb.collection("users").doc(currentAuthUser.uid).collection("tokens").doc(tokenId).delete();
+    localStorage.removeItem(`liman-fcm-token-id-${currentAuthUser.uid}`);
+}
+
+reminderPermissionButton.addEventListener("click", async () => {
+    if (!currentAuthUser) {
+        accountDialog.showModal();
+        return;
+    }
+    if (!("Notification" in window)) {
+        updateReminderPermissionState();
+        return;
+    }
+    if (Notification.permission === "denied") {
+        updateReminderPermissionState();
+        showActionToast("Bildiriş icazəsini cihaz ayarlarından açın.");
+        return;
+    }
+    try {
+        await syncPushToken(true);
+        updateReminderPermissionState();
+        showActionToast("Bu cihaz xatırlatma bildirişlərinə qoşuldu.");
+    } catch (error) {
+        updateReminderPermissionState();
+        showActionToast(error.message || "Bildiriş icazəsini aktiv etmək mümkün olmadı.");
+    }
+});
+
+function initializeReminders() {
+    setReminderDateDefault();
+    updateReminderPermissionState();
+    renderReminders();
+    checkDueReminders();
+    reminderCheckTimer = setInterval(checkDueReminders, 15000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDueReminders(); });
+    window.addEventListener("focus", checkDueReminders);
+}
+
+function localDateInputValue(date = new Date()) {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 10);
+}
+
+function parseMeasurementNumber(value) {
+    const normalized = String(value ?? "").trim().replace(/\s/g, "").replace(",", ".");
+    if (!normalized) return 0;
+    return Number(normalized);
+}
+
+function formatMeasurementNumber(value) {
+    return new Intl.NumberFormat("az-AZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value) || 0);
+}
+
+function formatMeasurementDate(value) {
+    const [year, month, day] = String(value || "").split("-").map(Number);
+    if (!year || !month || !day) return "Tarix qeyd edilməyib";
+    return new Date(year, month - 1, day).toLocaleDateString("az-AZ", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function currentAccumulationDays(area) {
+    const initialDays = Math.floor(Number(area?.initialDays) || 0);
+    if (initialDays < 1) return 0;
+    const [year, month, day] = String(area.daysCountedOn || "").split("-").map(Number);
+    if (!year || !month || !day) return initialDays;
+    const countedOn = new Date(year, month - 1, day);
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return initialDays + Math.max(0, Math.floor((todayStart - countedOn) / 86400000));
+}
+
+function formatAccumulationDays(area) {
+    const days = currentAccumulationDays(area);
+    return days ? `${days} gündür yığılır` : "Yığılma günü qeyd edilməyib";
+}
+
+function createAreaMeasurementBlock(index, area = {}) {
+    const block = document.createElement("section");
+    block.className = "area-measurement-block";
+    block.dataset.areaBlock = "";
+
+    const heading = document.createElement("div");
+    heading.className = "area-measurement-block-heading";
+    const title = document.createElement("strong");
+    title.className = "area-measurement-block-title";
+    title.textContent = `SAHƏ ${index + 1}`;
+    heading.appendChild(title);
+
+    if (index > 0) {
+        const removeButton = document.createElement("button");
+        removeButton.className = "area-remove-measurement";
+        removeButton.type = "button";
+        removeButton.dataset.removeArea = "";
+        removeButton.setAttribute("aria-label", `Sahə ${index + 1} sətrini sil`);
+        removeButton.textContent = "Sil";
+        heading.appendChild(removeButton);
+    }
+
+    const fields = document.createElement("div");
+    fields.className = "area-measurement-fields";
+
+    const createField = (caption, key, placeholder) => {
+        const label = document.createElement("label");
+        label.className = `area-field${key === "location" || key === "initialDays" ? " area-field-full" : ""}`;
+        const text = document.createElement("span");
+        text.textContent = caption;
+        const input = document.createElement("input");
+        input.type = key === "initialDays" ? "number" : "text";
+        input.inputMode = key === "location" ? "text" : key === "initialDays" ? "numeric" : "decimal";
+        input.autocomplete = "off";
+        if (key === "initialDays") {
+            input.min = "1";
+            input.max = "99999";
+            input.step = "1";
+        } else input.maxLength = key === "location" ? 100 : 24;
+        input.placeholder = placeholder;
+        input.required = true;
+        input.dataset.areaValue = key;
+        if (key === "location") input.value = area.location || "";
+        else if (key === "initialDays") input.value = area.initialDays == null ? "1" : String(area.initialDays);
+        else input.value = area[key] == null ? "" : String(area[key]).replace(".", ",");
+        label.append(text, input);
+        if (key === "initialDays") {
+            const hint = document.createElement("small");
+            hint.textContent = "Məsələn, 2 yazın; sabah 3 olacaq.";
+            label.appendChild(hint);
+        }
+        return label;
+    };
+
+    fields.append(
+        createField("Yer / zona", "location", "Məsələn, Açıq sahə A"),
+        createField("Uzunluq (m)", "length", "Məsələn, 12,5"),
+        createField("En (m)", "width", "Məsələn, 8"),
+        createField("Neçə gündür yığılır?", "initialDays", "Məsələn, 2")
+    );
+
+    const calculation = document.createElement("div");
+    calculation.className = "area-section-calculation";
+    const calculationLabel = document.createElement("span");
+    calculationLabel.textContent = "Bu sahənin ölçüsü";
+    const calculationValue = document.createElement("output");
+    calculationValue.dataset.areaOutput = "";
+    calculationValue.textContent = `${formatMeasurementNumber(area.area || 0)} m²`;
+    calculation.append(calculationLabel, calculationValue);
+
+    block.append(heading, fields, calculation);
+    return block;
+}
+
+function updateAreaBlockNumbers() {
+    [...areaMeasurementList.querySelectorAll("[data-area-block]")].forEach((block, index) => {
+        const title = block.querySelector(".area-measurement-block-title");
+        title.textContent = `SAHƏ ${index + 1}`;
+        const removeButton = block.querySelector("[data-remove-area]");
+        if (removeButton) removeButton.setAttribute("aria-label", `Sahə ${index + 1} sətrini sil`);
+    });
+}
+
+function updateAreaCalculation() {
+    let totalArea = 0;
+    areaMeasurementList.querySelectorAll("[data-area-block]").forEach(block => {
+        const length = parseMeasurementNumber(block.querySelector('[data-area-value="length"]').value);
+        const width = parseMeasurementNumber(block.querySelector('[data-area-value="width"]').value);
+        const area = Number.isFinite(length) && Number.isFinite(width) && length > 0 && width > 0 ? length * width : 0;
+        block.querySelector("[data-area-output]").textContent = `${formatMeasurementNumber(area)} m²`;
+        totalArea += area;
+    });
+    areaCalculatedValue.textContent = `${formatMeasurementNumber(totalArea)} m²`;
+}
+
+function getAreaMeasurementValues() {
+    return [...areaMeasurementList.querySelectorAll("[data-area-block]")].map(block => ({
+        location: block.querySelector('[data-area-value="location"]').value.trim(),
+        length: parseMeasurementNumber(block.querySelector('[data-area-value="length"]').value),
+        width: parseMeasurementNumber(block.querySelector('[data-area-value="width"]').value),
+        initialDays: Math.floor(parseMeasurementNumber(block.querySelector('[data-area-value="initialDays"]').value))
+    }));
+}
+
+function renderAreaMeasurements() {
+    areaRecordList.replaceChildren();
+    const totalArea = areaMeasurementRecords.reduce((sum, record) => sum + (Number(record.area) || 0), 0);
+    areaRecordCount.textContent = `${areaMeasurementRecords.length} qeyd`;
+    areaTotalValue.textContent = `${formatMeasurementNumber(totalArea)} m²`;
+
+    if (areaMeasurementRecords.length === 0) {
+        const emptyItem = document.createElement("li");
+        emptyItem.className = "area-empty";
+        emptyItem.textContent = "Hələ ölçü qeydi yoxdur.";
+        areaRecordList.appendChild(emptyItem);
+        return;
+    }
+
+    areaMeasurementRecords.forEach(record => {
+        const item = document.createElement("li");
+        item.className = "area-record-card";
+        const openButton = document.createElement("button");
+        openButton.className = "area-record-open";
+        openButton.type = "button";
+        openButton.dataset.openRecord = record.id;
+        openButton.setAttribute("aria-label", `${record.company}, ${formatMeasurementNumber(record.area)} kvadratmetr, ətraflı bax`);
+
+        const top = document.createElement("div");
+        top.className = "area-record-top";
+        const company = document.createElement("strong");
+        company.className = "area-record-company";
+        company.textContent = record.company;
+        const area = document.createElement("span");
+        area.className = "area-record-measure";
+        area.textContent = `${formatMeasurementNumber(record.area)} m²`;
+        top.append(company, area);
+
+        const vessel = document.createElement("p");
+        vessel.className = "area-record-vessel";
+        vessel.textContent = `Gəmi: ${record.vessel}`;
+
+        const details = document.createElement("div");
+        details.className = "area-record-open-footer";
+        const date = document.createElement("time");
+        date.dateTime = record.date || "";
+        date.textContent = formatMeasurementDate(record.date);
+        const areas = Array.isArray(record.areas) && record.areas.length
+            ? record.areas
+            : [{ location: "Sahə 1", length: record.length, width: record.width, area: record.area }];
+        const areaCount = document.createElement("span");
+        areaCount.textContent = `${areas.length} sahə`;
+        const openLabel = document.createElement("span");
+        openLabel.className = "area-record-open-label";
+        openLabel.textContent = "Ətraflı bax  ›";
+        details.append(date, areaCount, openLabel);
+        openButton.append(top, vessel, details);
+        item.appendChild(openButton);
+        areaRecordList.appendChild(item);
+    });
+}
+
+function getAreaRecordById(recordId) {
+    return areaMeasurementRecords.find(record => record.id === recordId);
+}
+
+function renderAreaRecordDetails(record) {
+    if (!record) return;
+    areaRecordDialogContent.replaceChildren();
+
+    const heading = document.createElement("div");
+    heading.className = "area-dialog-title-block";
+    const title = document.createElement("h2");
+    title.id = "area-dialog-title";
+    title.textContent = record.company;
+    const vessel = document.createElement("p");
+    vessel.textContent = record.vessel ? `Gəmi: ${record.vessel}` : "Gəmi adı qeyd edilməyib";
+    heading.append(title, vessel);
+    areaRecordDialogContent.appendChild(heading);
+
+    const total = document.createElement("div");
+    total.className = "area-dialog-total";
+    const totalLabel = document.createElement("span");
+    totalLabel.textContent = "ÜMUMİ SAHƏ";
+    const totalValue = document.createElement("strong");
+    totalValue.textContent = `${formatMeasurementNumber(record.area)} m²`;
+    total.append(totalLabel, totalValue);
+    areaRecordDialogContent.appendChild(total);
+
+    const date = document.createElement("p");
+    date.className = "area-dialog-date";
+    date.textContent = formatMeasurementDate(record.date);
+    areaRecordDialogContent.appendChild(date);
+
+    const sectionHeading = document.createElement("h3");
+    sectionHeading.className = "area-dialog-section-heading";
+    sectionHeading.textContent = "Ölçülən sahələr";
+    areaRecordDialogContent.appendChild(sectionHeading);
+
+    const areaList = document.createElement("div");
+    areaList.className = "area-dialog-area-list";
+    const areas = Array.isArray(record.areas) && record.areas.length
+        ? record.areas
+        : [{ location: "Sahə 1", length: record.length, width: record.width, area: record.area }];
+    areas.forEach((measurement, index) => {
+        const areaCard = document.createElement("article");
+        areaCard.className = "area-dialog-area-card";
+        const areaCardHeader = document.createElement("div");
+        areaCardHeader.className = "area-dialog-area-header";
+        const location = document.createElement("strong");
+        location.textContent = measurement.location || `Sahə ${index + 1}`;
+        const areaValue = document.createElement("span");
+        areaValue.textContent = `${formatMeasurementNumber(measurement.area ?? (Number(measurement.length) * Number(measurement.width)))} m²`;
+        areaCardHeader.append(location, areaValue);
+
+        const dimensions = document.createElement("p");
+        dimensions.textContent = `${formatMeasurementNumber(measurement.length)} m × ${formatMeasurementNumber(measurement.width)} m`;
+        areaCard.append(areaCardHeader, dimensions);
+
+        const age = document.createElement("p");
+        age.className = "area-dialog-area-age";
+        age.dataset.areaAgeIndex = String(index);
+        age.textContent = formatAccumulationDays(measurement);
+        areaCard.appendChild(age);
+
+        const deleteAreaButton = document.createElement("button");
+        deleteAreaButton.className = "area-dialog-area-delete";
+        deleteAreaButton.type = "button";
+        deleteAreaButton.dataset.deleteDialogArea = String(index);
+        deleteAreaButton.textContent = "Bu sahəni sil";
+        areaCard.appendChild(deleteAreaButton);
+        areaList.appendChild(areaCard);
+    });
+    areaRecordDialogContent.appendChild(areaList);
+
+    if (record.note) {
+        const note = document.createElement("p");
+        note.className = "area-dialog-note";
+        note.textContent = record.note;
+        areaRecordDialogContent.appendChild(note);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "area-dialog-actions";
+    const deleteRecordButton = document.createElement("button");
+    deleteRecordButton.className = "area-dialog-delete-record";
+    deleteRecordButton.type = "button";
+    deleteRecordButton.dataset.deleteDialogRecord = "";
+    deleteRecordButton.textContent = "Bütün qeydi sil";
+    const closeButton = document.createElement("button");
+    closeButton.className = "area-dialog-secondary";
+    closeButton.type = "button";
+    closeButton.dataset.closeAreaDialog = "";
+    closeButton.textContent = "Bağla";
+    actions.append(deleteRecordButton, closeButton);
+    areaRecordDialogContent.appendChild(actions);
+}
+
+function refreshAreaAgeLabels() {
+    if (!activeAreaRecordId) return;
+    const record = getAreaRecordById(activeAreaRecordId);
+    if (!record) return;
+    areaRecordDialogContent.querySelectorAll("[data-area-age-index]").forEach(label => {
+        const area = record.areas?.[Number(label.dataset.areaAgeIndex)];
+        if (area) label.textContent = formatAccumulationDays(area);
+    });
+}
+
+function renderAreaDeleteConfirmation(scope) {
+    areaRecordDialogContent.replaceChildren();
+    const confirmation = document.createElement("div");
+    confirmation.className = "area-delete-confirmation";
+    const icon = document.createElement("span");
+    icon.className = "area-delete-confirmation-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "!";
+    const title = document.createElement("h2");
+    title.id = "area-dialog-title";
+    title.textContent = "Silmək istəyirsiniz?";
+    const message = document.createElement("p");
+    message.textContent = scope.type === "record"
+        ? `${scope.record.company} qeydi və bütün sahələri silinəcək.`
+        : `${scope.area.location || "Seçilmiş sahə"} ölçüsü silinəcək${scope.isLastArea ? " və qeydin özü də silinəcək" : ""}.`;
+    const actions = document.createElement("div");
+    actions.className = "area-dialog-actions area-delete-confirmation-actions";
+    const cancelButton = document.createElement("button");
+    cancelButton.className = "area-dialog-secondary";
+    cancelButton.type = "button";
+    cancelButton.dataset.cancelAreaDelete = "";
+    cancelButton.textContent = "Ləğv et";
+    const confirmButton = document.createElement("button");
+    confirmButton.className = "area-dialog-delete-record";
+    confirmButton.type = "button";
+    confirmButton.dataset.confirmAreaDelete = "";
+    confirmButton.textContent = "Bəli, sil";
+    actions.append(cancelButton, confirmButton);
+    confirmation.append(icon, title, message, actions);
+    areaRecordDialogContent.appendChild(confirmation);
+}
+
+function renderReminderDeleteConfirmation(item) {
+    areaRecordDialogContent.replaceChildren();
+    const confirmation = document.createElement("div");
+    confirmation.className = "area-delete-confirmation";
+    const icon = document.createElement("span");
+    icon.className = "area-delete-confirmation-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "!";
+    const title = document.createElement("h2");
+    title.id = "area-dialog-title";
+    title.textContent = "Xatırlatma silinsin?";
+    const message = document.createElement("p");
+    message.textContent = `“${item.title}” xatırlatması hesabınızdan silinəcək.`;
+    const actions = document.createElement("div");
+    actions.className = "area-dialog-actions area-delete-confirmation-actions";
+    const cancelButton = document.createElement("button");
+    cancelButton.className = "area-dialog-secondary";
+    cancelButton.type = "button";
+    cancelButton.dataset.cancelReminderDelete = "";
+    cancelButton.textContent = "Ləğv et";
+    const confirmButton = document.createElement("button");
+    confirmButton.className = "area-dialog-delete-record";
+    confirmButton.type = "button";
+    confirmButton.dataset.confirmReminderDelete = "";
+    confirmButton.textContent = "Bəli, sil";
+    actions.append(cancelButton, confirmButton);
+    confirmation.append(icon, title, message, actions);
+    areaRecordDialogContent.appendChild(confirmation);
+}
+
+function openAreaRecordDialog(recordId) {
+    const record = getAreaRecordById(recordId);
+    if (!record) return;
+    activeAreaRecordId = recordId;
+    pendingAreaDelete = null;
+    pendingReminderDelete = null;
+    areaDialogKicker.textContent = "ƏRAZİ QEYDİ";
+    renderAreaRecordDetails(record);
+    if (!areaRecordDialog.open) areaRecordDialog.showModal();
+}
+
+function deleteAreaRecord(recordId) {
+    const record = getAreaRecordById(recordId);
+    if (!record) return;
+    const updatedRecords = areaMeasurementRecords.filter(item => item.id !== recordId);
+    if (saveAreaMeasurementRecords(updatedRecords)) {
+        areaRecordDialog.close();
+        pendingAreaDelete = null;
+        activeAreaRecordId = null;
+        syncAreaMeasurementMutation("delete", { id: recordId }, "Qeyd və bütün sahələri Google Sheets-dən silindi.", "Qeyd cihazdan silindi, amma Google Sheets-dən silinmədi.");
+    }
+}
+
+function deleteAreaRecordSection(recordId, areaIndex) {
+    const record = getAreaRecordById(recordId);
+    if (!record || !record.areas?.[areaIndex]) return;
+    const remainingAreas = record.areas.filter((_, index) => index !== areaIndex);
+    const updatedRecords = remainingAreas.length
+        ? areaMeasurementRecords.map(item => item.id === recordId ? {
+            ...item,
+            areas: remainingAreas,
+            area: remainingAreas.reduce((sum, measurement) => sum + measurement.area, 0)
+        } : item)
+        : areaMeasurementRecords.filter(item => item.id !== recordId);
+
+    if (!saveAreaMeasurementRecords(updatedRecords)) return;
+    pendingAreaDelete = null;
+    if (remainingAreas.length) {
+        renderAreaRecordDetails(getAreaRecordById(recordId));
+        syncAreaMeasurementMutation("save", getAreaRecordById(recordId), "Sahə silindi və Google Sheets yeniləndi.", "Sahə cihazdan silindi, amma Google Sheets yenilənmədi.");
+    } else {
+        areaRecordDialog.close();
+        activeAreaRecordId = null;
+        syncAreaMeasurementMutation("delete", { id: recordId }, "Son sahə və qeyd Google Sheets-dən silindi.", "Son sahə cihazdan silindi, amma Google Sheets-dən silinmədi.");
+    }
+}
+
+areaRecordList.addEventListener("click", event => {
+    const openButton = event.target.closest("[data-open-record]");
+    if (openButton) openAreaRecordDialog(openButton.dataset.openRecord);
+});
+
+areaDialogCloseButton.addEventListener("click", () => areaRecordDialog.close());
+areaRecordDialog.addEventListener("click", async event => {
+    if (event.target === areaRecordDialog) {
+        areaRecordDialog.close();
+        return;
+    }
+
+    if (event.target.closest("[data-close-area-dialog]")) {
+        areaRecordDialog.close();
+        return;
+    }
+
+    if (event.target.closest("[data-cancel-reminder-delete]")) {
+        pendingReminderDelete = null;
+        areaRecordDialog.close();
+        return;
+    }
+
+    if (event.target.closest("[data-confirm-reminder-delete]") && pendingReminderDelete) {
+        const reminderId = pendingReminderDelete.id;
+        try {
+            await firebaseDb.collection("users").doc(currentAuthUser.uid).collection("reminders").doc(reminderId).delete();
+            reminders = reminders.filter(item => item.id !== reminderId);
+            saveReminders();
+            renderReminders();
+            areaRecordDialog.close();
+            showActionToast("Xatırlatma silindi.");
+        } catch (error) {
+            console.error("Xatırlatma silinmədi", error);
+            showActionToast("Silmək olmadı. İnterneti yoxlayın.");
+        }
+        return;
+    }
+
+    if (event.target.closest("[data-delete-dialog-record]")) {
+        const record = getAreaRecordById(activeAreaRecordId);
+        if (!record) return;
+        pendingAreaDelete = { type: "record", record };
+        renderAreaDeleteConfirmation(pendingAreaDelete);
+        return;
+    }
+
+    const deleteAreaButton = event.target.closest("[data-delete-dialog-area]");
+    if (deleteAreaButton) {
+        const record = getAreaRecordById(activeAreaRecordId);
+        const areaIndex = Number(deleteAreaButton.dataset.deleteDialogArea);
+        const area = record?.areas?.[areaIndex];
+        if (!record || !area) return;
+        pendingAreaDelete = { type: "area", record, area, areaIndex, isLastArea: record.areas.length === 1 };
+        renderAreaDeleteConfirmation(pendingAreaDelete);
+        return;
+    }
+
+    if (event.target.closest("[data-cancel-area-delete]")) {
+        const record = getAreaRecordById(activeAreaRecordId);
+        pendingAreaDelete = null;
+        if (record) renderAreaRecordDetails(record);
+        else areaRecordDialog.close();
+        return;
+    }
+
+    if (event.target.closest("[data-confirm-area-delete]") && pendingAreaDelete) {
+        if (pendingAreaDelete.type === "record") deleteAreaRecord(pendingAreaDelete.record.id);
+        else deleteAreaRecordSection(pendingAreaDelete.record.id, pendingAreaDelete.areaIndex);
+    }
+});
+
+areaRecordDialog.addEventListener("close", () => {
+    pendingAreaDelete = null;
+    pendingReminderDelete = null;
+    activeAreaRecordId = null;
+    areaDialogKicker.textContent = "ƏRAZİ QEYDİ";
+});
+
+function normalizeAreaCloudDate(value) {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return localDateInputValue(value);
+    const text = String(value ?? "").trim();
+    const isoDate = text.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (isoDate) return isoDate[1];
+    const dottedDate = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if (dottedDate) return `${dottedDate[3]}-${dottedDate[2].padStart(2, "0")}-${dottedDate[1].padStart(2, "0")}`;
+    const usDate = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (usDate) return `${usDate[3]}-${usDate[1].padStart(2, "0")}-${usDate[2].padStart(2, "0")}`;
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.getTime()) ? "" : localDateInputValue(parsed);
+}
+
+function getAreaCloudObjectValue(object, aliases) {
+    if (!object || typeof object !== "object") return "";
+    const entries = Object.entries(object);
+    for (const alias of aliases) {
+        const normalizedAlias = normalizeCell(alias);
+        const match = entries.find(([key]) => normalizeCell(key) === normalizedAlias);
+        if (match) return match[1];
+    }
+    return "";
+}
+
+function normalizeAreaCloudRecord(source, index = 0) {
+    const id = String(getAreaCloudObjectValue(source, ["id", "recordId", "qeyd id", "qeydId"]) || "").trim();
+    if (!id) return null;
+    const sourceAreas = Array.isArray(source.areas) ? source.areas : null;
+    const rawAreas = sourceAreas?.length ? sourceAreas : [source];
+    const areas = rawAreas.map((area, areaIndex) => {
+        const length = parseMeasurementNumber(getAreaCloudObjectValue(area, ["length", "uzunluq", "uzunluq (m)"]));
+        const width = parseMeasurementNumber(getAreaCloudObjectValue(area, ["width", "en", "en (m)"]));
+        const suppliedArea = parseMeasurementNumber(getAreaCloudObjectValue(area, ["area", "sahə (m²)", "sahe (m2)"]));
+        return {
+            location: String(getAreaCloudObjectValue(area, ["location", "sahə / yer", "sahe / yer", "yer", "sahə", "sahe"]) || `Sahə ${areaIndex + 1}`).trim(),
+            length,
+            width,
+            area: suppliedArea || (length * width),
+            initialDays: Math.floor(parseMeasurementNumber(getAreaCloudObjectValue(area, ["initialDays", "days", "ilkin gün sayı", "yığılıb gün"]))) || 0,
+            daysCountedOn: normalizeAreaCloudDate(getAreaCloudObjectValue(area, ["daysCountedOn", "countedOn", "hesab tarixi"]))
+        };
+    }).filter(area => area.length > 0 && area.width > 0);
+    if (!areas.length) return null;
+    return {
+        id,
+        date: normalizeAreaCloudDate(getAreaCloudObjectValue(source, ["date", "tarix"])),
+        company: String(getAreaCloudObjectValue(source, ["company", "companyName", "şirkət adı", "sirkət adı", "sirket adi"]) || "Şirkət qeyd edilməyib").trim(),
+        vessel: String(getAreaCloudObjectValue(source, ["vessel", "ship", "gəminin adı", "geminin adi", "gəmi adı"]) || "").trim(),
+        areas,
+        area: areas.reduce((sum, item) => sum + item.area, 0),
+        note: String(getAreaCloudObjectValue(source, ["note", "qeyd"]) || "").trim()
+    };
+}
+
+function unwrapAreaCloudPayload(payload) {
+    if (typeof payload === "string") {
+        try { payload = JSON.parse(payload); }
+        catch { throw new Error("Google Sheets cavabı oxuna bilmədi."); }
+    }
+    if (payload?.success === false || payload?.ok === false) {
+        throw new Error(payload.message || payload.error || "Google Sheets sorğunu qəbul etmədi.");
+    }
+    if (Array.isArray(payload)) return payload;
+    for (const key of ["records", "data", "rows", "values", "result"]) {
+        if (payload && Object.prototype.hasOwnProperty.call(payload, key)) {
+            const value = payload[key];
+            if (Array.isArray(value) || typeof value === "string") return unwrapAreaCloudPayload(value);
+            if (value && typeof value === "object") return unwrapAreaCloudPayload(value);
+        }
+    }
+    if (payload && typeof payload === "object" && getAreaCloudObjectValue(payload, ["id", "recordId", "qeyd id"])) return [payload];
+    throw new Error("Google Sheets cavabında ölçü qeydləri tapılmadı.");
+}
+
+function normalizeAreaCloudRecords(payload) {
+    const rows = unwrapAreaCloudPayload(payload);
+    if (!rows.length) return [];
+
+    if (rows.every(row => row && typeof row === "object" && !Array.isArray(row))) {
+        const grouped = new Map();
+        rows.forEach((row, index) => {
+            const normalized = normalizeAreaCloudRecord(row, index);
+            if (!normalized) return;
+            const previous = grouped.get(normalized.id);
+            if (!previous) grouped.set(normalized.id, normalized);
+            else if (!Array.isArray(row.areas) || !row.areas.length) {
+                previous.areas.push(...normalized.areas);
+                previous.area = previous.areas.reduce((sum, item) => sum + item.area, 0);
+            }
+        });
+        if (!grouped.size) throw new Error("Cədvəldə Qeyd ID sütunu tapılmadı.");
+        return [...grouped.values()].sort((a, b) => b.id.localeCompare(a.id));
+    }
+
+    if (!rows.every(Array.isArray)) throw new Error("Google Sheets məlumat formatı tanınmadı.");
+    const headerIndex = rows.findIndex(row => {
+        const cells = row.map(normalizeCell);
+        return cells.some(value => value === "tarix") && cells.some(value => value === "şirkət adı" || value === "sirket adi");
+    });
+    const headers = headerIndex >= 0 ? rows[headerIndex].map(normalizeCell) : [];
+    const column = (aliases, fallback) => {
+        const found = headers.findIndex(value => aliases.some(alias => value === normalizeCell(alias)));
+        return found >= 0 ? found : fallback;
+    };
+    const columns = {
+        date: column(["tarix", "date"], 0),
+        company: column(["şirkət adı", "sirket adi", "company"], 1),
+        vessel: column(["gəminin adı", "geminin adi", "vessel"], 2),
+        location: column(["sahə / yer", "sahe / yer", "yer", "sahə", "sahe"], 3),
+        length: column(["uzunluq (m)", "uzunluq", "length"], 4),
+        width: column(["en (m)", "en", "width"], 5),
+        area: column(["sahə (m²)", "sahe (m2)", "area"], 6),
+        currentDays: column(["neçə gündür", "nece gundur", "yığılıb (gün)", "yigilma gunu", "current days"], 7),
+        note: column(["qeyd", "note"], 8),
+        id: column(["qeyd id", "record id", "id"], 9),
+        initialDays: column(["ilkin gün sayı", "ilkin gun sayi", "initial days"], 10),
+        daysCountedOn: column(["hesab tarixi", "counted on"], 11)
+    };
+    const firstDataRow = headerIndex >= 0 ? headerIndex + 1 : 0;
+    const grouped = new Map();
+    rows.slice(firstDataRow).forEach(row => {
+        const id = String(row[columns.id] ?? "").trim();
+        const length = parseMeasurementNumber(row[columns.length]);
+        const width = parseMeasurementNumber(row[columns.width]);
+        if (!id || length <= 0 || width <= 0) return;
+        const record = grouped.get(id) || {
+            id,
+            date: normalizeAreaCloudDate(row[columns.date]),
+            company: String(row[columns.company] ?? "").trim() || "Şirkət qeyd edilməyib",
+            vessel: String(row[columns.vessel] ?? "").trim(),
+            areas: [],
+            area: 0,
+            note: String(row[columns.note] ?? "").trim()
+        };
+        const area = parseMeasurementNumber(row[columns.area]) || length * width;
+        const currentDays = Math.floor(parseMeasurementNumber(row[columns.currentDays])) || 0;
+        const initialDays = Math.floor(parseMeasurementNumber(row[columns.initialDays])) || currentDays;
+        record.areas.push({
+            location: String(row[columns.location] ?? `Sahə ${record.areas.length + 1}`).trim(),
+            length,
+            width,
+            area,
+            initialDays,
+            daysCountedOn: normalizeAreaCloudDate(row[columns.daysCountedOn])
+        });
+        record.area += area;
+        grouped.set(id, record);
+    });
+    if (rows.length > firstDataRow && !grouped.size) throw new Error("Cədvəldə Qeyd ID sütunu tapılmadı.");
+    return [...grouped.values()].sort((a, b) => b.id.localeCompare(a.id));
+}
+
+function fetchAreaMeasurementsFromCloud() {
+    if (!areaMeasurementsApiUrl) return Promise.reject(new Error("Google Sheets bağlantısı qurulmayıb."));
+    return new Promise((resolve, reject) => {
+        const callbackName = `__limanAreaCallback_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const script = document.createElement("script");
+        let settled = false;
+        const cleanup = () => {
+            clearTimeout(timeout);
+            script.remove();
+            try { delete window[callbackName]; } catch { window[callbackName] = undefined; }
+        };
+        const finish = (error, result) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            if (error) reject(error);
+            else resolve(result);
+        };
+        const timeout = setTimeout(() => finish(new Error("Google Sheets-dən cavab gecikdi.")), 20000);
+        window[callbackName] = payload => {
+            try { finish(null, normalizeAreaCloudRecords(payload)); }
+            catch (error) { finish(error); }
+        };
+        script.async = true;
+        script.onerror = () => finish(new Error("Google Sheets bağlantısı açıla bilmədi."));
+        const separator = areaMeasurementsApiUrl.includes("?") ? "&" : "?";
+        script.src = `${areaMeasurementsApiUrl}${separator}callback=${encodeURIComponent(callbackName)}&_=${Date.now()}`;
+        document.head.appendChild(script);
+    });
+}
+
+async function postAreaMeasurementMutation(action, record) {
+    await fetch(areaMeasurementsApiUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, record })
+    });
+}
+
+function readPendingAreaCloudMutations() {
+    try {
+        const pending = JSON.parse(localStorage.getItem(areaCloudPendingKey) || "[]");
+        return Array.isArray(pending) ? pending : [];
+    } catch { return []; }
+}
+
+function savePendingAreaCloudMutation(action, record) {
+    const pending = readPendingAreaCloudMutations().filter(item => String(item.record?.id) !== String(record.id));
+    pending.push({ mutationId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, action, record });
+    localStorage.setItem(areaCloudPendingKey, JSON.stringify(pending));
+    return pending[pending.length - 1];
+}
+
+function removePendingAreaCloudMutation(mutationId) {
+    const pending = readPendingAreaCloudMutations().filter(item => item.mutationId !== mutationId);
+    localStorage.setItem(areaCloudPendingKey, JSON.stringify(pending));
+}
+
+function enqueueAreaCloudTask(task) {
+    const current = areaCloudQueue.then(task, task);
+    areaCloudQueue = current.catch(() => {});
+    return current;
+}
+
+function isAreaCloudRecordEquivalent(cloudRecord, desiredRecord) {
+    const desired = normalizeAreaCloudRecord(desiredRecord);
+    if (!desired || normalizeCell(cloudRecord.company) !== normalizeCell(desired.company)
+        || normalizeCell(cloudRecord.vessel) !== normalizeCell(desired.vessel)
+        || normalizeCell(cloudRecord.note) !== normalizeCell(desired.note)
+        || normalizeAreaCloudDate(cloudRecord.date) !== desired.date
+        || cloudRecord.areas.length !== desired.areas.length) return false;
+    return desired.areas.every((area, index) => {
+        const storedArea = cloudRecord.areas[index];
+        return storedArea
+            && normalizeCell(storedArea.location) === normalizeCell(area.location)
+            && Math.abs(storedArea.length - area.length) < 0.0001
+            && Math.abs(storedArea.width - area.width) < 0.0001
+            && Math.abs(storedArea.area - area.area) < 0.0001
+            && (Number(storedArea.initialDays) || 0) === (Number(area.initialDays) || 0)
+            && normalizeAreaCloudDate(storedArea.daysCountedOn) === normalizeAreaCloudDate(area.daysCountedOn);
+    });
+}
+
+async function confirmAreaCloudMutation(action, record) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const cloudRecords = await fetchAreaMeasurementsFromCloud();
+        const storedRecord = cloudRecords.find(item => item.id === String(record.id));
+        if ((action === "delete" && !storedRecord) || (action === "save" && storedRecord && isAreaCloudRecordEquivalent(storedRecord, record))) return true;
+        if (attempt < 4) await new Promise(resolve => setTimeout(resolve, 450));
+    }
+    return false;
+}
+
+function syncAreaMeasurementMutation(action, record, successMessage, failureMessage) {
+    if (!areaMeasurementsApiUrl) {
+        showActionToast("Qeyd bu cihazda saxlanıldı.");
+        return;
+    }
+    let mutation;
+    try { mutation = savePendingAreaCloudMutation(action, record); }
+    catch (error) {
+        console.warn("Google Sheets üçün gözləyən qeyd saxlanıla bilmədi:", error);
+        showActionToast(failureMessage);
+        return;
+    }
+    showActionToast("Google Sheets-ə yadda saxlanılır…");
+    enqueueAreaCloudTask(async () => {
+        try {
+            await postAreaMeasurementMutation(action, record);
+            if (!await confirmAreaCloudMutation(action, record)) throw new Error("Google Sheets dəyişiklik təsdiqləmədi.");
+            removePendingAreaCloudMutation(mutation.mutationId);
+            localStorage.setItem(areaCloudMigrationKey, "true");
+            showActionToast(successMessage);
+        } catch (error) {
+            console.warn("Sahə ölçüsü Google Sheets-ə sinxronlaşdırıla bilmədi:", error);
+            showActionToast(failureMessage);
+        }
+    });
+}
+
+async function synchronizeAreaMeasurementsOnStart() {
+    if (!areaMeasurementsApiUrl) return;
+    try {
+        let cloudRecords = await fetchAreaMeasurementsFromCloud();
+        if (localStorage.getItem(areaCloudMigrationKey) !== "true") {
+            const cloudIds = new Set(cloudRecords.map(record => record.id));
+            const localRecordsToMigrate = areaMeasurementRecords.slice();
+            for (const record of localRecordsToMigrate) {
+                if (!cloudIds.has(String(record.id))) await postAreaMeasurementMutation("save", record);
+            }
+            cloudRecords = await fetchAreaMeasurementsFromCloud();
+            const migratedIds = new Set(cloudRecords.map(record => record.id));
+            if (localRecordsToMigrate.some(record => !migratedIds.has(String(record.id)))) {
+                throw new Error("Cihazdakı əvvəlki qeydlərin hamısı Google Sheets-də təsdiqlənmədi.");
+            }
+            localStorage.setItem(areaCloudMigrationKey, "true");
+        }
+
+        const pending = readPendingAreaCloudMutations();
+        for (const mutation of pending) {
+            await postAreaMeasurementMutation(mutation.action, mutation.record);
+            if (!await confirmAreaCloudMutation(mutation.action, mutation.record)) {
+                throw new Error("Gözləyən dəyişiklik Google Sheets-də təsdiqlənmədi.");
+            }
+            removePendingAreaCloudMutation(mutation.mutationId);
+        }
+        if (pending.length) cloudRecords = await fetchAreaMeasurementsFromCloud();
+
+        areaMeasurementRecords = cloudRecords;
+        localStorage.setItem(areaMeasurementStorageKey, JSON.stringify(cloudRecords));
+        renderAreaMeasurements();
+    } catch (error) {
+        console.warn("Sahə ölçüləri Google Sheets-dən yüklənə bilmədi:", error);
+        showActionToast("Google Sheets-ə qoşulmadı. Qeydlər bu cihazdan göstərilir.");
+    }
+}
+
+function saveAreaMeasurementRecords(records) {
+    try {
+        localStorage.setItem(areaMeasurementStorageKey, JSON.stringify(records));
+        areaMeasurementRecords = records;
+        renderAreaMeasurements();
+        return true;
+    } catch (error) {
+        console.warn("Sahə ölçüsü qeydləri saxlanıla bilmədi:", error);
+        showActionToast("Dəyişiklik bu cihazda saxlanıla bilmədi.");
+        return false;
+    }
+}
+
+function loadAreaMeasurements() {
+    try {
+        const storedRecords = JSON.parse(localStorage.getItem(areaMeasurementStorageKey) || "[]");
+        areaMeasurementRecords = Array.isArray(storedRecords) ? storedRecords.map(record => {
+            if (Array.isArray(record.areas) && record.areas.length) {
+                const areas = record.areas.map(area => ({
+                    location: area.location || "Sahə",
+                    length: Number(area.length) || 0,
+                    width: Number(area.width) || 0,
+                    area: Number(area.area) || ((Number(area.length) || 0) * (Number(area.width) || 0)),
+                    initialDays: Math.floor(Number(area.initialDays) || 0),
+                    daysCountedOn: normalizeAreaCloudDate(area.daysCountedOn)
+                }));
+                return { ...record, areas, area: areas.reduce((sum, area) => sum + area.area, 0) };
+            }
+
+            const length = Number(record.length) || 0;
+            const width = Number(record.width) || 0;
+            return {
+                ...record,
+                areas: [{ location: record.location || "Sahə 1", length, width, area: Number(record.area) || (length * width) }],
+                area: Number(record.area) || (length * width)
+            };
+        }) : [];
+    } catch (error) {
+        areaMeasurementRecords = [];
+        console.warn("Sahə ölçüsü qeydləri oxuna bilmədi:", error);
+    }
+    if (areaMeasurementList.children.length === 0) areaMeasurementList.appendChild(createAreaMeasurementBlock(0));
+    renderAreaMeasurements();
+    enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
+}
+
+addAreaMeasurementButton.addEventListener("click", () => {
+    const count = areaMeasurementList.querySelectorAll("[data-area-block]").length;
+    areaMeasurementList.appendChild(createAreaMeasurementBlock(count));
+    updateAreaBlockNumbers();
+    areaMeasurementList.querySelector("[data-area-block]:last-child [data-area-value='location']")?.focus();
+});
+
+areaMeasurementList.addEventListener("input", event => {
+    if (event.target.matches("[data-area-value]")) updateAreaCalculation();
+});
+
+areaMeasurementList.addEventListener("click", event => {
+    const removeButton = event.target.closest("[data-remove-area]");
+    if (!removeButton) return;
+    removeButton.closest("[data-area-block]").remove();
+    updateAreaBlockNumbers();
+    updateAreaCalculation();
+});
+
+areaRecordList.addEventListener("click", event => {
+    const deleteAreaButton = event.target.closest("[data-delete-area]");
+    const deleteRecordButton = event.target.closest("[data-delete-record]");
+    if (!deleteAreaButton && !deleteRecordButton) return;
+
+    const card = event.target.closest("[data-record-id]");
+    const recordIndex = areaMeasurementRecords.findIndex(record => record.id === card?.dataset.recordId);
+    if (recordIndex < 0) return;
+    const record = areaMeasurementRecords[recordIndex];
+
+    if (deleteRecordButton) {
+        const confirmed = window.confirm(`${record.company} qeydi və bütün sahələri silinsin?`);
+        if (!confirmed) return;
+        const updatedRecords = areaMeasurementRecords.filter(item => item.id !== record.id);
+        if (saveAreaMeasurementRecords(updatedRecords)) {
+            syncAreaMeasurementMutation("delete", { id: record.id }, "Qeyd və sahələri Google Sheets-dən silindi.", "Qeyd cihazdan silindi, amma Google Sheets-dən silinmədi.");
+        }
+        return;
+    }
+
+    const areaIndex = Number(deleteAreaButton.dataset.deleteArea);
+    const targetArea = record.areas?.[areaIndex];
+    if (!targetArea) return;
+    const confirmed = window.confirm(`${targetArea.location || `Sahə ${areaIndex + 1}`} ölçüsü silinsin?`);
+    if (!confirmed) return;
+
+    const updatedRecords = areaMeasurementRecords.map(item => {
+        if (item.id !== record.id) return item;
+        const remainingAreas = item.areas.filter((_, index) => index !== areaIndex);
+        return { ...item, areas: remainingAreas, area: remainingAreas.reduce((sum, measurement) => sum + measurement.area, 0) };
+    }).filter(item => item.id !== record.id || item.areas.length > 0);
+
+    if (saveAreaMeasurementRecords(updatedRecords)) {
+        const updatedRecord = updatedRecords.find(item => item.id === record.id);
+        if (updatedRecord) syncAreaMeasurementMutation("save", updatedRecord, "Sahə silindi və Google Sheets yeniləndi.", "Sahə cihazdan silindi, amma Google Sheets yenilənmədi.");
+        else syncAreaMeasurementMutation("delete", { id: record.id }, "Son sahə və qeyd Google Sheets-dən silindi.", "Son sahə cihazdan silindi, amma Google Sheets-dən silinmədi.");
+    }
+});
+
+areaMeasurementForm.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!areaMeasurementForm.reportValidity()) return;
+
+    const areas = getAreaMeasurementValues();
+    const invalidAreaIndex = areas.findIndex(area => !area.location || !Number.isFinite(area.length) || !Number.isFinite(area.width) || area.length <= 0 || area.width <= 0 || !Number.isInteger(area.initialDays) || area.initialDays < 1);
+    if (invalidAreaIndex >= 0) {
+        const invalidBlock = areaMeasurementList.querySelectorAll("[data-area-block]")[invalidAreaIndex];
+        const invalidField = !areas[invalidAreaIndex].location
+            ? invalidBlock.querySelector('[data-area-value="location"]')
+            : !Number.isFinite(areas[invalidAreaIndex].length) || areas[invalidAreaIndex].length <= 0
+                ? invalidBlock.querySelector('[data-area-value="length"]')
+                : !Number.isFinite(areas[invalidAreaIndex].width) || areas[invalidAreaIndex].width <= 0
+                    ? invalidBlock.querySelector('[data-area-value="width"]')
+                    : invalidBlock.querySelector('[data-area-value="initialDays"]');
+        invalidField.focus();
+        showActionToast("Hər sahənin yerini, ölçülərini və yığılma gün sayını düzgün yazın.");
+        return;
+    }
+
+    const countedOn = localDateInputValue();
+    const measuredAreas = areas.map(area => ({ ...area, area: area.length * area.width, daysCountedOn: countedOn }));
+
+    const record = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        company: areaCompanyInput.value.trim(),
+        vessel: areaVesselInput.value.trim(),
+        areas: measuredAreas,
+        area: measuredAreas.reduce((sum, area) => sum + area.area, 0),
+        date: areaDateInput.value || localDateInputValue(),
+        note: areaNoteInput.value.trim()
+    };
+
+    if (!saveAreaMeasurementRecords([record, ...areaMeasurementRecords])) return;
+    areaMeasurementForm.reset();
+    areaMeasurementList.replaceChildren(createAreaMeasurementBlock(0));
+    areaDateInput.value = localDateInputValue();
+    updateAreaCalculation();
+    syncAreaMeasurementMutation("save", record, "Sahə ölçüsü Google Sheets-də yadda saxlanıldı.", "Sahə bu cihazda saxlanıldı, amma Google Sheets-ə göndərilmədi.");
+});
 
 function normalizeCell(value) {
     return String(value ?? "")
@@ -277,6 +1673,12 @@ async function returnHome() {
 }
 
 document.getElementById("start-scan").addEventListener("click", startScan);
+document.getElementById("home-area-measurement").addEventListener("click", function () {
+    scanHandled = false;
+    void stopScanner();
+    showView("area-measurement");
+    renderAreaMeasurements();
+});
 document.getElementById("cancel-scan").addEventListener("click", returnHome);
 document.getElementById("return-home").addEventListener("click", returnHome);
 document.getElementById("about-home").addEventListener("click", returnHome);
@@ -349,8 +1751,50 @@ issueGoodsButton.addEventListener("click", function () {
     showActionToast("Mal vermək funksiyası hələ aktiv deyil.");
 });
 
-loginPlaceholder.addEventListener("click", function () {
-    showActionToast("Daxil ol funksiyası hələ aktiv deyil.");
+loginPlaceholder.addEventListener("click", async function () {
+    if (!firebaseAuth) {
+        showActionToast("Hesab xidməti açıla bilmədi. Səhifəni yeniləyin.");
+        return;
+    }
+    if (currentAuthUser) {
+        try {
+            try { await removeCurrentDeviceToken(); } catch (error) { console.warn("Cihaz bildiriş əlaqəsi silinmədi", error); }
+            await firebaseAuth.signOut();
+            showActionToast("Hesabdan çıxdınız.");
+        } catch {
+            showActionToast("Hesabdan çıxmaq olmadı.");
+        }
+        return;
+    }
+    accountLoginError.hidden = true;
+    accountDialog.showModal();
+});
+
+accountLoginForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!firebaseAuth) return;
+    const submit = accountLoginForm.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    accountLoginError.hidden = true;
+    try {
+        await firebaseAuth.signInWithEmailAndPassword(accountEmailInput.value.trim(), accountPasswordInput.value);
+        accountDialog.close();
+        accountLoginForm.reset();
+        showActionToast("Hesaba daxil oldunuz.");
+    } catch (error) {
+        console.error("Hesaba giriş alınmadı", error);
+        accountLoginError.textContent = error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found"
+            ? "E-poçt və ya şifrə düzgün deyil."
+            : "Daxil olmaq alınmadı. İnterneti yoxlayıb yenidən cəhd edin.";
+        accountLoginError.hidden = false;
+    } finally {
+        submit.disabled = false;
+    }
+});
+
+accountDialogClose.addEventListener("click", () => accountDialog.close());
+accountDialog.addEventListener("click", event => {
+    if (event.target === accountDialog) accountDialog.close();
 });
 
 function normalizeJournalHeader(value) {
@@ -589,6 +2033,11 @@ if (splashScreen) {
     });
 }
 
+areaDateInput.value = localDateInputValue();
+loadAreaMeasurements();
+initializeFirebaseAccount();
+initializeReminders();
+setInterval(refreshAreaAgeLabels, 60 * 1000);
 loadDistributionJournal();
 updateDashboardClock();
 setInterval(updateDashboardClock, 1000);

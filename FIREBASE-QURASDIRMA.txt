@@ -1,0 +1,19 @@
+LİMAN ANBARI · FIREBASE XATIRLATMALARI
+
+Hazır olanlar:
+- Tətbiqdə e-poçt formatlı hesab adı və şifrə ilə giriş.
+- Hər hesabın xatırlatmaları Firestore-da ayrıca saxlanır.
+- Cihaz bildiriş icazəsi və FCM tokeninin hesaba qoşulması.
+- Tətbiq bağlı olanda bildiriş göndərmək üçün Cloud Function mənbə faylları.
+
+Hesabları yaratmaq:
+1. Firebase Console → Authentication → Users → Add user.
+2. Hər işçi üçün ayrıca giriş adı (e-poçt formatında) və tətbiq şifrəsi yaradın.
+3. Bunlar Google hesabı deyil; Google/Gmail şifrənizi heç kimə verməyin.
+4. Tətbiqdə “Daxil ol” düyməsinə həmin giriş adı və tətbiq şifrəsi yazılır.
+
+Vacib:
+- Firestore Rules-də hər istifadəçiyə yalnız /users/{öz UID-si}/... yolu açıq qalmalıdır.
+- Tətbiq bağlı olanda bildiriş üçün functions/ qovluğundakı funksiya Firebase-ə yerləşdirilməlidir.
+- Planlaşdırılmış funksiya Firebase Blaze planı və billing hesabı tələb edir. Bu arxiv heç bir planı və ya ödənişi aktiv etmir.
+- Funksiya yerləşdirilənə qədər xatırlatmalar hesaba sinxronlaşır, amma tətbiq bağlıykən server bildirişi hələ göndərilmir.

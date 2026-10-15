@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=57">
+    <link rel="stylesheet" href="style.css?v=66">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -59,8 +59,8 @@
             <nav id="app-menu" class="app-menu" aria-label="Əsas menyu" hidden>
                 <button type="button" data-menu-view="home">Ana səhifə</button>
                 <button type="button" data-menu-view="distribution">Paylama jurnalı</button>
-                <button type="button" data-menu-inactive="Sahə ölçümü">Sahə ölçümü</button>
-                <button type="button" data-menu-inactive="Xatırlatmalar">Xatırlatmalar</button>
+                <button type="button" data-menu-view="area-measurement">Sahə ölçümü</button>
+                <button type="button" data-menu-view="reminders">Xatırlatmalar</button>
                 <button type="button" data-menu-view="about">Tətbiq haqqında</button>
             </nav>
         </div>
@@ -90,15 +90,26 @@
                     <div class="dashboard-stat"><strong id="dashboard-quantity-total">—</strong><span>verilən miqdar</span></div>
                 </div>
             </section>
-            <button id="start-scan" class="home-scan-launch" type="button">
-                <span class="home-scan-launch-icon" aria-hidden="true"><img src="images/scan-icon.png" alt=""></span>
-                <span class="home-scan-launch-copy">
-                    <span class="home-scan-kicker">SÜRƏTLİ AXTARIŞ</span>
-                    <strong>Rəfi skan et</strong>
-                    <small>QR kodu oxudub malın yerini tap</small>
-                </span>
-                <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
-            </button>
+            <div class="home-launch-actions">
+                <button id="home-area-measurement" class="home-scan-launch" type="button">
+                    <span class="home-scan-launch-icon home-area-launch-icon" aria-hidden="true"><img src="images/scan-icon.png" alt=""></span>
+                    <span class="home-scan-launch-copy">
+                        <span class="home-scan-kicker">ƏRAZİ QEYDLƏRİ</span>
+                        <strong>Sahə ölçümü</strong>
+                        <small>Ölçüləri hesabla və qeydə al</small>
+                    </span>
+                    <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
+                </button>
+                <button id="start-scan" class="home-scan-launch" type="button">
+                    <span class="home-scan-launch-icon" aria-hidden="true"><img src="images/scan-icon.png" alt=""></span>
+                    <span class="home-scan-launch-copy">
+                        <span class="home-scan-kicker">SÜRƏTLİ AXTARIŞ</span>
+                        <strong>Rəfi skan et</strong>
+                        <small>QR kodu oxudub malın yerini tap</small>
+                    </span>
+                    <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
+                </button>
+            </div>
             <section class="home-recent-section" aria-label="Son verilən mallar">
                 <div class="home-recent-heading">
                     <div>
@@ -146,6 +157,86 @@
             </div>
         </section>
 
+        <section id="area-measurement-view" class="view area-measurement-view" hidden>
+            <div class="area-page-heading">
+                <div class="area-page-kicker"><span class="dashboard-live-dot"></span> ƏRAZİ QEYDLƏRİ</div>
+                <h2>Sahə ölçümü</h2>
+                <p>Ölçüləri və neçə gündür yığıldığını yazın. Sahə və gün sayı avtomatik hesablansın.</p>
+            </div>
+            <form id="area-measurement-form" class="area-form">
+                <div class="area-form-grid">
+                    <label class="area-field">
+                        <span>Şirkətin adı</span>
+                        <input id="area-company" type="text" maxlength="120" autocomplete="organization" placeholder="Şirkətin adını yazın" required>
+                    </label>
+                    <label class="area-field">
+                        <span>Gəminin adı</span>
+                        <input id="area-vessel" type="text" maxlength="120" placeholder="Gəminin adını yazın" required>
+                    </label>
+                    <div class="area-field area-field-full">
+                        <span>Yığıldığı sahələr</span>
+                        <div id="area-measurement-list" class="area-measurement-list"></div>
+                        <button id="add-area-measurement" class="area-add-measurement" type="button"><span aria-hidden="true">＋</span> Yeni sahə əlavə et</button>
+                    </div>
+                    <label class="area-field area-field-full">
+                        <span>Tarix</span>
+                        <input id="area-date" type="date" required>
+                    </label>
+                    <label class="area-field area-field-full">
+                        <span>Qeyd <small>istəyə bağlı</small></span>
+                        <textarea id="area-note" rows="2" maxlength="300" placeholder="Əlavə qeyd yazın"></textarea>
+                    </label>
+                </div>
+                <div class="area-calculation" aria-live="polite">
+                    <span>Ümumi sahə</span>
+                    <output id="area-calculated-value">0,00 m²</output>
+                </div>
+                <button class="primary-button area-save-button" type="submit"><span aria-hidden="true">＋</span> Ölçünü yadda saxla</button>
+                <p class="area-sync-note">Google Sheets bağlantısı qurulana qədər qeydlər bu cihazda saxlanacaq.</p>
+            </form>
+            <div class="area-records-heading">
+                <div><span>YADDA SAXLANANLAR</span><strong id="area-record-count">0 qeyd</strong></div>
+                <output id="area-total-value">0,00 m²</output>
+            </div>
+            <ul id="area-record-list" class="area-record-list" aria-live="polite">
+                <li class="area-empty">Hələ ölçü qeydi yoxdur.</li>
+            </ul>
+        </section>
+
+        <section id="reminders-view" class="view reminders-view" hidden>
+            <div class="reminder-page-heading">
+                <div class="reminder-page-kicker"><span class="dashboard-live-dot"></span> GÜNDƏLİK QEYDLƏR</div>
+                <h2>Xatırlatmalar</h2>
+                <p>Vacib işi və vaxtını yazın. Xatırlatmalar daxil olduğunuz hesaba ayrıca bağlanır.</p>
+            </div>
+            <section class="reminder-notification-panel" aria-label="Bildiriş icazəsi">
+                <div class="reminder-notification-icon" aria-hidden="true">◷</div>
+                <div class="reminder-notification-copy">
+                    <strong id="reminder-permission-title">Telefon bildirişləri</strong>
+                    <p id="reminder-permission-note">Xatırlatmaları hesabınızda saxlamaq üçün daxil olun.</p>
+                </div>
+                <button id="reminder-notification-enable" class="reminder-permission-button" type="button">İcazəni aktiv et</button>
+            </section>
+            <form id="reminder-form" class="reminder-form">
+                <label class="reminder-field">
+                    <span>Nəyi xatırladaq?</span>
+                    <input id="reminder-title" type="text" maxlength="160" autocomplete="off" placeholder="Məsələn: Qonaqlar gələcək" required>
+                </label>
+                <label class="reminder-field">
+                    <span>Tarix və saat</span>
+                    <input id="reminder-datetime" type="datetime-local" required>
+                </label>
+                <div class="reminder-offset"><span aria-hidden="true">◷</span> Vaxtından 10 dəqiqə əvvəl başlayaraq hər 2 dəqiqədə bir bildiriş</div>
+                <button class="primary-button reminder-save-button" type="submit"><span aria-hidden="true">＋</span> Xatırlatma əlavə et</button>
+            </form>
+            <div class="reminders-list-heading">
+                <div><span>YADDA SAXLANANLAR</span><strong id="reminder-count">0 aktiv</strong></div>
+            </div>
+            <ul id="reminder-list" class="reminder-list" aria-live="polite">
+                <li class="reminder-empty">Hələ xatırlatma əlavə edilməyib.</li>
+            </ul>
+        </section>
+
         <section id="about-view" class="view about-view" hidden>
             <div class="about-page-kicker"><span class="dashboard-live-dot"></span> LİMAN ANBARI · TƏTBİQ</div>
             <div class="about-card">
@@ -153,8 +244,8 @@
                     <div class="about-icon" aria-hidden="true">i</div>
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
-                    <p class="about-intro">QR rəf kodunu skan edib malların yerini və sayını tapmaq, paylama qeydlərini isə bir yerdən izləmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.40</strong></span>
+                    <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, xatırlatma və paylama qeydlərini bir yerdə idarə etmək üçün hazırlanıb.</p>
+                    <span class="about-version">Versiya <strong>1.52</strong></span>
                 </div>
                 <section class="about-feature-section" aria-labelledby="about-features-title">
                     <div class="about-section-heading">
@@ -162,7 +253,7 @@
                             <span class="about-label">GÜNDƏLİK İŞ ÜÇÜN</span>
                             <h3 id="about-features-title">Tətbiqin imkanları</h3>
                         </div>
-                        <span class="about-feature-count" aria-hidden="true">04</span>
+                        <span class="about-feature-count" aria-hidden="true">05</span>
                     </div>
                     <div class="about-feature-grid">
                         <article class="about-feature-card">
@@ -180,6 +271,10 @@
                         <article class="about-feature-card">
                             <span class="about-feature-icon" aria-hidden="true">◷</span>
                             <div><h4>Canlı günün icmalı</h4><p>Saatı, tarixi və bugünkü paylama sayını izləyin; yeni gün başlayanda icmal yenilənir.</p></div>
+                        </article>
+                        <article class="about-feature-card">
+                            <span class="about-feature-icon" aria-hidden="true">⏰</span>
+                            <div><h4>Xatırlatmalar</h4><p>Vacib işləri qeyd edin və son 10 dəqiqədə hər 2 dəqiqədən bir xatırladın.</p></div>
                         </article>
                     </div>
                     <p class="about-feature-note">Jurnalı açanda və ya “Yenilə” düyməsinə basanda qeydləri təzələyin.</p>
@@ -199,7 +294,7 @@
                     </div>
                     <div class="about-purpose">
                         <span class="about-label">MƏQSƏD</span>
-                        <p>Rəf axtarışını, günün paylama icmalını və malların verilmə tarixçəsini bir tətbiqdə toplamaq.</p>
+                        <p>Rəf axtarışını, sahə ölçülərini, vacib xatırlatmaları və paylama tarixçəsini bir tətbiqdə toplamaq.</p>
                     </div>
                 </div>
             </div>
@@ -251,12 +346,43 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.40</span>
+            <span class="footer-version">Versiya 1.52</span>
         </footer>
     </main>
+    <dialog id="area-record-dialog" class="area-record-dialog" aria-labelledby="area-dialog-title">
+        <div class="area-record-dialog-panel">
+            <header class="area-record-dialog-header">
+                <span id="area-dialog-kicker" class="area-record-dialog-kicker">ƏRAZİ QEYDİ</span>
+                <button id="area-dialog-close" class="area-dialog-close" type="button" aria-label="Pəncərəni bağla">×</button>
+            </header>
+            <div id="area-record-dialog-content" class="area-record-dialog-content"></div>
+        </div>
+    </dialog>
+    <dialog id="account-dialog" class="area-record-dialog account-dialog" aria-labelledby="account-dialog-title">
+        <div class="area-record-dialog-panel">
+            <header class="area-record-dialog-header">
+                <span class="area-record-dialog-kicker">LİMAN ANBARI · HESAB</span>
+                <button id="account-dialog-close" class="area-dialog-close" type="button" aria-label="Pəncərəni bağla">×</button>
+            </header>
+            <form id="account-login-form" class="account-login-form">
+                <span class="account-login-mark" aria-hidden="true">↗</span>
+                <h2 id="account-dialog-title">Hesaba daxil ol</h2>
+                <p>Xatırlatmalarınız bu hesabda ayrıca saxlanacaq.</p>
+                <label class="account-login-field"><span>E-poçt</span><input id="account-email" type="email" autocomplete="username" required></label>
+                <label class="account-login-field"><span>Şifrə</span><input id="account-password" type="password" autocomplete="current-password" required></label>
+                <p id="account-login-error" class="account-login-error" role="alert" hidden></p>
+                <button class="primary-button account-login-submit" type="submit">Daxil ol</button>
+                <p class="account-login-footnote">Hesab məlumatını tətbiqin administratoru verir.</p>
+            </form>
+        </div>
+    </dialog>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-    <script src="app-config.js?v=3"></script>
-    <script src="script.js?v=30"></script>
+    <script src="app-config.js?v=5"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
+    <script src="script.js?v=41"></script>
 </body>
 </html>
 
