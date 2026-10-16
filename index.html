@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=67">
+    <link rel="stylesheet" href="style.css?v=69">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -57,11 +57,41 @@
                 <span></span><span></span><span></span>
             </button>
             <nav id="app-menu" class="app-menu" aria-label="Əsas menyu" hidden>
-                <button type="button" data-menu-view="home">Ana səhifə</button>
-                <button type="button" data-menu-view="distribution">Paylama jurnalı</button>
-                <button type="button" data-menu-view="area-measurement">Sahə ölçümü</button>
-                <button type="button" data-menu-view="reminders">Xatırlatmalar</button>
-                <button type="button" data-menu-view="about">Tətbiq haqqında</button>
+                <div class="app-menu-heading">
+                    <div><span class="app-menu-kicker">LİMAN ANBARI</span><strong>Bölmələr</strong></div>
+                    <span class="app-menu-heading-mark" aria-hidden="true">↗</span>
+                </div>
+                <span class="app-menu-divider" aria-hidden="true"></span>
+                <button type="button" data-menu-view="home">
+                    <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-home.png" alt="" onerror="this.hidden=true"></span>
+                    <span class="app-menu-item-copy"><strong>Ana səhifə</strong><small>Ümumi baxış</small></span>
+                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
+                </button>
+                <button type="button" data-menu-view="distribution">
+                    <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-journal.png" alt="" onerror="this.hidden=true"></span>
+                    <span class="app-menu-item-copy"><strong>Paylama jurnalı</strong><small>Verilən mallar</small></span>
+                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
+                </button>
+                <button type="button" data-menu-view="area-measurement">
+                    <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-area.png" alt="" onerror="this.hidden=true"></span>
+                    <span class="app-menu-item-copy"><strong>Sahə ölçümü</strong><small>Ərazi qeydləri</small></span>
+                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
+                </button>
+                <button id="approval-menu-link" type="button" data-menu-view="approvals" hidden>
+                    <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-approvals.png" alt="" onerror="this.hidden=true"></span>
+                    <span class="app-menu-item-copy"><strong>Qeydiyyat sorğuları</strong><small>Təsdiq gözləyən hesablar</small></span>
+                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
+                </button>
+                <button type="button" data-menu-view="reminders">
+                    <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-reminders.png" alt="" onerror="this.hidden=true"></span>
+                    <span class="app-menu-item-copy"><strong>Xatırlatmalar</strong><small>Vacib vaxtlar</small></span>
+                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
+                </button>
+                <button type="button" data-menu-view="about">
+                    <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-about.png" alt="" onerror="this.hidden=true"></span>
+                    <span class="app-menu-item-copy"><strong>Tətbiq haqqında</strong><small>Məlumat və versiya</small></span>
+                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
+                </button>
             </nav>
         </div>
         <header class="app-header">
@@ -237,6 +267,20 @@
             </ul>
         </section>
 
+        <section id="approval-view" class="view approval-view" hidden>
+            <div class="approval-page-heading">
+                <div class="approval-page-kicker"><span class="dashboard-live-dot"></span> HESAB İDARƏETMƏSİ</div>
+                <h2>Qeydiyyat sorğuları</h2>
+                <p>Yeni istifadəçiləri yoxlayıb tətbiq hesabını təsdiqləyin.</p>
+            </div>
+            <div class="approval-toolbar">
+                <div><span>GÖZLƏYƏN SORĞULAR</span><strong id="approval-count">0</strong></div>
+                <button id="approval-refresh" class="secondary-button" type="button"><span aria-hidden="true">↻</span> Yenilə</button>
+            </div>
+            <p id="approval-status" class="approval-status" role="status" aria-live="polite">Sorğular yüklənir…</p>
+            <ul id="approval-list" class="approval-list" aria-live="polite"></ul>
+        </section>
+
         <section id="about-view" class="view about-view" hidden>
             <div class="about-page-kicker"><span class="dashboard-live-dot"></span> LİMAN ANBARI · TƏTBİQ</div>
             <div class="about-card">
@@ -245,7 +289,7 @@
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
                     <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, xatırlatma və paylama qeydlərini bir yerdə idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.55</strong></span>
+                    <span class="about-version">Versiya <strong>1.57</strong></span>
                 </div>
                 <section class="about-feature-section" aria-labelledby="about-features-title">
                     <div class="about-section-heading">
@@ -346,7 +390,7 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.55</span>
+            <span class="footer-version">Versiya 1.57</span>
         </footer>
     </main>
     <dialog id="area-record-dialog" class="area-record-dialog" aria-labelledby="area-dialog-title">
@@ -367,12 +411,14 @@
             <form id="account-login-form" class="account-login-form">
                 <span class="account-login-mark" aria-hidden="true">↗</span>
                 <h2 id="account-dialog-title">Hesaba daxil ol</h2>
-                <p>Xatırlatmalarınız bu hesabda ayrıca saxlanacaq.</p>
+                <p id="account-dialog-description">Xatırlatmalarınız bu hesabda ayrıca saxlanacaq.</p>
+                <label id="account-name-field" class="account-login-field" hidden><span>Ad və soyad</span><input id="account-name" type="text" minlength="2" maxlength="80" autocomplete="name" disabled></label>
                 <label class="account-login-field"><span>E-poçt</span><input id="account-email" type="email" autocomplete="username" required></label>
-                <label class="account-login-field"><span>Şifrə</span><input id="account-password" type="password" autocomplete="current-password" required></label>
+                <label class="account-login-field"><span>Şifrə</span><input id="account-password" type="password" minlength="6" autocomplete="current-password" required></label>
                 <p id="account-login-error" class="account-login-error" role="alert" hidden></p>
                 <button class="primary-button account-login-submit" type="submit">Daxil ol</button>
-                <p class="account-login-footnote">Hesab məlumatını tətbiqin administratoru verir.</p>
+                <p id="account-login-footnote" class="account-login-footnote">Hesabınız yoxdursa, qeydiyyat sorğusu göndərin.</p>
+                <button id="account-mode-toggle" class="account-mode-toggle" type="button">Qeydiyyat</button>
             </form>
         </div>
     </dialog>
@@ -382,7 +428,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=43"></script>
+    <script src="script.js?v=44"></script>
 </body>
 </html>
 

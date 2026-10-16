@@ -2,6 +2,7 @@
 const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=870115945&single=true&output=csv";
 // Yalnız yayımlanmış Paylanma Jurnalı vərəqinin oxu linkidir.
 const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=2059277788&single=true&output=csv";
+const LIMAN_ADMIN_UID = "uXqtWccnKOaCHJZp2vAMF0bZ9R42";
 
 let anbarData = [];
 let distributionRecords = [];
@@ -28,6 +29,9 @@ let reminderSubscription = null;
 let pushTokenRegistered = false;
 let pushTokenSyncing = false;
 let pushTokenError = "";
+let authStateVersion = 0;
+let accountRegistrationInProgress = false;
+let accountDialogMode = "login";
 
 const homeView = document.getElementById("home-view");
 const scanView = document.getElementById("scan-view");
@@ -36,6 +40,12 @@ const distributionView = document.getElementById("distribution-view");
 const areaMeasurementView = document.getElementById("area-measurement-view");
 const aboutView = document.getElementById("about-view");
 const remindersView = document.getElementById("reminders-view");
+const approvalView = document.getElementById("approval-view");
+const approvalMenuLink = document.getElementById("approval-menu-link");
+const approvalList = document.getElementById("approval-list");
+const approvalCount = document.getElementById("approval-count");
+const approvalStatus = document.getElementById("approval-status");
+const approvalRefreshButton = document.getElementById("approval-refresh");
 const reminderForm = document.getElementById("reminder-form");
 const reminderTitleInput = document.getElementById("reminder-title");
 const reminderDateTimeInput = document.getElementById("reminder-datetime");
@@ -87,8 +97,14 @@ const appMenu = document.getElementById("app-menu");
 const menuBackdrop = document.getElementById("menu-backdrop");
 const accountDialog = document.getElementById("account-dialog");
 const accountLoginForm = document.getElementById("account-login-form");
+const accountNameField = document.getElementById("account-name-field");
+const accountNameInput = document.getElementById("account-name");
 const accountEmailInput = document.getElementById("account-email");
 const accountPasswordInput = document.getElementById("account-password");
+const accountDialogTitle = document.getElementById("account-dialog-title");
+const accountDialogDescription = document.getElementById("account-dialog-description");
+const accountLoginFootnote = document.getElementById("account-login-footnote");
+const accountModeToggle = document.getElementById("account-mode-toggle");
 const accountLoginError = document.getElementById("account-login-error");
 const accountDialogClose = document.getElementById("account-dialog-close");
 document.body.classList.add("home-screen");
@@ -143,11 +159,17 @@ appMenu.addEventListener("click", function (event) {
         showActionToast("Xatırlatmalar üçün hesabınıza daxil olun.");
         return;
     }
+    if (targetView === "approvals" && currentAuthUser?.uid !== LIMAN_ADMIN_UID) {
+        closeMenu();
+        showActionToast("Bu bölmə yalnız administrator üçündür.");
+        return;
+    }
     showView(targetView);
     closeMenu();
     if (targetView === "distribution") loadDistributionJournal();
     if (targetView === "area-measurement") renderAreaMeasurements();
     if (targetView === "reminders") renderReminders();
+    if (targetView === "approvals") void loadRegistrationRequests();
 });
 
 document.addEventListener("click", function (event) {
@@ -159,18 +181,21 @@ document.addEventListener("keydown", function (event) {
 });
 
 function showView(view) {
+    if (view === "approvals" && currentAuthUser?.uid !== LIMAN_ADMIN_UID) view = "home";
     document.body.classList.toggle("home-screen", view === "home");
     document.body.classList.toggle("scan-screen", view === "scan");
     document.body.classList.toggle("distribution-screen", view === "distribution");
     document.body.classList.toggle("area-measurement-screen", view === "area-measurement");
     document.body.classList.toggle("reminders-screen", view === "reminders");
     document.body.classList.toggle("about-screen", view === "about");
+    document.body.classList.toggle("approval-screen", view === "approvals");
     homeView.hidden = view !== "home";
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
     distributionView.hidden = view !== "distribution";
     areaMeasurementView.hidden = view !== "area-measurement";
     remindersView.hidden = view !== "reminders";
+    approvalView.hidden = view !== "approvals";
     aboutView.hidden = view !== "about";
     dataStatus.hidden = true;
 }
@@ -188,23 +213,90 @@ function initializeFirebaseAccount() {
         firebaseDb = firebase.firestore();
         try { firebaseMessaging = firebase.messaging(app); } catch (_) { firebaseMessaging = null; }
         if (firebaseMessaging) firebaseMessaging.onMessage(handleForegroundPush);
-        firebaseAuth.onAuthStateChanged(user => {
-            currentAuthUser = user || null;
+        firebaseAuth.onAuthStateChanged(async user => {
+            const stateVersion = ++authStateVersion;
+            if (accountRegistrationInProgress) return;
+
+            currentAuthUser = null;
             pushTokenRegistered = false;
             pushTokenSyncing = false;
             pushTokenError = "";
-            loginPlaceholder.textContent = user ? "Çıxış" : "Daxil ol";
+            approvalMenuLink.hidden = true;
+            loginPlaceholder.textContent = "Daxil ol";
             if (reminderSubscription) {
                 reminderSubscription();
                 reminderSubscription = null;
             }
+            reminders = [];
+            renderReminders();
+
             if (!user) {
-                reminders = [];
-                renderReminders();
                 updateReminderPermissionState();
                 return;
             }
 
+            if (user.uid !== LIMAN_ADMIN_UID) {
+                let profileSnapshot;
+                try {
+                    profileSnapshot = await firebaseDb.collection("users").doc(user.uid).get();
+                } catch (error) {
+                    if (stateVersion !== authStateVersion) return;
+                    console.error("Hesab təsdiqi yoxlanmadı", error);
+                    await firebaseAuth.signOut();
+                    accountLoginError.textContent = "Hesab təsdiqini yoxlamaq olmadı. İnterneti yoxlayıb yenidən cəhd edin.";
+                    accountLoginError.hidden = false;
+                    if (!accountDialog.open) accountDialog.showModal();
+                    return;
+                }
+
+                if (stateVersion !== authStateVersion) return;
+                let profile = profileSnapshot.exists ? profileSnapshot.data() : null;
+                if (!profile) {
+                    const emailName = String(user.email || "").split("@")[0].trim();
+                    const displayName = String(user.displayName || emailName || "İstifadəçi").trim().slice(0, 80);
+                    try {
+                        await firebaseDb.collection("users").doc(user.uid).set({
+                            displayName: displayName.length >= 2 ? displayName : "İstifadəçi",
+                            email: user.email || "",
+                            status: "pending",
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } catch (error) {
+                        if (stateVersion !== authStateVersion) return;
+                        console.error("Hesab üçün təsdiq sorğusu yaradıla bilmədi", error);
+                        await firebaseAuth.signOut();
+                        accountLoginError.textContent = "Təsdiq sorğusu yaradıla bilmədi. Firebase qaydalarını yeniləyib yenidən cəhd edin.";
+                        accountLoginError.hidden = false;
+                        if (!accountDialog.open) accountDialog.showModal();
+                        return;
+                    }
+                    if (stateVersion !== authStateVersion) return;
+                    await firebaseAuth.signOut();
+                    accountLoginError.textContent = "Hesabınızın təsdiq sorğusu göndərildi. Administrator təsdiqləyəndən sonra daxil ola bilərsiniz.";
+                    accountLoginError.hidden = false;
+                    if (!accountDialog.open) accountDialog.showModal();
+                    updateReminderPermissionState();
+                    return;
+                }
+
+                if (profile.status !== "approved") {
+                    await firebaseAuth.signOut();
+                    accountLoginError.textContent = profile?.status === "pending"
+                        ? "Qeydiyyat sorğunuz təsdiq gözləyir. Təsdiqdən sonra bu hesabla daxil ola bilərsiniz."
+                        : profile?.status === "rejected"
+                            ? "Bu hesab üçün giriş təsdiqlənməyib. Administratorla əlaqə saxlayın."
+                            : "Hesab profili tapılmadı. Qeydiyyat sorğusu göndərin və təsdiqi gözləyin.";
+                    accountLoginError.hidden = false;
+                    if (!accountDialog.open) accountDialog.showModal();
+                    updateReminderPermissionState();
+                    return;
+                }
+            }
+
+            if (stateVersion !== authStateVersion) return;
+            currentAuthUser = user;
+            loginPlaceholder.textContent = "Çıxış";
+            approvalMenuLink.hidden = user.uid !== LIMAN_ADMIN_UID;
             reminders = loadReminders(user.uid);
             renderReminders();
             reminderSubscription = firebaseDb.collection("users").doc(user.uid)
@@ -1754,20 +1846,156 @@ accountLoginForm.addEventListener("submit", async event => {
     submit.disabled = true;
     accountLoginError.hidden = true;
     try {
-        await firebaseAuth.signInWithEmailAndPassword(accountEmailInput.value.trim(), accountPasswordInput.value);
-        accountDialog.close();
-        accountLoginForm.reset();
-        showActionToast("Hesaba daxil oldunuz.");
+        if (accountDialogMode === "register") {
+            const displayName = accountNameInput.value.trim();
+            if (displayName.length < 2) throw new Error("Ad və soyadı daxil edin.");
+            accountRegistrationInProgress = true;
+            const credential = await firebaseAuth.createUserWithEmailAndPassword(
+                accountEmailInput.value.trim(),
+                accountPasswordInput.value
+            );
+            try {
+                await credential.user.updateProfile({ displayName });
+                await firebaseDb.collection("users").doc(credential.user.uid).set({
+                    displayName,
+                    email: credential.user.email || accountEmailInput.value.trim(),
+                    status: "pending",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                try { await credential.user.delete(); } catch (cleanupError) { console.warn("Yarımçıq qeydiyyat təmizlənmədi", cleanupError); }
+                throw error;
+            } finally {
+                await firebaseAuth.signOut();
+            }
+            accountDialog.close();
+            accountLoginForm.reset();
+            setAccountDialogMode("login");
+            showActionToast("Qeydiyyat sorğunuz göndərildi. Təsdiqi gözləyin.");
+        } else {
+            await firebaseAuth.signInWithEmailAndPassword(accountEmailInput.value.trim(), accountPasswordInput.value);
+            accountDialog.close();
+            accountLoginForm.reset();
+            showActionToast("Hesab yoxlanılır…");
+        }
     } catch (error) {
         console.error("Hesaba giriş alınmadı", error);
-        accountLoginError.textContent = error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found"
-            ? "E-poçt və ya şifrə düzgün deyil."
-            : "Daxil olmaq alınmadı. İnterneti yoxlayıb yenidən cəhd edin.";
+        accountLoginError.textContent = error.message === "Ad və soyadı daxil edin."
+            ? error.message
+            : error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found"
+                ? "E-poçt və ya şifrə düzgün deyil."
+                : error.code === "auth/email-already-in-use"
+                    ? "Bu e-poçtla artıq hesab yaradılıb. Daxil olma bölməsindən yoxlayın."
+                    : error.code === "auth/weak-password"
+                        ? "Şifrə ən azı 6 simvol olmalıdır."
+                        : error.code === "auth/invalid-email"
+                            ? "E-poçt ünvanını düzgün yazın."
+                            : accountDialogMode === "register"
+                                ? "Qeydiyyat sorğusu göndərilmədi. İnterneti yoxlayıb yenidən cəhd edin."
+                                : "Daxil olmaq alınmadı. İnterneti yoxlayıb yenidən cəhd edin.";
         accountLoginError.hidden = false;
     } finally {
+        accountRegistrationInProgress = false;
         submit.disabled = false;
     }
 });
+
+function setAccountDialogMode(mode) {
+    accountDialogMode = mode === "register" ? "register" : "login";
+    const isRegistration = accountDialogMode === "register";
+    accountDialogTitle.textContent = isRegistration ? "Qeydiyyat sorğusu" : "Hesaba daxil ol";
+    accountDialogDescription.textContent = isRegistration
+        ? "Hesabınız administrator təsdiqindən sonra aktiv olacaq."
+        : "Xatırlatmalarınız bu hesabda ayrıca saxlanacaq.";
+    accountLoginFootnote.textContent = isRegistration
+        ? "Sorğu təsdiqlənənədək hesabla daxil olmaq mümkün olmayacaq."
+        : "Hesabınız yoxdursa, qeydiyyat sorğusu göndərin.";
+    accountModeToggle.textContent = isRegistration ? "Artıq hesabım var · Daxil ol" : "Qeydiyyat sorğusu göndər";
+    accountNameField.hidden = !isRegistration;
+    accountNameInput.disabled = !isRegistration;
+    accountNameInput.required = isRegistration;
+    accountPasswordInput.autocomplete = isRegistration ? "new-password" : "current-password";
+    accountLoginForm.querySelector('button[type="submit"]').textContent = isRegistration ? "Sorğu göndər" : "Daxil ol";
+}
+
+accountModeToggle.addEventListener("click", () => {
+    accountLoginError.hidden = true;
+    setAccountDialogMode(accountDialogMode === "register" ? "login" : "register");
+});
+
+approvalRefreshButton.addEventListener("click", () => void loadRegistrationRequests());
+approvalList.addEventListener("click", async event => {
+    const approveButton = event.target.closest("[data-approve-user]");
+    if (!approveButton || currentAuthUser?.uid !== LIMAN_ADMIN_UID) return;
+
+    const uid = approveButton.dataset.approveUser;
+    if (!uid) return;
+    approveButton.disabled = true;
+    approvalStatus.textContent = "Hesab təsdiqlənir…";
+    try {
+        await firebaseDb.collection("users").doc(uid).update({
+            status: "approved",
+            approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            approvedBy: currentAuthUser.uid
+        });
+        showActionToast("Hesab təsdiqləndi.");
+        await loadRegistrationRequests();
+    } catch (error) {
+        console.error("Hesab təsdiqlənmədi", error);
+        approvalStatus.textContent = "Təsdiq alınmadı. Firebase qaydalarını yoxlayın və yenidən cəhd edin.";
+        approveButton.disabled = false;
+    }
+});
+
+async function loadRegistrationRequests() {
+    if (currentAuthUser?.uid !== LIMAN_ADMIN_UID || !firebaseDb) return;
+    approvalRefreshButton.disabled = true;
+    approvalStatus.textContent = "Sorğular yüklənir…";
+    approvalList.replaceChildren();
+    try {
+        const snapshot = await firebaseDb.collection("users")
+            .where("status", "==", "pending")
+            .limit(50)
+            .get();
+        const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        requests.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+            const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+            return aTime - bTime;
+        });
+        approvalCount.textContent = String(requests.length);
+        if (!requests.length) {
+            approvalStatus.textContent = "Hazırda təsdiq gözləyən qeydiyyat yoxdur.";
+            return;
+        }
+
+        approvalStatus.textContent = "Təsdiqləmək istədiyiniz hesabı seçin.";
+        requests.forEach(request => {
+            const item = document.createElement("li");
+            item.className = "approval-card";
+            const copy = document.createElement("div");
+            copy.className = "approval-card-copy";
+            const name = document.createElement("strong");
+            name.textContent = request.displayName || "Ad göstərilməyib";
+            const email = document.createElement("span");
+            email.textContent = request.email || "E-poçt göstərilməyib";
+            copy.append(name, email);
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "primary-button approval-approve-button";
+            button.dataset.approveUser = request.id;
+            button.textContent = "Təsdiqlə";
+            item.append(copy, button);
+            approvalList.appendChild(item);
+        });
+    } catch (error) {
+        console.error("Qeydiyyat sorğuları yüklənmədi", error);
+        approvalCount.textContent = "—";
+        approvalStatus.textContent = "Sorğuları yükləmək olmadı. Firebase qaydalarını və interneti yoxlayın.";
+    } finally {
+        approvalRefreshButton.disabled = false;
+    }
+}
 
 accountDialogClose.addEventListener("click", () => accountDialog.close());
 accountDialog.addEventListener("click", event => {

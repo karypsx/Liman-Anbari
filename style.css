@@ -506,6 +506,39 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 .account-login-submit { width: 100%; min-height: 46px; margin-top: 3px; }
 .account-login-form .account-login-footnote { color: #81958a; font-size: 9px; text-align: center; }
 .account-login-error { padding: 10px 12px; border-radius: 10px; color: #ffc0b8 !important; background: rgba(214,86,68,.11); }
+.account-mode-toggle {
+    justify-self: center;
+    min-height: 36px;
+    padding: 6px 11px;
+    border: 0;
+    border-radius: 10px;
+    color: #8ee3ac;
+    background: transparent;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color .18s ease, background .18s ease, transform .18s ease;
+}
+.account-mode-toggle:hover { color: #c8f8d8; background: rgba(57,201,130,.08); }
+.account-mode-toggle:active { transform: scale(.98); }
+.approval-view { gap: 16px; }
+.approval-page-heading { display: grid; gap: 8px; padding: 0 2px; }
+.approval-page-kicker { display: flex; align-items: center; gap: 8px; color: #83c997; font-size: 8px; font-weight: 850; letter-spacing: 1.5px; }
+.approval-page-heading h2 { margin: 2px 0 0; color: #eff6f1; font-size: clamp(25px, 6vw, 34px); letter-spacing: -.7px; }
+.approval-page-heading p { max-width: 480px; margin: 0; color: #9eafa5; font-size: 11px; line-height: 1.55; }
+.approval-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 2px; }
+.approval-toolbar > div { display: grid; gap: 5px; }
+.approval-toolbar > div > span { color: #789083; font-size: 8px; font-weight: 850; letter-spacing: 1.1px; }
+.approval-toolbar > div > strong { color: #a9edbf; font-size: 23px; line-height: 1; }
+.approval-toolbar button { min-height: 38px; padding: 7px 12px; border-radius: 12px; font-size: 10px; }
+.approval-status { min-height: 18px; margin: 0 2px; color: #91a69a; font-size: 10px; line-height: 1.5; }
+.approval-list { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.approval-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 2px; border-bottom: 1px solid rgba(255,255,255,.075); }
+.approval-card-copy { display: grid; gap: 5px; min-width: 0; }
+.approval-card-copy strong { overflow: hidden; color: #e7f1ea; font-size: 12px; font-weight: 720; text-overflow: ellipsis; }
+.approval-card-copy span { overflow-wrap: anywhere; color: #899d91; font-size: 10px; }
+.approval-approve-button { flex: none; min-height: 37px; padding: 7px 13px; border-radius: 11px; font-size: 10px; }
 @keyframes area-dialog-pop-in { from { opacity: 0; transform: translateY(12px) scale(.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes area-dialog-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 .journal-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
@@ -1114,6 +1147,15 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
     .scan-screen #reader { max-width: 760px; min-height: 390px; margin: 0 auto; }
     .scan-screen #reader__scan_region { min-height: 390px; }
 
+    .approval-view { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .approval-page-heading h2 { font-size: 36px; }
+    .approval-page-heading p { font-size: 13px; }
+    .approval-toolbar { padding: 15px 18px; border-radius: 18px; background: linear-gradient(145deg, rgba(25,39,33,.7), rgba(13,21,18,.7)); }
+    .approval-list { gap: 8px; }
+    .approval-card { min-height: 74px; padding: 14px 16px; border: 1px solid rgba(106,153,128,.16); border-radius: 16px; background: linear-gradient(145deg, rgba(25,39,33,.72), rgba(13,21,18,.76)); }
+    .approval-card-copy strong { font-size: 14px; }
+    .approval-card-copy span { font-size: 11px; }
+
     .app-footer {
         display: flex;
         align-items: center;
@@ -1137,4 +1179,91 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
         font-weight: 600;
         letter-spacing: .2px;
     }
+}
+
+/* Premium menu rows and reserved PNG icon slots. */
+.app-menu {
+    gap: 5px;
+    width: min(276px, calc(100vw - 32px));
+    max-height: min(76dvh, 540px);
+    overflow: auto;
+    padding: 11px;
+    border: 1px solid rgba(136, 194, 157, .17);
+    border-radius: 21px;
+    background: linear-gradient(155deg, rgba(24, 41, 32, .97), rgba(12, 21, 17, .97));
+    box-shadow: 0 24px 64px rgba(0, 0, 0, .48), inset 0 1px rgba(255, 255, 255, .035);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    transform-origin: top right;
+}
+
+.app-menu:not([hidden]) { animation: app-menu-enter .2s cubic-bezier(.2, .8, .2, 1) both; }
+.app-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 8px 10px; }
+.app-menu-heading > div { display: grid; gap: 3px; }
+.app-menu-kicker { color: #79dba0; font-size: 8px; font-weight: 850; letter-spacing: 1.6px; }
+.app-menu-heading strong { color: #edf5ef; font-size: 16px; font-weight: 720; letter-spacing: -.2px; }
+.app-menu-heading-mark { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid rgba(90, 211, 139, .13); border-radius: 11px; color: #83e0a7; background: rgba(57, 201, 130, .075); font-size: 16px; }
+.app-menu-divider { height: 1px; margin: 0 7px 5px; background: linear-gradient(90deg, rgba(111, 196, 143, .17), rgba(255, 255, 255, .025)); }
+.app-menu button {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    min-height: 58px;
+    padding: 8px 9px;
+    border: 1px solid transparent;
+    border-radius: 15px;
+    color: #e7f0e9;
+    background: transparent;
+    text-align: left;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+
+.app-menu-icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(105, 204, 145, .15);
+    border-radius: 13px;
+    background: linear-gradient(145deg, rgba(57, 201, 130, .12), rgba(57, 201, 130, .035));
+    box-shadow: inset 0 1px rgba(255, 255, 255, .025);
+}
+
+.app-menu-icon img { display: block; width: 23px; height: 23px; object-fit: contain; }
+.app-menu-item-copy { display: grid; gap: 3px; min-width: 0; }
+.app-menu-item-copy strong { overflow: hidden; color: inherit; font-size: 12px; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.app-menu-item-copy small { overflow: hidden; color: #82998b; font-size: 9px; font-weight: 500; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.app-menu-item-arrow { color: #5c8f6f; font-size: 21px; line-height: 1; text-align: center; transition: color .18s ease, transform .18s ease; }
+.app-menu button:hover,
+.app-menu button:focus-visible {
+    border-color: rgba(92, 207, 139, .18);
+    color: #c8f8d9;
+    background: linear-gradient(100deg, rgba(57, 201, 130, .13), rgba(57, 201, 130, .035));
+    box-shadow: inset 0 1px rgba(255, 255, 255, .025);
+    outline: none;
+    transform: translateX(2px);
+}
+
+.app-menu button:hover .app-menu-icon,
+.app-menu button:focus-visible .app-menu-icon { border-color: rgba(105, 226, 154, .33); background: rgba(57, 201, 130, .15); }
+.app-menu button:hover .app-menu-item-arrow,
+.app-menu button:focus-visible .app-menu-item-arrow { color: #91e4ae; transform: translateX(2px); }
+.app-menu button:active { color: #e8fff0; background: rgba(57, 201, 130, .19); box-shadow: none; transform: scale(.985); }
+.app-menu button:focus { outline: none; -webkit-tap-highlight-color: transparent; }
+
+@keyframes app-menu-enter {
+    from { opacity: 0; transform: translateY(-7px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (min-width: 900px) {
+    .app-menu { width: 286px; padding: 12px; }
+    .app-menu button { min-height: 62px; gap: 12px; padding: 9px 10px; }
+    .app-menu-icon { width: 42px; height: 42px; }
+    .app-menu-icon img { width: 24px; height: 24px; }
+    .app-menu-item-copy strong { font-size: 13px; }
+    .app-menu-item-copy small { font-size: 10px; }
 }
