@@ -25,6 +25,9 @@ let firebaseDb = null;
 let firebaseMessaging = null;
 let currentAuthUser = null;
 let reminderSubscription = null;
+let pushTokenRegistered = false;
+let pushTokenSyncing = false;
+let pushTokenError = "";
 
 const homeView = document.getElementById("home-view");
 const scanView = document.getElementById("scan-view");
@@ -187,6 +190,9 @@ function initializeFirebaseAccount() {
         if (firebaseMessaging) firebaseMessaging.onMessage(handleForegroundPush);
         firebaseAuth.onAuthStateChanged(user => {
             currentAuthUser = user || null;
+            pushTokenRegistered = false;
+            pushTokenSyncing = false;
+            pushTokenError = "";
             loginPlaceholder.textContent = user ? "Çıxış" : "Daxil ol";
             if (reminderSubscription) {
                 reminderSubscription();
@@ -216,7 +222,13 @@ function initializeFirebaseAccount() {
                     showActionToast("Xatırlatmaları yükləmək olmadı. İnterneti yoxlayın.");
                 });
             updateReminderPermissionState();
-            if ("Notification" in window && Notification.permission === "granted") void syncPushToken(false);
+            if ("Notification" in window && Notification.permission === "granted") {
+                void syncPushToken(false).catch(error => {
+                    pushTokenError = error.message || "Telefon bildiriş xidməti qoşula bilmədi.";
+                    console.warn("Telefonun bildiriş açarı qeydiyyata alınmadı:", error);
+                    updateReminderPermissionState();
+                });
+            }
         });
     } catch (error) {
         console.error("Firebase başlatma xətası", error);
@@ -370,11 +382,18 @@ function updateReminderPermissionState() {
         reminderPermissionButton.textContent = "Daxil ol";
         return;
     }
-    if (Notification.permission === "granted") {
+    if (Notification.permission === "granted" && pushTokenRegistered) {
         reminderPermissionTitle.textContent = "Telefon bildirişləri aktivdir";
         reminderPermissionNote.textContent = "Bu cihaz qoşulub. Bildirişlər 10 dəq, 5 dəq qalmış və vaxtı çatanda gələcək.";
         reminderPermissionButton.textContent = "Qoşulub";
         reminderPermissionButton.disabled = true;
+    } else if (Notification.permission === "granted") {
+        reminderPermissionTitle.textContent = pushTokenSyncing ? "Telefon qoşulur…" : "Telefon hələ qoşulmayıb";
+        reminderPermissionNote.textContent = pushTokenError
+            ? `Qoşulma alınmadı: ${pushTokenError}`
+            : "İcazə var, amma bu telefonun bildiriş bağlantısı hələ yadda saxlanmayıb.";
+        reminderPermissionButton.textContent = pushTokenSyncing ? "Qoşulur…" : "Yenidən qoş";
+        reminderPermissionButton.disabled = pushTokenSyncing;
     } else if (Notification.permission === "denied") {
         reminderPermissionTitle.textContent = "Bildiriş icazəsi bağlıdır";
         reminderPermissionNote.textContent = "İcazəni telefonun və ya brauzerin tətbiq ayarlarından aça bilərsiniz.";
@@ -441,28 +460,40 @@ async function syncPushToken(requestPermission = true) {
     if (!firebaseMessaging || !window.APP_CONFIG?.firebaseVapidPublicKey) throw new Error("Bildiriş xidməti hazır deyil.");
     if (!("serviceWorker" in navigator)) throw new Error("Bu cihazda bildiriş xidməti dəstəklənmir.");
 
-    let permission = Notification.permission;
-    if (permission === "default" && requestPermission) permission = await Notification.requestPermission();
-    if (permission !== "granted") throw new Error(permission === "denied" ? "Bildiriş icazəsini cihaz ayarlarından açın." : "Bildiriş icazəsi verilmədi.");
-
-    const workerUrl = new URL("firebase-messaging-sw.js", document.baseURI);
-    const workerScope = new URL("./", document.baseURI).pathname;
-    const registration = await navigator.serviceWorker.register(workerUrl.href, { scope: workerScope });
-    await registration.update().catch(() => {});
-    const token = await firebaseMessaging.getToken({
-        vapidKey: window.APP_CONFIG.firebaseVapidPublicKey,
-        serviceWorkerRegistration: registration
-    });
-    if (!token) throw new Error("Bu cihaz üçün bildiriş açarı alınmadı.");
-
-    const tokenId = await notificationTokenId(token);
-    await firebaseDb.collection("users").doc(currentAuthUser.uid).collection("tokens").doc(tokenId).set({
-        token,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        userAgent: navigator.userAgent.slice(0, 250)
-    }, { merge: true });
-    localStorage.setItem(`liman-fcm-token-id-${currentAuthUser.uid}`, tokenId);
+    pushTokenSyncing = true;
+    pushTokenError = "";
     updateReminderPermissionState();
+    try {
+        let permission = Notification.permission;
+        if (permission === "default" && requestPermission) permission = await Notification.requestPermission();
+        if (permission !== "granted") throw new Error(permission === "denied" ? "Bildiriş icazəsini cihaz ayarlarından açın." : "Bildiriş icazəsi verilmədi.");
+
+        const workerUrl = new URL("firebase-messaging-sw.js", document.baseURI);
+        const workerScope = new URL("./", document.baseURI).pathname;
+        const registration = await navigator.serviceWorker.register(workerUrl.href, { scope: workerScope });
+        await registration.update().catch(() => {});
+        const token = await firebaseMessaging.getToken({
+            vapidKey: window.APP_CONFIG.firebaseVapidPublicKey,
+            serviceWorkerRegistration: registration
+        });
+        if (!token) throw new Error("Bu telefon üçün bildiriş açarı alınmadı.");
+
+        const tokenId = await notificationTokenId(token);
+        await firebaseDb.collection("users").doc(currentAuthUser.uid).collection("tokens").doc(tokenId).set({
+            token,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            userAgent: navigator.userAgent.slice(0, 250)
+        }, { merge: true });
+        localStorage.setItem(`liman-fcm-token-id-${currentAuthUser.uid}`, tokenId);
+        pushTokenRegistered = true;
+    } catch (error) {
+        pushTokenRegistered = false;
+        pushTokenError = error.message || "Telefonun bildiriş xidməti qoşula bilmədi.";
+        throw error;
+    } finally {
+        pushTokenSyncing = false;
+        updateReminderPermissionState();
+    }
 }
 
 async function notificationTokenId(token) {
