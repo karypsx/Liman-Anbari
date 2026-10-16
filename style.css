@@ -910,3 +910,231 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
     .reminder-notification-panel { grid-template-columns: 28px minmax(0, 1fr); }
     .reminder-permission-button { grid-column: 2; justify-self: start; margin-left: -8px; }
 }
+
+/* Kompüter görünüşü: geniş ekran qaydaları mobil ölçülərin mövcud stillərinə toxunmur. */
+@media (min-width: 900px) {
+    body {
+        background:
+            radial-gradient(ellipse 62% 58% at 50% 0%, rgba(33, 75, 53, .5), transparent 72%),
+            var(--bg);
+    }
+
+    .container {
+        width: min(100%, 1380px);
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 112px clamp(38px, 5vw, 82px) 30px;
+    }
+
+    .top-label {
+        top: 28px;
+        left: clamp(38px, 5vw, 82px);
+        min-height: 52px;
+        font-size: 19px;
+        letter-spacing: .15px;
+    }
+
+    .top-label-icon { width: 27px; height: 27px; }
+
+    .app-menu-wrap {
+        top: 27px;
+        right: clamp(38px, 5vw, 82px);
+        gap: 12px;
+    }
+
+    .login-placeholder { min-height: 48px; padding: 0 14px; font-size: 13px; }
+
+    .menu-toggle {
+        width: 50px;
+        height: 50px;
+        border: 1px solid rgba(150, 198, 167, .13);
+        border-radius: 16px;
+        background: rgba(19, 34, 27, .58);
+        transition: border-color .2s ease, background .2s ease, transform .18s ease, box-shadow .2s ease;
+    }
+
+    .menu-toggle:hover, .menu-toggle:focus-visible, .menu-toggle[aria-expanded="true"] {
+        border-color: rgba(102, 220, 151, .36);
+        background: rgba(57, 201, 130, .12);
+        box-shadow: 0 10px 28px rgba(15, 75, 43, .2);
+    }
+
+    .app-menu {
+        top: 61px;
+        width: 232px;
+        padding: 8px;
+        border-color: rgba(150, 198, 167, .17);
+        border-radius: 18px;
+        background: rgba(20, 34, 28, .96);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .app-menu button { min-height: 48px; padding-inline: 14px; font-size: 13px; }
+
+    .home-screen #home-view {
+        grid-template-columns: minmax(0, 1.1fr) minmax(350px, .85fr);
+        grid-template-rows: auto 1fr;
+        grid-template-areas: "dashboard actions" "recent actions";
+        align-content: center;
+        gap: clamp(34px, 5vh, 58px) clamp(54px, 7vw, 110px);
+        width: 100%;
+        max-width: 1160px;
+        min-height: min(76vh, 790px);
+        margin: 0 auto;
+    }
+
+    .home-dashboard { grid-area: dashboard; padding: 10px 0 0; }
+    .dashboard-topline { align-items: center; }
+    .dashboard-date-wrap { gap: 11px; }
+    .dashboard-kicker { gap: 9px; font-size: 10px; letter-spacing: 1.9px; }
+    .dashboard-live-dot { width: 8px; height: 8px; }
+    .dashboard-date { font-size: 15px; }
+    .dashboard-clock-wrap { gap: 6px; }
+    .dashboard-clock { font-size: clamp(42px, 4.2vw, 58px); letter-spacing: -1.8px; }
+    .dashboard-clock-label { font-size: 9px; letter-spacing: 1.8px; }
+    .dashboard-title { margin-top: 34px; font-size: clamp(30px, 3vw, 39px); letter-spacing: -.9px; }
+    .dashboard-stats { gap: clamp(36px, 5vw, 68px); margin-top: 20px; }
+    .dashboard-stat { gap: 7px; min-width: 105px; }
+    .dashboard-stat strong { font-size: 32px; }
+    .dashboard-stat span { font-size: 12px; }
+
+    .home-launch-actions {
+        grid-area: actions;
+        align-self: center;
+        gap: 16px;
+    }
+
+    .home-scan-launch {
+        min-height: 126px;
+        gap: 18px;
+        padding: 21px 22px;
+        border-radius: 24px;
+        box-shadow: 0 18px 38px rgba(40, 191, 119, .17);
+    }
+
+    .home-scan-launch-icon { width: 64px; height: 64px; border-radius: 20px; }
+    .home-scan-launch-icon img { width: 38px; height: 38px; }
+    .home-area-launch-icon img { width: 46px; height: 46px; }
+    .home-scan-launch-copy { gap: 6px; }
+    .home-scan-kicker { font-size: 9px; letter-spacing: 1.5px; }
+    .home-scan-launch-copy strong { font-size: 21px; }
+    .home-scan-launch-copy small { font-size: 12px; }
+    .home-scan-launch-arrow { width: 42px; height: 42px; font-size: 21px; }
+
+    .home-recent-section {
+        grid-area: recent;
+        padding: 23px 0 0;
+        border-top: 1px solid rgba(255, 255, 255, .075);
+    }
+
+    .home-recent-heading { margin-bottom: 14px; }
+    .home-recent-heading h2 { font-size: 20px; }
+    .recent-open-button { gap: 7px; font-size: 12px; }
+    .recent-distribution-item { padding: 13px 0; }
+    .recent-distribution-info strong { font-size: 14px; }
+    .recent-distribution-info span, .recent-empty { font-size: 12px; }
+    .recent-distribution-quantity { font-size: 13px; }
+
+    .distribution-screen #distribution-view,
+    .area-measurement-screen #area-measurement-view,
+    .reminders-screen #reminders-view,
+    .about-screen #about-view,
+    .scan-screen #scan-view {
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
+    }
+
+    .distribution-screen #distribution-view,
+    .area-measurement-screen #area-measurement-view,
+    .reminders-screen #reminders-view { gap: 20px; }
+
+    .distribution-screen #distribution-view { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .distribution-screen .journal-page-heading,
+    .distribution-screen .journal-results-heading,
+    .distribution-screen #distribution-results { grid-column: 1 / -1; }
+    .distribution-screen .journal-toolbar { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 18px 20px; }
+    .distribution-screen .journal-actions { display: flex; gap: 10px; }
+    .distribution-screen .journal-actions button { width: auto; min-width: 130px; }
+    .distribution-screen .distribution-search { align-self: center; margin: 0; }
+    .distribution-screen .journal-results-heading { margin-top: 5px; font-size: 10px; }
+    .distribution-screen #distribution-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .distribution-screen .distribution-entry { min-height: 100%; padding: 17px; border-radius: 18px; }
+
+    .area-measurement-screen #area-measurement-view { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 38px; }
+    .area-measurement-screen .area-page-heading { grid-column: 1 / -1; }
+    .area-measurement-screen .area-page-heading h2,
+    .reminder-page-heading h2 { font-size: 36px; }
+    .area-measurement-screen .area-page-heading p,
+    .reminder-page-heading p { max-width: 600px; font-size: 14px; }
+    .area-measurement-screen .area-form { grid-column: 1; grid-row: 2 / span 2; gap: 17px; padding: 22px; border-radius: 22px; }
+    .area-measurement-screen .area-form-grid { gap: 16px 14px; }
+    .area-measurement-screen .area-field { gap: 8px; font-size: 12px; }
+    .area-measurement-screen .area-field input,
+    .area-measurement-screen .area-field textarea { min-height: 50px; padding-inline: 14px; font-size: 14px; }
+    .area-measurement-screen .area-records-heading { grid-column: 2; grid-row: 2; align-self: end; margin: 0 2px 0; font-size: 10px; }
+    .area-measurement-screen .area-record-list { grid-column: 2; grid-row: 3; align-content: start; gap: 12px; }
+    .area-measurement-screen .area-record-card { padding: 17px; border-radius: 18px; }
+    .area-measurement-screen .area-record-company { font-size: 15px; }
+    .area-measurement-screen .area-record-vessel,
+    .area-measurement-screen .area-record-note { font-size: 12px; }
+
+    .reminders-screen #reminders-view { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: 38px; }
+    .reminders-screen .reminder-page-heading,
+    .reminders-screen .reminder-notification-panel { grid-column: 1 / -1; }
+    .reminders-screen .reminder-notification-panel { grid-template-columns: 48px minmax(0, 1fr) auto; gap: 16px; padding: 17px 20px; border-radius: 18px; }
+    .reminders-screen .reminder-notification-icon { width: 46px; height: 46px; border-radius: 15px; font-size: 24px; }
+    .reminders-screen .reminder-notification-copy strong { font-size: 13px; }
+    .reminders-screen .reminder-notification-copy p { font-size: 11px; }
+    .reminders-screen .reminder-permission-button { min-height: 42px; padding-inline: 16px; font-size: 11px; }
+    .reminders-screen .reminder-form { grid-column: 1; grid-row: 3 / span 2; align-content: start; gap: 18px; padding: 22px; border-radius: 22px; }
+    .reminders-screen .reminder-field { gap: 9px; font-size: 12px; }
+    .reminders-screen .reminder-field input { min-height: 50px; padding-inline: 14px; font-size: 14px; }
+    .reminders-screen .reminder-offset { font-size: 11px; }
+    .reminders-screen .reminder-save-button { min-height: 52px; font-size: 13px; }
+    .reminders-screen .reminders-list-heading { grid-column: 2; grid-row: 3; align-self: end; margin: 0 2px 0; font-size: 10px; }
+    .reminders-screen .reminder-list { grid-column: 2; grid-row: 4; align-content: start; gap: 5px; }
+    .reminders-screen .reminder-card { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 16px; padding: 17px 4px; }
+    .reminders-screen .reminder-time strong { font-size: 17px; }
+    .reminders-screen .reminder-card-copy strong { font-size: 14px; }
+    .reminders-screen .reminder-card-copy p { font-size: 11px; }
+    .reminders-screen .reminder-card-state { font-size: 10px; }
+
+    .about-screen #about-view { gap: 22px; }
+    .about-screen .about-card { padding: 30px; border-radius: 26px; }
+    .about-screen .about-feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .about-screen .about-feature-card { min-height: 105px; padding: 18px; }
+    .about-screen #about-home { max-width: 280px; }
+
+    .scan-screen #scan-view { gap: 22px; }
+    .scan-screen .scan-page-heading h2 { font-size: 38px; }
+    .scan-screen .scan-page-heading p { max-width: 560px; font-size: 14px; }
+    .scan-screen .scan-camera-card { padding: 22px; border-radius: 25px; }
+    .scan-screen #reader { max-width: 760px; min-height: 390px; margin: 0 auto; }
+    .scan-screen #reader__scan_region { min-height: 390px; }
+
+    .app-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        width: 100%;
+        max-width: 1160px;
+        margin: auto auto 0;
+        padding: 19px 0 3px;
+        font-size: 11px;
+        text-align: left;
+    }
+
+    .app-footer span { display: block; }
+    .app-footer .footer-credit { margin-right: auto; }
+    .app-footer .footer-version {
+        position: static;
+        flex: none;
+        color: #839188;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .2px;
+    }
+}
