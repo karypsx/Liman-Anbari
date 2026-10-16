@@ -2,7 +2,7 @@
 const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=870115945&single=true&output=csv";
 // Yalnız yayımlanmış Paylanma Jurnalı vərəqinin oxu linkidir.
 const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=2059277788&single=true&output=csv";
-const LIMAN_ADMIN_UID = "uXqtWccnKOaCHJZp2vAMF0bZ9R42";
+const LIMAN_ADMIN_UID = "WvDIKF4R5SNNEGBpMy6oZdcA1Ub2";
 
 let anbarData = [];
 let distributionRecords = [];
@@ -32,6 +32,15 @@ let pushTokenError = "";
 let authStateVersion = 0;
 let accountRegistrationInProgress = false;
 let accountDialogMode = "login";
+let currentProfileAvatar = "box";
+const profileAvatars = Object.freeze({
+    box: { label: "Girl1", src: "avatar/avatar1.jpg", fallback: "A" },
+    ship: { label: "Girl2", src: "avatar/avatar2.jpg", fallback: "G" },
+    anchor: { label: "Boy1", src: "avatar/avatar3.jpg", fallback: "L" },
+    vest: { label: "Boy2", src: "avatar/avatar4.png", fallback: "İ" },
+    crane: { label: "Gemi", src: "avatar/avatar5.png", fallback: "S" },
+    clipboard: { label: "Gemi-sukani", src: "avatar/avatar6.png", fallback: "Q" }
+});
 
 const homeView = document.getElementById("home-view");
 const scanView = document.getElementById("scan-view");
@@ -41,6 +50,14 @@ const areaMeasurementView = document.getElementById("area-measurement-view");
 const aboutView = document.getElementById("about-view");
 const remindersView = document.getElementById("reminders-view");
 const approvalView = document.getElementById("approval-view");
+const accountView = document.getElementById("account-view");
+const accountBackButton = document.getElementById("account-back");
+const accountAvatarField = document.getElementById("account-avatar-field");
+const accountAvatarOptions = document.getElementById("account-avatar-options");
+const accountAvatarInput = document.getElementById("account-avatar");
+const accountAvatarPickerToggle = document.getElementById("account-avatar-picker-toggle");
+const accountAvatarPickerPreview = document.getElementById("account-avatar-picker-preview");
+const accountAvatarPickerLabel = document.getElementById("account-avatar-picker-label");
 const approvalMenuLink = document.getElementById("approval-menu-link");
 const approvalList = document.getElementById("approval-list");
 const approvalCount = document.getElementById("approval-count");
@@ -93,9 +110,11 @@ const scanCameraStatus = document.getElementById("scan-camera-status");
 const dataStatus = document.getElementById("data-status");
 const menuToggle = document.getElementById("menu-toggle");
 const loginPlaceholder = document.getElementById("login-placeholder");
+const accountControl = document.getElementById("account-control");
+const accountLogoutMenu = document.getElementById("account-logout-menu");
+const accountLogoutButton = document.getElementById("account-logout-button");
 const appMenu = document.getElementById("app-menu");
 const menuBackdrop = document.getElementById("menu-backdrop");
-const accountDialog = document.getElementById("account-dialog");
 const accountLoginForm = document.getElementById("account-login-form");
 const accountNameField = document.getElementById("account-name-field");
 const accountNameInput = document.getElementById("account-name");
@@ -106,7 +125,8 @@ const accountDialogDescription = document.getElementById("account-dialog-descrip
 const accountLoginFootnote = document.getElementById("account-login-footnote");
 const accountModeToggle = document.getElementById("account-mode-toggle");
 const accountLoginError = document.getElementById("account-login-error");
-const accountDialogClose = document.getElementById("account-dialog-close");
+const currentAvatarElement = document.getElementById("account-current-avatar");
+const loginPlaceholderLabel = document.getElementById("login-placeholder-label");
 document.body.classList.add("home-screen");
 
 // Tətbiq daxilində mətnin seçilib köçürülməsini və kontekst menyusunu bağla.
@@ -128,6 +148,50 @@ function showActionToast(message) {
     actionToastTimer = setTimeout(() => {
         actionToast.hidden = true;
     }, 2600);
+}
+
+function updateAccountButton(user = null, avatar = "box", profileName = "") {
+    const accountName = user
+        ? String(profileName || user.displayName || user.email?.split("@")[0] || "Hesabım").trim()
+        : "Daxil ol";
+    loginPlaceholderLabel.textContent = accountName;
+    loginPlaceholder.classList.toggle("is-signed-in", Boolean(user));
+    renderProfileAvatar(currentAvatarElement, avatar);
+    currentAvatarElement.hidden = !user;
+    closeAccountLogoutMenu();
+}
+
+function closeAccountLogoutMenu() {
+    accountLogoutMenu.hidden = true;
+    loginPlaceholder.setAttribute("aria-expanded", "false");
+}
+
+function renderProfileAvatar(container, avatar) {
+    if (!container) return;
+    const details = profileAvatars[avatar] || profileAvatars.box;
+    const fallback = document.createElement("span");
+    fallback.className = "profile-avatar-fallback";
+    fallback.textContent = details.fallback;
+    const image = document.createElement("img");
+    image.src = details.src;
+    image.alt = "";
+    image.addEventListener("load", () => { fallback.hidden = true; }, { once: true });
+    image.addEventListener("error", () => { image.hidden = true; }, { once: true });
+    container.replaceChildren(fallback, image);
+}
+
+accountAvatarOptions.querySelectorAll("[data-account-avatar]").forEach(button => {
+    renderProfileAvatar(button.querySelector(".account-avatar-image"), button.dataset.accountAvatar);
+});
+renderProfileAvatar(accountAvatarPickerPreview, "box");
+
+function openAccountPage(mode = "login") {
+    scanHandled = false;
+    void stopScanner();
+    closeMenu();
+    setAccountDialogMode(mode);
+    accountLoginError.hidden = true;
+    showView("account");
 }
 
 menuToggle.addEventListener("click", function () {
@@ -155,7 +219,7 @@ appMenu.addEventListener("click", function (event) {
     const targetView = button.dataset.menuView;
     if (targetView === "reminders" && !currentAuthUser) {
         closeMenu();
-        accountDialog.showModal();
+        openAccountPage("login");
         showActionToast("Xatırlatmalar üçün hesabınıza daxil olun.");
         return;
     }
@@ -189,6 +253,7 @@ function showView(view) {
     document.body.classList.toggle("reminders-screen", view === "reminders");
     document.body.classList.toggle("about-screen", view === "about");
     document.body.classList.toggle("approval-screen", view === "approvals");
+    document.body.classList.toggle("account-screen", view === "account");
     homeView.hidden = view !== "home";
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
@@ -196,6 +261,7 @@ function showView(view) {
     areaMeasurementView.hidden = view !== "area-measurement";
     remindersView.hidden = view !== "reminders";
     approvalView.hidden = view !== "approvals";
+    accountView.hidden = view !== "account";
     aboutView.hidden = view !== "about";
     dataStatus.hidden = true;
 }
@@ -203,7 +269,7 @@ function showView(view) {
 function initializeFirebaseAccount() {
     const config = window.APP_CONFIG?.firebaseConfig;
     if (!window.firebase || !config?.projectId) {
-        loginPlaceholder.textContent = "Daxil ol";
+        updateAccountButton();
         return;
     }
 
@@ -221,8 +287,9 @@ function initializeFirebaseAccount() {
             pushTokenRegistered = false;
             pushTokenSyncing = false;
             pushTokenError = "";
+            currentProfileAvatar = "box";
             approvalMenuLink.hidden = true;
-            loginPlaceholder.textContent = "Daxil ol";
+            updateAccountButton();
             if (reminderSubscription) {
                 reminderSubscription();
                 reminderSubscription = null;
@@ -231,11 +298,22 @@ function initializeFirebaseAccount() {
             renderReminders();
 
             if (!user) {
+                showView("home");
                 updateReminderPermissionState();
                 return;
             }
 
-            if (user.uid !== LIMAN_ADMIN_UID) {
+            let approvedProfile = null;
+            if (user.uid === LIMAN_ADMIN_UID) {
+                try {
+                    const adminProfileSnapshot = await firebaseDb.collection("users").doc(user.uid).get();
+                    if (stateVersion !== authStateVersion) return;
+                    approvedProfile = adminProfileSnapshot.exists ? adminProfileSnapshot.data() : null;
+                } catch (error) {
+                    if (stateVersion !== authStateVersion) return;
+                    console.warn("Administrator profili yüklənmədi", error);
+                }
+            } else {
                 let profileSnapshot;
                 try {
                     profileSnapshot = await firebaseDb.collection("users").doc(user.uid).get();
@@ -245,7 +323,7 @@ function initializeFirebaseAccount() {
                     await firebaseAuth.signOut();
                     accountLoginError.textContent = "Hesab təsdiqini yoxlamaq olmadı. İnterneti yoxlayıb yenidən cəhd edin.";
                     accountLoginError.hidden = false;
-                    if (!accountDialog.open) accountDialog.showModal();
+                    showView("account");
                     return;
                 }
 
@@ -258,6 +336,7 @@ function initializeFirebaseAccount() {
                         await firebaseDb.collection("users").doc(user.uid).set({
                             displayName: displayName.length >= 2 ? displayName : "İstifadəçi",
                             email: user.email || "",
+                            avatar: "box",
                             status: "pending",
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
@@ -267,18 +346,19 @@ function initializeFirebaseAccount() {
                         await firebaseAuth.signOut();
                         accountLoginError.textContent = "Təsdiq sorğusu yaradıla bilmədi. Firebase qaydalarını yeniləyib yenidən cəhd edin.";
                         accountLoginError.hidden = false;
-                        if (!accountDialog.open) accountDialog.showModal();
+                        showView("account");
                         return;
                     }
                     if (stateVersion !== authStateVersion) return;
                     await firebaseAuth.signOut();
                     accountLoginError.textContent = "Hesabınızın təsdiq sorğusu göndərildi. Administrator təsdiqləyəndən sonra daxil ola bilərsiniz.";
                     accountLoginError.hidden = false;
-                    if (!accountDialog.open) accountDialog.showModal();
+                    showView("account");
                     updateReminderPermissionState();
                     return;
                 }
 
+                approvedProfile = profile;
                 if (profile.status !== "approved") {
                     await firebaseAuth.signOut();
                     accountLoginError.textContent = profile?.status === "pending"
@@ -287,7 +367,7 @@ function initializeFirebaseAccount() {
                             ? "Bu hesab üçün giriş təsdiqlənməyib. Administratorla əlaqə saxlayın."
                             : "Hesab profili tapılmadı. Qeydiyyat sorğusu göndərin və təsdiqi gözləyin.";
                     accountLoginError.hidden = false;
-                    if (!accountDialog.open) accountDialog.showModal();
+                    showView("account");
                     updateReminderPermissionState();
                     return;
                 }
@@ -295,8 +375,10 @@ function initializeFirebaseAccount() {
 
             if (stateVersion !== authStateVersion) return;
             currentAuthUser = user;
-            loginPlaceholder.textContent = "Çıxış";
+            currentProfileAvatar = approvedProfile?.avatar || "box";
+            updateAccountButton(user, currentProfileAvatar, approvedProfile?.displayName);
             approvalMenuLink.hidden = user.uid !== LIMAN_ADMIN_UID;
+            showView("home");
             reminders = loadReminders(user.uid);
             renderReminders();
             reminderSubscription = firebaseDb.collection("users").doc(user.uid)
@@ -324,7 +406,7 @@ function initializeFirebaseAccount() {
         });
     } catch (error) {
         console.error("Firebase başlatma xətası", error);
-        loginPlaceholder.textContent = "Daxil ol";
+        updateAccountButton();
     }
 }
 
@@ -502,7 +584,7 @@ reminderForm.addEventListener("submit", async event => {
     if (!reminderForm.reportValidity()) return;
     if (!currentAuthUser || !firebaseDb) {
         showActionToast("Xatırlatma əlavə etmək üçün əvvəlcə hesabınıza daxil olun.");
-        accountDialog.showModal();
+        openAccountPage("login");
         return;
     }
 
@@ -603,7 +685,7 @@ async function removeCurrentDeviceToken() {
 
 reminderPermissionButton.addEventListener("click", async () => {
     if (!currentAuthUser) {
-        accountDialog.showModal();
+        openAccountPage("login");
         return;
     }
     if (!("Notification" in window)) {
@@ -1820,23 +1902,63 @@ issueGoodsButton.addEventListener("click", function () {
     showActionToast("Mal vermək funksiyası hələ aktiv deyil.");
 });
 
-loginPlaceholder.addEventListener("click", async function () {
+loginPlaceholder.addEventListener("click", function () {
     if (!firebaseAuth) {
         showActionToast("Hesab xidməti açıla bilmədi. Səhifəni yeniləyin.");
         return;
     }
     if (currentAuthUser) {
-        try {
-            try { await removeCurrentDeviceToken(); } catch (error) { console.warn("Cihaz bildiriş əlaqəsi silinmədi", error); }
-            await firebaseAuth.signOut();
-            showActionToast("Hesabdan çıxdınız.");
-        } catch {
-            showActionToast("Hesabdan çıxmaq olmadı.");
-        }
+        accountLogoutMenu.hidden = !accountLogoutMenu.hidden;
+        loginPlaceholder.setAttribute("aria-expanded", String(!accountLogoutMenu.hidden));
         return;
     }
-    accountLoginError.hidden = true;
-    accountDialog.showModal();
+    openAccountPage("login");
+});
+
+accountLogoutButton.addEventListener("click", async () => {
+    closeAccountLogoutMenu();
+    try {
+        try { await removeCurrentDeviceToken(); } catch (error) { console.warn("Cihaz bildiriş əlaqəsi silinmədi", error); }
+        await firebaseAuth.signOut();
+        showActionToast("Hesabdan çıxdınız.");
+    } catch {
+        showActionToast("Hesabdan çıxmaq olmadı.");
+    }
+});
+
+document.addEventListener("click", event => {
+    if (!accountControl.contains(event.target)) closeAccountLogoutMenu();
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeAccountLogoutMenu();
+});
+
+accountBackButton.addEventListener("click", () => showView("home"));
+
+function selectAccountAvatar(avatar) {
+    const selected = Object.prototype.hasOwnProperty.call(profileAvatars, avatar) ? avatar : "box";
+    accountAvatarInput.value = selected;
+    accountAvatarOptions.querySelectorAll("[data-account-avatar]").forEach(button => {
+        const isSelected = button.dataset.accountAvatar === selected;
+        button.classList.toggle("is-selected", isSelected);
+        button.setAttribute("aria-pressed", String(isSelected));
+    });
+    renderProfileAvatar(accountAvatarPickerPreview, selected);
+    accountAvatarPickerLabel.textContent = profileAvatars[selected].label;
+    accountAvatarOptions.hidden = true;
+    accountAvatarPickerToggle.setAttribute("aria-expanded", "false");
+}
+
+accountAvatarPickerToggle.addEventListener("click", () => {
+    const opening = accountAvatarOptions.hidden;
+    accountAvatarOptions.hidden = !opening;
+    accountAvatarPickerToggle.setAttribute("aria-expanded", String(opening));
+});
+
+accountAvatarOptions.addEventListener("click", event => {
+    const button = event.target.closest("[data-account-avatar]");
+    if (button) selectAccountAvatar(button.dataset.accountAvatar);
 });
 
 accountLoginForm.addEventListener("submit", async event => {
@@ -1859,6 +1981,7 @@ accountLoginForm.addEventListener("submit", async event => {
                 await firebaseDb.collection("users").doc(credential.user.uid).set({
                     displayName,
                     email: credential.user.email || accountEmailInput.value.trim(),
+                    avatar: accountAvatarInput.value,
                     status: "pending",
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -1868,13 +1991,13 @@ accountLoginForm.addEventListener("submit", async event => {
             } finally {
                 await firebaseAuth.signOut();
             }
-            accountDialog.close();
             accountLoginForm.reset();
+            selectAccountAvatar("box");
             setAccountDialogMode("login");
+            showView("account");
             showActionToast("Qeydiyyat sorğunuz göndərildi. Təsdiqi gözləyin.");
         } else {
             await firebaseAuth.signInWithEmailAndPassword(accountEmailInput.value.trim(), accountPasswordInput.value);
-            accountDialog.close();
             accountLoginForm.reset();
             showActionToast("Hesab yoxlanılır…");
         }
@@ -1914,7 +2037,20 @@ function setAccountDialogMode(mode) {
     accountNameField.hidden = !isRegistration;
     accountNameInput.disabled = !isRegistration;
     accountNameInput.required = isRegistration;
+    accountAvatarField.hidden = !isRegistration;
+    accountLoginForm.autocomplete = isRegistration ? "off" : "on";
+    accountEmailInput.autocomplete = isRegistration ? "off" : "username";
     accountPasswordInput.autocomplete = isRegistration ? "new-password" : "current-password";
+    accountAvatarOptions.hidden = true;
+    accountAvatarPickerToggle.setAttribute("aria-expanded", "false");
+    if (isRegistration) {
+        accountNameInput.value = "";
+        accountEmailInput.value = "";
+        accountPasswordInput.value = "";
+        const selected = accountAvatarInput.value || "box";
+        renderProfileAvatar(accountAvatarPickerPreview, selected);
+        accountAvatarPickerLabel.textContent = "Avatar seç";
+    }
     accountLoginForm.querySelector('button[type="submit"]').textContent = isRegistration ? "Sorğu göndər" : "Daxil ol";
 }
 
@@ -1973,6 +2109,10 @@ async function loadRegistrationRequests() {
         requests.forEach(request => {
             const item = document.createElement("li");
             item.className = "approval-card";
+            const avatar = document.createElement("span");
+            avatar.className = "approval-card-avatar";
+            avatar.setAttribute("aria-hidden", "true");
+            renderProfileAvatar(avatar, request.avatar);
             const copy = document.createElement("div");
             copy.className = "approval-card-copy";
             const name = document.createElement("strong");
@@ -1985,7 +2125,7 @@ async function loadRegistrationRequests() {
             button.className = "primary-button approval-approve-button";
             button.dataset.approveUser = request.id;
             button.textContent = "Təsdiqlə";
-            item.append(copy, button);
+            item.append(avatar, copy, button);
             approvalList.appendChild(item);
         });
     } catch (error) {
@@ -1996,11 +2136,6 @@ async function loadRegistrationRequests() {
         approvalRefreshButton.disabled = false;
     }
 }
-
-accountDialogClose.addEventListener("click", () => accountDialog.close());
-accountDialog.addEventListener("click", event => {
-    if (event.target === accountDialog) accountDialog.close();
-});
 
 function normalizeJournalHeader(value) {
     return String(value || "").trim().toLocaleLowerCase("az-AZ").replace(/\s+/g, " ");

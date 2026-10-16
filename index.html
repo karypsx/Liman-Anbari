@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=69">
+    <link rel="stylesheet" href="style.css?v=79">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -52,7 +52,12 @@
 </div>
         <div id="menu-backdrop" class="menu-backdrop" hidden></div>
         <div class="app-menu-wrap">
-            <button id="login-placeholder" class="login-placeholder" type="button">Daxil ol</button>
+            <div id="account-control" class="account-control">
+                <button id="login-placeholder" class="login-placeholder" type="button" aria-controls="account-logout-menu" aria-expanded="false"><span id="account-current-avatar" class="account-current-avatar" aria-hidden="true" hidden></span><span id="login-placeholder-label">Daxil ol</span></button>
+                <div id="account-logout-menu" class="account-logout-menu" role="menu" hidden>
+                    <button id="account-logout-button" class="account-logout-button" type="button" role="menuitem">Çıxış</button>
+                </div>
+            </div>
             <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Menyunu aç" aria-expanded="false" aria-controls="app-menu">
                 <span></span><span></span><span></span>
             </button>
@@ -67,6 +72,13 @@
                     <span class="app-menu-item-copy"><strong>Ana səhifə</strong><small>Ümumi baxış</small></span>
                     <span class="app-menu-item-arrow" aria-hidden="true">›</span>
                 </button>
+
+                 <button id="approval-menu-link" type="button" data-menu-view="approvals" hidden>
+                    <span class="app-menu-icon" aria-hidden="true"><img src="images/appointment.png" alt="" onerror="this.hidden=true"></span>
+                    <span class="app-menu-item-copy"><strong>Qeydiyyat sorğuları</strong><small>Təsdiq gözləyən hesablar</small></span>
+                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
+                </button>
+
                 <button type="button" data-menu-view="distribution">
                     <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-journal.png" alt="" onerror="this.hidden=true"></span>
                     <span class="app-menu-item-copy"><strong>Paylama jurnalı</strong><small>Verilən mallar</small></span>
@@ -77,11 +89,7 @@
                     <span class="app-menu-item-copy"><strong>Sahə ölçümü</strong><small>Ərazi qeydləri</small></span>
                     <span class="app-menu-item-arrow" aria-hidden="true">›</span>
                 </button>
-                <button id="approval-menu-link" type="button" data-menu-view="approvals" hidden>
-                    <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-approvals.png" alt="" onerror="this.hidden=true"></span>
-                    <span class="app-menu-item-copy"><strong>Qeydiyyat sorğuları</strong><small>Təsdiq gözləyən hesablar</small></span>
-                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
-                </button>
+                
                 <button type="button" data-menu-view="reminders">
                     <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-reminders.png" alt="" onerror="this.hidden=true"></span>
                     <span class="app-menu-item-copy"><strong>Xatırlatmalar</strong><small>Vacib vaxtlar</small></span>
@@ -122,7 +130,7 @@
             </section>
             <div class="home-launch-actions">
                 <button id="home-area-measurement" class="home-scan-launch" type="button">
-                    <span class="home-scan-launch-icon home-area-launch-icon" aria-hidden="true"><img src="images/scan-icon.png" alt=""></span>
+                    <span class="home-scan-launch-icon home-area-launch-icon" aria-hidden="true"><img src="images/saheolcumu.png" alt=""></span>
                     <span class="home-scan-launch-copy">
                         <span class="home-scan-kicker">ƏRAZİ QEYDLƏRİ</span>
                         <strong>Sahə ölçümü</strong>
@@ -269,7 +277,7 @@
 
         <section id="approval-view" class="view approval-view" hidden>
             <div class="approval-page-heading">
-                <div class="approval-page-kicker"><span class="dashboard-live-dot"></span> HESAB İDARƏETMƏSİ</div>
+                <div class="approval-page-kicker"><span class="dashboard-live-dot"></span> HESAB TƏSDİQİ</div>
                 <h2>Qeydiyyat sorğuları</h2>
                 <p>Yeni istifadəçiləri yoxlayıb tətbiq hesabını təsdiqləyin.</p>
             </div>
@@ -281,6 +289,49 @@
             <ul id="approval-list" class="approval-list" aria-live="polite"></ul>
         </section>
 
+        <section id="account-view" class="view account-view" hidden>
+            <div class="account-page-shell">
+                <button id="account-back" class="account-back-button" type="button"><span aria-hidden="true">←</span> Ana səhifəyə qayıt</button>
+                <div class="account-page-card">
+                    <div class="account-page-brand">
+                        <span class="account-page-brand-icon" aria-hidden="true"><img src="images/app-mark.png" alt=""></span>
+                        <span>LİMAN ANBARI <i></i> HESAB MƏRKƏZİ</span>
+                    </div>
+                    <span class="account-login-mark" aria-hidden="true">↗</span>
+                    <p class="account-page-kicker">ŞƏXSİ İŞ SAHƏSİ</p>
+                    <h2 id="account-dialog-title">Hesaba daxil ol</h2>
+                    <p id="account-dialog-description" class="account-page-description">Xatırlatmalarınız bu hesabda ayrıca saxlanacaq.</p>
+                    <form id="account-login-form" class="account-login-form" autocomplete="on">
+                        <label id="account-name-field" class="account-login-field" hidden><span>Ad və soyad</span><input id="account-name" type="text" minlength="2" maxlength="80" autocomplete="name" disabled></label>
+                        <fieldset id="account-avatar-field" class="account-avatar-field" hidden>
+                            <legend>Profil şəkli</legend>
+                            <button id="account-avatar-picker-toggle" class="account-avatar-picker-toggle" type="button" aria-expanded="false" aria-controls="account-avatar-options">
+                                <span id="account-avatar-picker-preview" class="account-avatar-picker-preview" aria-hidden="true"></span>
+                                <span id="account-avatar-picker-label">Avatar seç</span>
+                                <span class="account-avatar-picker-chevron" aria-hidden="true">⌄</span>
+                            </button>
+                            <div id="account-avatar-options" class="account-avatar-options" role="group" aria-label="Avatar seçimi" hidden>
+                                <button type="button" class="account-avatar-option is-selected" data-account-avatar="box" aria-label="Anbar avatarı" aria-pressed="true"><span class="account-avatar-image" aria-hidden="true"></span><small>Girl1</small></button>
+                                <button type="button" class="account-avatar-option" data-account-avatar="ship" aria-label="Gəmi avatarı" aria-pressed="false"><span class="account-avatar-image" aria-hidden="true"></span><small>Girl2</small></button>
+                                <button type="button" class="account-avatar-option" data-account-avatar="anchor" aria-label="Liman avatarı" aria-pressed="false"><span class="account-avatar-image" aria-hidden="true"></span><small>Boy1</small></button>
+                                <button type="button" class="account-avatar-option" data-account-avatar="vest" aria-label="İşçi avatarı" aria-pressed="false"><span class="account-avatar-image" aria-hidden="true"></span><small>Boy2</small></button>
+                                <button type="button" class="account-avatar-option" data-account-avatar="crane" aria-label="Sahə avatarı" aria-pressed="false"><span class="account-avatar-image" aria-hidden="true"></span><small>Gemi</small></button>
+                                <button type="button" class="account-avatar-option" data-account-avatar="clipboard" aria-label="Qeyd avatarı" aria-pressed="false"><span class="account-avatar-image" aria-hidden="true"></span><small>Gemi-sukani</small></button>
+                            </div>
+                            <input id="account-avatar" type="hidden" value="box">
+                        </fieldset>
+                        <label class="account-login-field"><span>E-poçt</span><input id="account-email" type="email" autocomplete="username" required></label>
+                        <label class="account-login-field"><span>Şifrə</span><input id="account-password" type="password" minlength="6" autocomplete="current-password" required></label>
+                        <p id="account-login-error" class="account-login-error" role="alert" hidden></p>
+                        <button class="primary-button account-login-submit" type="submit">Daxil ol</button>
+                        <p id="account-login-footnote" class="account-login-footnote">Hesabınız yoxdursa, qeydiyyat sorğusu göndərin.</p>
+                        <button id="account-mode-toggle" class="account-mode-toggle" type="button">Qeydiyyat sorğusu göndər</button>
+                    </form>
+                    <div class="account-page-bottom"><span class="dashboard-live-dot"></span> Təsdiqli hesab · Şəxsi xatırlatmalar</div>
+                </div>
+            </div>
+        </section>
+
         <section id="about-view" class="view about-view" hidden>
             <div class="about-page-kicker"><span class="dashboard-live-dot"></span> LİMAN ANBARI · TƏTBİQ</div>
             <div class="about-card">
@@ -289,7 +340,7 @@
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
                     <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, xatırlatma və paylama qeydlərini bir yerdə idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.57</strong></span>
+                    <span class="about-version">Versiya <strong>1.63</strong></span>
                 </div>
                 <section class="about-feature-section" aria-labelledby="about-features-title">
                     <div class="about-section-heading">
@@ -390,7 +441,7 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.57</span>
+            <span class="footer-version">Versiya 1.63</span>
         </footer>
     </main>
     <dialog id="area-record-dialog" class="area-record-dialog" aria-labelledby="area-dialog-title">
@@ -402,33 +453,13 @@
             <div id="area-record-dialog-content" class="area-record-dialog-content"></div>
         </div>
     </dialog>
-    <dialog id="account-dialog" class="area-record-dialog account-dialog" aria-labelledby="account-dialog-title">
-        <div class="area-record-dialog-panel">
-            <header class="area-record-dialog-header">
-                <span class="area-record-dialog-kicker">LİMAN ANBARI · HESAB</span>
-                <button id="account-dialog-close" class="area-dialog-close" type="button" aria-label="Pəncərəni bağla">×</button>
-            </header>
-            <form id="account-login-form" class="account-login-form">
-                <span class="account-login-mark" aria-hidden="true">↗</span>
-                <h2 id="account-dialog-title">Hesaba daxil ol</h2>
-                <p id="account-dialog-description">Xatırlatmalarınız bu hesabda ayrıca saxlanacaq.</p>
-                <label id="account-name-field" class="account-login-field" hidden><span>Ad və soyad</span><input id="account-name" type="text" minlength="2" maxlength="80" autocomplete="name" disabled></label>
-                <label class="account-login-field"><span>E-poçt</span><input id="account-email" type="email" autocomplete="username" required></label>
-                <label class="account-login-field"><span>Şifrə</span><input id="account-password" type="password" minlength="6" autocomplete="current-password" required></label>
-                <p id="account-login-error" class="account-login-error" role="alert" hidden></p>
-                <button class="primary-button account-login-submit" type="submit">Daxil ol</button>
-                <p id="account-login-footnote" class="account-login-footnote">Hesabınız yoxdursa, qeydiyyat sorğusu göndərin.</p>
-                <button id="account-mode-toggle" class="account-mode-toggle" type="button">Qeydiyyat</button>
-            </form>
-        </div>
-    </dialog>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     <script src="app-config.js?v=5"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=44"></script>
+    <script src="script.js?v=49"></script>
 </body>
 </html>
 
