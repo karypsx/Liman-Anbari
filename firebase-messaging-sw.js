@@ -13,6 +13,10 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(payload => {
+    // FCM displays notification-payload messages automatically while the app is closed.
+    // Avoid showing the same message a second time here. Data-only messages use this handler.
+    if (payload.notification) return;
+
     const data = payload.data || {};
     const title = data.title || payload.notification?.title || "Liman Anbarı · Xatırlatma";
     const body = data.body || payload.notification?.body || "Xatırlatma vaxtınız yaxınlaşır.";

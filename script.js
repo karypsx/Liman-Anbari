@@ -20,7 +20,6 @@ const areaMeasurementsApiUrl = window.APP_CONFIG?.areaMeasurementsApiUrl || "";
 let areaCloudQueue = Promise.resolve();
 const reminderStorageKey = "liman-reminders-v1";
 let reminders = [];
-let reminderCheckTimer;
 let firebaseAuth = null;
 let firebaseDb = null;
 let firebaseMessaging = null;
@@ -185,6 +184,7 @@ function initializeFirebaseAccount() {
         firebaseAuth = firebase.auth();
         firebaseDb = firebase.firestore();
         try { firebaseMessaging = firebase.messaging(app); } catch (_) { firebaseMessaging = null; }
+        if (firebaseMessaging) firebaseMessaging.onMessage(handleForegroundPush);
         firebaseAuth.onAuthStateChanged(user => {
             currentAuthUser = user || null;
             loginPlaceholder.textContent = user ? "Çıxış" : "Daxil ol";
@@ -211,7 +211,6 @@ function initializeFirebaseAccount() {
                     });
                     saveReminders();
                     renderReminders();
-                    checkDueReminders();
                 }, error => {
                     console.error("Xatırlatmalar yüklənmədi", error);
                     showActionToast("Xatırlatmaları yükləmək olmadı. İnterneti yoxlayın.");
@@ -223,6 +222,34 @@ function initializeFirebaseAccount() {
         console.error("Firebase başlatma xətası", error);
         loginPlaceholder.textContent = "Daxil ol";
     }
+}
+
+async function handleForegroundPush(payload) {
+    const data = payload?.data || {};
+    const title = data.title || payload?.notification?.title || "Liman Anbarı · Xatırlatma";
+    const body = data.body || payload?.notification?.body || "Xatırlatma vaxtınız yaxınlaşır.";
+    const appUrl = new URL("./", document.baseURI).href;
+    const iconUrl = new URL("images/ikoon-192.png", document.baseURI).href;
+    const tag = data.tag || `liman-reminder-${data.reminderId || Date.now()}-${data.stage || "notice"}`;
+
+    try {
+        if ("Notification" in window && Notification.permission === "granted" && "serviceWorker" in navigator) {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.showNotification(title, {
+                body,
+                icon: iconUrl,
+                badge: iconUrl,
+                tag,
+                renotify: false,
+                data: { url: appUrl }
+            });
+            return;
+        }
+    } catch (error) {
+        console.warn("Açıq tətbiqdə bildiriş göstərilmədi", error);
+    }
+
+    showActionToast(`⏰ ${body}`);
 }
 
 function reminderCacheKey(uid = currentAuthUser?.uid) {
@@ -313,7 +340,7 @@ function renderReminders() {
         const state = document.createElement("span");
         state.className = "reminder-card-state";
         if (eventTime <= now) state.textContent = "Vaxtı keçib";
-        else state.textContent = "10 dəq qalmış başlayır · hər 2 dəq";
+        else state.textContent = "10 dəq və 5 dəq qalmış, vaxtında bildiriş";
         copy.append(title, detail, state);
 
         const remove = document.createElement("button");
@@ -345,95 +372,17 @@ function updateReminderPermissionState() {
     }
     if (Notification.permission === "granted") {
         reminderPermissionTitle.textContent = "Telefon bildirişləri aktivdir";
-        reminderPermissionNote.textContent = "Bu cihaz hesabınıza qoşulub. Xatırlatma vaxtında bildiriş göndəriləcək.";
-        reminderPermissionButton.textContent = "Cihazı qoş";
+        reminderPermissionNote.textContent = "Bu cihaz qoşulub. Bildirişlər 10 dəq, 5 dəq qalmış və vaxtı çatanda gələcək.";
+        reminderPermissionButton.textContent = "Qoşulub";
+        reminderPermissionButton.disabled = true;
     } else if (Notification.permission === "denied") {
         reminderPermissionTitle.textContent = "Bildiriş icazəsi bağlıdır";
         reminderPermissionNote.textContent = "İcazəni telefonun və ya brauzerin tətbiq ayarlarından aça bilərsiniz.";
         reminderPermissionButton.textContent = "Ayarlara baxın";
     } else {
         reminderPermissionTitle.textContent = "Telefon bildirişləri";
-        reminderPermissionNote.textContent = "İcazə verin ki, tətbiq açıq olduqda son 10 dəqiqədə bildirişlər gəlsin.";
+        reminderPermissionNote.textContent = "Bildirişlər 10 dəq, 5 dəq qalmış və vaxtı çatanda gələcək.";
         reminderPermissionButton.textContent = "İcazəni aktiv et";
-    }
-}
-
-function showReminderToast(message) {
-    actionToast.textContent = `⏰ ${message}`;
-    actionToast.hidden = false;
-    clearTimeout(actionToastTimer);
-    actionToastTimer = setTimeout(() => { actionToast.hidden = true; }, 8000);
-}
-
-function reminderLastNotifiedSlot(item, eventTime) {
-    if (Number.isInteger(item.lastNotifiedSlot)) return item.lastNotifiedSlot;
-    if (!item.notifiedAt) return -1;
-
-    const notifiedTime = new Date(item.notifiedAt).getTime();
-    if (!Number.isFinite(notifiedTime)) return -1;
-    if (notifiedTime >= eventTime) return 4;
-
-    const firstNoticeTime = eventTime - 10 * 60 * 1000;
-    return Math.max(-1, Math.min(4, Math.floor((notifiedTime - firstNoticeTime) / (2 * 60 * 1000))));
-}
-
-function deliverReminder(item, slotIndex) {
-    const minutesRemaining = 10 - slotIndex * 2;
-    const body = `${minutesRemaining} dəqiqə qalıb: ${item.title}`;
-    showReminderToast(body);
-
-    if ("Notification" in window && Notification.permission === "granted") {
-        try {
-            const notification = new Notification("Liman Anbarı · Xatırlatma", {
-                body,
-                icon: "images/ikoon-192.png",
-                tag: `liman-reminder-${item.id}-${slotIndex}`
-            });
-            notification.onclick = () => {
-                window.focus();
-                showView("reminders");
-                renderReminders();
-                notification.close();
-            };
-        } catch {
-            // Ekrandakı xəbərdarlıq telefon bildirişi mümkün olmadıqda da qalır.
-        }
-    }
-}
-
-function checkDueReminders() {
-    if (!currentAuthUser) return;
-    const now = Date.now();
-    let changed = false;
-    reminders.forEach(item => {
-        const eventTime = new Date(item.at).getTime();
-        if (!Number.isFinite(eventTime)) return;
-
-        let lastSlot = reminderLastNotifiedSlot(item, eventTime);
-        if (!Number.isInteger(item.lastNotifiedSlot) && item.notifiedAt) {
-            item.lastNotifiedSlot = lastSlot;
-            changed = true;
-        }
-
-        const firstNoticeTime = eventTime - 10 * 60 * 1000;
-        if (now < firstNoticeTime || now >= eventTime) return;
-
-        const currentSlot = Math.min(4, Math.floor((now - firstNoticeTime) / (2 * 60 * 1000)));
-        if (currentSlot > lastSlot) {
-            item.lastNotifiedSlot = currentSlot;
-            item.notifiedAt = new Date(now).toISOString();
-            changed = true;
-            void firebaseDb.collection("users").doc(currentAuthUser.uid).collection("reminders")
-                .doc(item.id).set({
-                    lastNotifiedSlot: currentSlot,
-                    lastNotifiedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true }).catch(error => console.warn("Bildiriş vəziyyəti sinxronlaşmadı", error));
-            deliverReminder(item, currentSlot);
-        }
-    });
-    if (changed) {
-        saveReminders();
-        renderReminders();
     }
 }
 
@@ -456,7 +405,7 @@ reminderForm.addEventListener("submit", async event => {
     const record = {
         title,
         at: firebase.firestore.Timestamp.fromDate(eventDate),
-        lastNotifiedSlot: -1,
+        pushStage: -1,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
     const submitButton = reminderForm.querySelector('button[type="submit"]');
@@ -499,6 +448,7 @@ async function syncPushToken(requestPermission = true) {
     const workerUrl = new URL("firebase-messaging-sw.js", document.baseURI);
     const workerScope = new URL("./", document.baseURI).pathname;
     const registration = await navigator.serviceWorker.register(workerUrl.href, { scope: workerScope });
+    await registration.update().catch(() => {});
     const token = await firebaseMessaging.getToken({
         vapidKey: window.APP_CONFIG.firebaseVapidPublicKey,
         serviceWorkerRegistration: registration
@@ -556,10 +506,6 @@ function initializeReminders() {
     setReminderDateDefault();
     updateReminderPermissionState();
     renderReminders();
-    checkDueReminders();
-    reminderCheckTimer = setInterval(checkDueReminders, 15000);
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDueReminders(); });
-    window.addEventListener("focus", checkDueReminders);
 }
 
 function localDateInputValue(date = new Date()) {
