@@ -1976,18 +1976,22 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
         display: none;
     }
     .home-screen .app-menu-wrap {
-        flex-direction: column;
-        align-items: flex-end;
+        flex-direction: row;
+        align-items: center;
         gap: 6px;
     }
     .home-screen .account-control {
-        position: absolute;
-        top: 0;
-        right: 54px;
+        position: relative;
+        order: 2;
+    }
+    .home-screen #menu-toggle {
+        order: 3;
     }
     .home-screen .dashboard-map-button-mobile {
         display: inline-flex;
-        position: static;
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
         align-items: center;
         justify-content: center;
         gap: 6px;
@@ -2002,14 +2006,17 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
         font-weight: 700;
         -webkit-tap-highlight-color: transparent;
     }
-    .home-screen .app-menu { top: 88px; }
+    .home-screen .app-menu { top: 96px; }
     .home-screen .dashboard-map-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
     .home-screen .port-map-dialog { padding: 0; overflow: hidden; }
     .home-screen .port-map-full {
+        position: absolute;
+        top: 50%;
+        left: 50%;
         width: min(88dvh, 200vw);
         height: auto;
         max-height: none;
         object-fit: contain;
-        transform: rotate(90deg);
+        transform: translate(-50%, -50%) rotate(90deg);
     }
 }
