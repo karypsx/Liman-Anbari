@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=106">
+    <link rel="stylesheet" href="style.css?v=116">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -140,6 +140,13 @@
                             <div class="dashboard-stat"><strong id="dashboard-record-count">—</strong><span>paylama qeydi</span></div>
                             <div class="dashboard-stat"><strong id="dashboard-quantity-total">—</strong><span>verilən miqdar</span></div>
                         </div>
+                        <div class="dashboard-monthly-expense" aria-live="polite">
+                            <span class="dashboard-expense-icon" aria-hidden="true">₼</span>
+                            <div class="dashboard-expense-copy">
+                                <span id="dashboard-expense-label">Bu ay xərclənən vəsait</span>
+                                <strong id="dashboard-monthly-expense">—</strong>
+                            </div>
+                        </div>
                     </section>
                 </div>
             </section>
@@ -179,6 +186,10 @@
                 </button>
             </div>
             <div class="home-lists-grid">
+                <div class="home-lists-intro">
+                    <h2>Gündəlik nəzarət</h2>
+                    <p>Son paylamalar və sahədə uzun müddət qalan mallar</p>
+                </div>
                 <section class="home-recent-section home-card-active" aria-label="Son verilən mallar">
                     <div class="home-recent-heading">
                         <div class="home-list-heading home-list-heading-recent">
@@ -250,6 +261,13 @@
                 <h2>Sahə ölçümü</h2>
                 <p>Ölçüləri və neçə gündür yığıldığını yazın. Sahə və gün sayı avtomatik hesablansın.</p>
             </div>
+            <div class="area-records-heading">
+                <div><span>YADDA SAXLANANLAR</span><strong id="area-record-count">0 qeyd</strong></div>
+                <output id="area-total-value">0,00 m²</output>
+            </div>
+            <ul id="area-record-list" class="area-record-list" aria-live="polite">
+                <li class="area-empty">Hələ ölçü qeydi yoxdur.</li>
+            </ul>
             <form id="area-measurement-form" class="area-form">
                 <div class="area-form-grid">
                     <label class="area-field">
@@ -281,13 +299,6 @@
                 <button class="primary-button area-save-button" type="submit"><span aria-hidden="true">＋</span> Ölçünü yadda saxla</button>
                 <p class="area-sync-note">Google Sheets bağlantısı qurulana qədər qeydlər bu cihazda saxlanacaq.</p>
             </form>
-            <div class="area-records-heading">
-                <div><span>YADDA SAXLANANLAR</span><strong id="area-record-count">0 qeyd</strong></div>
-                <output id="area-total-value">0,00 m²</output>
-            </div>
-            <ul id="area-record-list" class="area-record-list" aria-live="polite">
-                <li class="area-empty">Hələ ölçü qeydi yoxdur.</li>
-            </ul>
         </section>
 
         <section id="reminders-view" class="view reminders-view" hidden>
@@ -512,9 +523,18 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=57"></script>
+    <script src="script.js?v=62"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
 
 
 

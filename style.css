@@ -9,25 +9,36 @@
     --green: #39c982;
     --green-dark: #153d2b;
     --orange: #ffb55e;
+    --liman-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 32 32'%3E%3Cpath d='M4 2v24l6-7 5 10 5-2-5-10 10-1L4 2z' fill='%230b1110' stroke='%230b1110' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M4 2v24l6-7 5 10 5-2-5-10 10-1L4 2z' fill='%2339c982' stroke='%23eafff0' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 button { font: inherit; }
 [hidden] { display: none !important; }
 
-/* Dekorativ köpük qabarcıqları yalnız boş sahəyə toxunanda göstərilir. */
-.tap-bubble {
+/* Bütün səhifənin üstündə, amma klikləri tutmayan dekorativ effekt qatı. */
+.tap-effect-layer {
     position: fixed;
-    z-index: 30;
+    z-index: 999999;
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+    isolation: isolate;
+}
+
+/* Səhifəyə basanda görünən dekorativ köpük qabarcıqları. */
+.tap-bubble {
+    position: absolute;
+    z-index: 1;
     left: var(--bubble-x);
     top: var(--bubble-y);
     width: var(--bubble-size);
     height: var(--bubble-size);
-    border: 1px solid rgba(153, 255, 198, .72);
+    border: 1px solid rgba(248, 255, 250, .96);
     border-radius: 50%;
     pointer-events: none;
-    background: radial-gradient(circle at 32% 28%, rgba(226,255,239,.82), rgba(57,201,130,.2) 48%, rgba(57,201,130,.04) 74%);
-    box-shadow: inset -1px -2px 4px rgba(57,201,130,.2), 0 0 10px rgba(57,201,130,.12);
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.98), rgba(113,255,173,.7) 40%, rgba(57,201,130,.22) 72%);
+    box-shadow: inset -1px -2px 4px rgba(57,201,130,.32), 0 0 13px rgba(203,255,221,.48);
     animation: bubbleFloat var(--bubble-duration) ease-out forwards;
 }
 
@@ -327,6 +338,7 @@ body.account-screen .container {
     .account-page-card { animation: none; }
     .account-back-button, .account-avatar-option { transition: none; }
 }
+
 .app-menu button:hover, .app-menu button:focus-visible { color: #bafbd3; background: #254c37; outline: none; }
 .app-menu button:active { color: #e4fff0; background: #2d6848; transform: scale(.98); }
 
@@ -411,6 +423,11 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 .dashboard-stat { display: grid; gap: 4px; min-width: 72px; }
 .dashboard-stat strong { color: #b9f0cf; font-size: 23px; line-height: 1; font-variant-numeric: tabular-nums; }
 .dashboard-stat span { color: #93a49a; font-size: 10px; line-height: 1.2; }
+.dashboard-monthly-expense { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 10px 12px; border-radius: 14px; background: linear-gradient(105deg, rgba(57,201,130,.09), rgba(57,201,130,.025)); }
+.dashboard-expense-icon { display: grid; flex: none; width: 29px; height: 29px; place-items: center; border-radius: 50%; color: #8de6ad; background: rgba(57,201,130,.12); font-size: 16px; font-weight: 750; }
+.dashboard-expense-copy { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; width: 100%; }
+.dashboard-expense-copy span { color: #9bac9f; font-size: 10px; line-height: 1.25; }
+.dashboard-expense-copy strong { color: #b9f0cf; font-size: 17px; line-height: 1.1; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .home-launch-actions { display: grid; gap: 12px; }
 .home-scan-launch { display: flex; align-items: center; gap: 13px; width: 100%; min-height: 90px; padding: 15px; border: 0; border-radius: 20px; color: #062114; background: linear-gradient(110deg, #36c981 0%, #58d594 100%); box-shadow: 0 14px 30px rgba(40,191,119,.2); text-align: left; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; }
 .home-scan-launch:active { transform: scale(.985); box-shadow: 0 8px 18px rgba(40,191,119,.16); }
@@ -1244,13 +1261,14 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
         cursor: pointer;
         transition: background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
     }
+    #port-map-open-mobile { display: none; }
     .dashboard-map-button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
     .dashboard-map-button:hover, .dashboard-map-button:focus-visible { border-color: rgba(98, 219, 146, .42); color: #e3ffed; background: rgba(46, 106, 67, .34); box-shadow: 0 7px 20px rgba(0, 0, 0, .18); outline: none; }
     .dashboard-map-button:active { transform: scale(.97); }
     .dashboard-kicker { gap: 9px; font-size: 10px; letter-spacing: 1.9px; }
     .dashboard-live-dot { width: 8px; height: 8px; }
     .dashboard-date { font-size: 12px; }
-    .dashboard-insight-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; margin-top: 32px; }
+    .dashboard-insight-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; margin-top: 18px; }
     .dashboard-title { margin-top: 0; }
     .dashboard-stats { margin-top: 20px; }
     .home-lists-grid { grid-area: recent; align-self: stretch; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 1.6vw, 22px); width: 100%; }
@@ -1261,6 +1279,22 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
     .dashboard-stat { gap: 7px; min-width: 105px; }
     .dashboard-stat strong { font-size: 32px; }
     .dashboard-stat span { font-size: 12px; }
+    .dashboard-daily-summary {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0;
+    }
+    .dashboard-title { order: 0; margin-top: 12px; }
+    .dashboard-stats { order: 1; }
+    .dashboard-monthly-expense {
+        order: -1;
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 7px;
+        margin-bottom: 4px;
+    }
+    .dashboard-expense-copy span { font-size: 12px; }
 
     .home-launch-actions {
         grid-area: actions;
@@ -1338,8 +1372,8 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
     .area-measurement-screen .area-field { gap: 8px; font-size: 12px; }
     .area-measurement-screen .area-field input,
     .area-measurement-screen .area-field textarea { min-height: 50px; padding-inline: 14px; font-size: 14px; }
-    .area-measurement-screen .area-records-heading { grid-column: 2; grid-row: 2; align-self: end; margin: 0 2px 0; font-size: 10px; }
-    .area-measurement-screen .area-record-list { grid-column: 2; grid-row: 3; align-content: start; gap: 12px; }
+    .area-measurement-screen .area-records-heading { grid-column: 2; grid-row: 2; align-self: start; margin: 0 2px 0; font-size: 10px; }
+    .area-measurement-screen .area-record-list { grid-column: 2; grid-row: 2; align-self: start; margin-top: 44px; align-content: start; gap: 12px; }
     .area-measurement-screen .area-record-card { padding: 17px; border-radius: 18px; }
     .area-measurement-screen .area-record-company { font-size: 15px; }
     .area-measurement-screen .area-record-vessel,
@@ -1410,6 +1444,25 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
         font-size: 10px;
         font-weight: 600;
         letter-spacing: .2px;
+    }
+}
+
+/* Kompüterdə tətbiqin nanə rəngli xüsusi siçan oxu. */
+@media (hover: hover) and (pointer: fine) {
+    body, body * {
+        cursor: var(--liman-cursor) 3 1, auto !important;
+    }
+    body button:not(:disabled),
+    body a,
+    body [role="button"] {
+        cursor: var(--liman-cursor) 3 1, pointer !important;
+    }
+    body button:disabled { cursor: not-allowed !important; }
+    body input,
+    body textarea,
+    body select,
+    body [contenteditable="true"] {
+        cursor: text !important;
     }
 }
 
@@ -1818,12 +1871,24 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
     position: relative;
     top: -6px;
     grid-template-columns: minmax(0, 1fr);
-    gap: 0;
+    grid-template-rows: auto auto;
+    row-gap: 9px;
     width: min(100%, 960px);
     justify-self: start;
 }
+.home-screen .home-lists-intro {
+    grid-area: 1 / 1 / 2 / 2;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    margin: 0 2px;
+}
+.home-screen .home-lists-intro h2 { margin: 0; color: #eaf3ec; font-size: 16px; font-weight: 720; letter-spacing: -.25px; line-height: 1.2; }
+.home-screen .home-lists-intro p { margin: 0; color: #92a69a; font-size: 10px; line-height: 1.3; text-align: right; }
 .home-screen .home-lists-grid > section {
-    grid-area: 1 / 1;
+    grid-area: 2 / 1 / 3 / 2;
     min-width: 0;
     transition: opacity .38s ease, transform .38s ease, visibility 0s;
 }
@@ -1852,7 +1917,9 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
         overflow: hidden;
     }
     .home-screen .home-actions-heading { display: none; }
-    .home-screen .home-lists-grid { top: -28px; width: 52%; }
+    .home-screen .home-lists-grid { top: -42px; width: 52%; }
+    .home-screen .home-lists-intro h2 { font-size: 19px; }
+    .home-screen .home-lists-intro p { font-size: 11px; }
     .home-screen .home-launch-actions { position: relative; top: 0; }
     .home-screen .home-actions-heading { display: grid; gap: 5px; margin: 0 0 2px 4px; }
     .home-screen .home-actions-heading > span { color: #83c99b; font-size: 9px; font-weight: 800; letter-spacing: 1.6px; }
@@ -1868,7 +1935,7 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
     body.home-screen .container { padding-top: 82px; padding-bottom: 14px; }
     .home-screen #home-view { min-height: 0; gap: clamp(16px, 3vh, 28px) clamp(36px, 5vw, 72px); }
     .home-screen .home-dashboard { padding-top: 0; }
-    .home-screen .dashboard-insight-grid { gap: 18px; margin-top: 23px; }
+    .home-screen .dashboard-insight-grid { gap: 18px; margin-top: 14px; }
     .home-screen .dashboard-title { margin-top: 24px; }
     .home-screen .dashboard-stats { margin-top: 14px; }
     .home-screen .home-launch-actions { gap: 10px; }

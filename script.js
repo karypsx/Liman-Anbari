@@ -2,10 +2,14 @@
 const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=870115945&single=true&output=csv";
 // Yalnız yayımlanmış Paylanma Jurnalı vərəqinin oxu linkidir.
 const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=2059277788&single=true&output=csv";
+// Yalnız yayımlanmış Mal Girişi vərəqinin oxu linkidir.
+const purchasePublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=1580400712&single=true&output=csv";
 const LIMAN_ADMIN_UID = "WvDIKF4R5SNNEGBpMy6oZdcA1Ub2";
 
 let anbarData = [];
 let distributionRecords = [];
+let monthlyPurchaseRecords = [];
+let monthlyPurchaseReady = false;
 let distributionColumnIndexes = {};
 let distributionLoading = false;
 let distributionRefreshQueued = false;
@@ -109,6 +113,8 @@ const portMapOpenMobileButton = document.getElementById("port-map-open-mobile");
 const portMapCloseButton = document.getElementById("port-map-close");
 const dashboardRecordCount = document.getElementById("dashboard-record-count");
 const dashboardQuantityTotal = document.getElementById("dashboard-quantity-total");
+const dashboardExpenseLabel = document.getElementById("dashboard-expense-label");
+const dashboardMonthlyExpense = document.getElementById("dashboard-monthly-expense");
 const issueGoodsButton = document.getElementById("issue-goods");
 const actionToast = document.getElementById("action-toast");
 let actionToastTimer;
@@ -2282,6 +2288,111 @@ function renderDailySummary() {
     dashboardQuantityTotal.textContent = Number.isInteger(total) ? String(total) : total.toLocaleString("az-AZ", { maximumFractionDigits: 2 });
 }
 
+function normalizeExpenseHeader(value) {
+    return String(value ?? "")
+        .trim()
+        .toLocaleLowerCase("az-AZ")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/ə/g, "e")
+        .replace(/ı/g, "i")
+        .replace(/\s+/g, " ");
+}
+
+function parseExpenseNumber(value) {
+    let text = String(value ?? "").trim().replace(/[^\d,.-]/g, "");
+    if (!/\d/.test(text)) return null;
+
+    const commaIndex = text.lastIndexOf(",");
+    const dotIndex = text.lastIndexOf(".");
+    if (commaIndex >= 0 && dotIndex >= 0) {
+        const decimalSeparator = commaIndex > dotIndex ? "," : ".";
+        const thousandsSeparator = decimalSeparator === "," ? "." : ",";
+        text = text.split(thousandsSeparator).join("");
+        if (decimalSeparator === ",") text = text.replace(",", ".");
+    } else if (commaIndex >= 0) {
+        const decimals = text.length - commaIndex - 1;
+        text = decimals > 0 && decimals <= 2
+            ? text.replace(/,/g, ".")
+            : text.replace(/,/g, "");
+    } else if (dotIndex >= 0 && text.indexOf(".") !== dotIndex) {
+        // Multiple dots are treated as grouping separators (for example 1.234.567).
+        text = text.replace(/\./g, "");
+    }
+
+    const number = Number(text);
+    return Number.isFinite(number) ? number : null;
+}
+
+function findPurchaseTable(rows) {
+    const headerIndex = rows.findIndex(row => {
+        if (!Array.isArray(row)) return false;
+        const headers = row.map(normalizeExpenseHeader);
+        return headers.some(value => value.includes("tarix") || value === "date")
+            && headers.some(value => value.includes("toplam mebleg") || value.includes("umumi mebleg")
+                || value.includes("mebleg") || value.includes("amount") || value.includes("xerc"));
+    });
+    if (headerIndex < 0) return { records: [], error: "Mal Girişi vərəqində Tarix və Toplam məbləğ başlıqları tapılmadı." };
+
+    const headers = rows[headerIndex].map(normalizeExpenseHeader);
+    const dateIndex = headers.findIndex(value => value.includes("tarix") || value === "date");
+    let amountIndex = headers.findIndex(value => value.includes("toplam mebleg"));
+    if (amountIndex < 0) amountIndex = headers.findIndex(value => value.includes("umumi mebleg") || value.includes("mebleg") || value.includes("amount") || value.includes("xerc"));
+
+    const records = rows.slice(headerIndex + 1)
+        .filter(Array.isArray)
+        .map(row => ({
+            date: parseJournalDate(row[dateIndex]),
+            amount: parseExpenseNumber(row[amountIndex])
+        }))
+        .filter(record => record.date && record.amount !== null);
+
+    return { records, error: "" };
+}
+
+function renderMonthlyExpense() {
+    const today = new Date();
+    const monthNames = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avqust", "sentyabr", "oktyabr", "noyabr", "dekabr"];
+    const monthName = monthNames[today.getMonth()];
+    dashboardExpenseLabel.textContent = `${monthName.charAt(0).toLocaleUpperCase("az-AZ")}${monthName.slice(1)} ayı üzrə xərclənən vəsait`;
+
+    if (!monthlyPurchaseReady) {
+        dashboardMonthlyExpense.textContent = "—";
+        return;
+    }
+
+    const total = monthlyPurchaseRecords.reduce((sum, record) => {
+        return record.date.getFullYear() === today.getFullYear() && record.date.getMonth() === today.getMonth()
+            ? sum + record.amount
+            : sum;
+    }, 0);
+    const formatted = new Intl.NumberFormat("en-US", {
+        useGrouping: false,
+        maximumFractionDigits: 3
+    }).format(total);
+    dashboardMonthlyExpense.textContent = `${formatted} ₼`;
+}
+
+async function loadMonthlyExpenses() {
+    if (!purchasePublicCsvUrl || !window.Papa) return;
+    try {
+        const response = await fetch(purchasePublicCsvUrl, { cache: "no-store" });
+        if (!response.ok) throw new Error("Mal Girişi cədvəlindən məlumat alınmadı.");
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: false });
+        const result = findPurchaseTable(parsed.data || []);
+        if (result.error) throw new Error(result.error);
+
+        monthlyPurchaseRecords = result.records;
+        monthlyPurchaseReady = true;
+        renderMonthlyExpense();
+    } catch (error) {
+        monthlyPurchaseReady = false;
+        renderMonthlyExpense();
+        console.error("Aylıq mal girişi məbləği yüklənmədi:", error);
+    }
+}
+
 function renderLongestStoredAreas() {
     if (!dashboardOldestList) return;
     dashboardOldestList.replaceChildren();
@@ -2459,28 +2570,29 @@ function appendJournalMessage(message) {
     distributionList.appendChild(item);
 }
 
-// Boş sahəyə toxunanda yüngül, dekorativ qabarcıq effekti.
-document.addEventListener("click", function (event) {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    if (!target.matches("body, .container, .app-header, .view, .app-footer")) return;
-    if (target.closest("button, a, input, textarea, select, nav, .intro-card, .result-card, .section-heading, #reader, .menu-backdrop")) return;
+// Səhifənin istənilən yerinə, o cümlədən düymə və yazılara basanda qabarcıq effekti.
+const tapEffectLayer = document.createElement("div");
+tapEffectLayer.className = "tap-effect-layer";
+tapEffectLayer.setAttribute("aria-hidden", "true");
+document.body.appendChild(tapEffectLayer);
+
+window.addEventListener("pointerdown", function (event) {
+    if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
         const bubble = document.createElement("span");
-        const size = 5 + Math.random() * 8;
+        const size = 6 + Math.random() * 8;
         bubble.className = "tap-bubble";
-        bubble.setAttribute("aria-hidden", "true");
-        bubble.style.setProperty("--bubble-x", `${event.clientX + (Math.random() - .5) * 34}px`);
-        bubble.style.setProperty("--bubble-y", `${event.clientY + (Math.random() - .5) * 14}px`);
+        bubble.style.setProperty("--bubble-x", `${event.clientX + (Math.random() - .5) * 38}px`);
+        bubble.style.setProperty("--bubble-y", `${event.clientY + (Math.random() - .5) * 18}px`);
         bubble.style.setProperty("--bubble-size", `${size}px`);
-        bubble.style.setProperty("--bubble-drift", `${(Math.random() - .5) * 54}px`);
-        bubble.style.setProperty("--bubble-duration", `${650 + Math.random() * 450}ms`);
-        document.body.appendChild(bubble);
+        bubble.style.setProperty("--bubble-drift", `${(Math.random() - .5) * 60}px`);
+        bubble.style.setProperty("--bubble-duration", `${750 + Math.random() * 450}ms`);
+        tapEffectLayer.appendChild(bubble);
         bubble.addEventListener("animationend", () => bubble.remove(), { once: true });
     }
-});
+}, { capture: true, passive: true });
 
 const splashScreen = document.getElementById("splash-screen");
 if (splashScreen) {
@@ -2496,7 +2608,10 @@ initializeReminders();
 setInterval(refreshAreaAgeLabels, 60 * 1000);
 loadDistributionJournal();
 updateDashboardClock();
+renderMonthlyExpense();
+void loadMonthlyExpenses();
 setInterval(updateDashboardClock, 1000);
+setInterval(renderMonthlyExpense, 60 * 1000);
 document.addEventListener("visibilitychange", () => {
     if (!document.hidden) updateDashboardClock();
 });
