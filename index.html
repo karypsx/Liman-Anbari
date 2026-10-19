@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=79">
+    <link rel="stylesheet" href="style.css?v=103">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -114,21 +114,36 @@
             <section class="home-dashboard" aria-label="Günün paneli">
                 <div class="dashboard-topline">
                     <div class="dashboard-date-wrap">
-                        <span class="dashboard-kicker"><span class="dashboard-live-dot"></span> CANLI İCMAL</span>
-                        <time id="dashboard-date" class="dashboard-date"></time>
-                    </div>
-                    <div class="dashboard-clock-wrap">
-                        <time id="dashboard-clock" class="dashboard-clock" aria-label="Canlı saat">--:--:--</time>
-                        <span class="dashboard-clock-label">YERLİ SAAT</span>
+                        <div class="dashboard-kicker-row">
+                            <div id="dashboard-clock" class="dashboard-clock" role="timer" aria-label="Canlı saat">
+                                <span id="dashboard-clock-hour" class="dashboard-clock-hour">--</span>
+                                <span class="dashboard-clock-separator" aria-hidden="true">:</span>
+                                <span id="dashboard-clock-minute" class="dashboard-clock-minute">--</span>
+                                <span id="dashboard-clock-second" class="dashboard-clock-second">:--</span>
+                                <time id="dashboard-date" class="dashboard-date"></time>
+                            </div>
+                            <button id="port-map-open" class="dashboard-map-button" type="button" aria-label="Liman xəritəsini aç" aria-haspopup="dialog" aria-controls="port-map-dialog">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
+                                <span>Xəritə</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <h2 class="dashboard-title">Günün icmalı</h2>
-                <div class="dashboard-stats" aria-label="Bu günün paylama xülasəsi">
-                    <div class="dashboard-stat"><strong id="dashboard-record-count">—</strong><span>paylama qeydi</span></div>
-                    <div class="dashboard-stat"><strong id="dashboard-quantity-total">—</strong><span>verilən miqdar</span></div>
+                <div class="dashboard-insight-grid">
+                    <section class="dashboard-daily-summary" aria-label="Günün icmalı">
+                        <h2 class="dashboard-title">Günün icmalı</h2>
+                        <div class="dashboard-stats" aria-label="Bu günün paylama xülasəsi">
+                            <div class="dashboard-stat"><strong id="dashboard-record-count">—</strong><span>paylama qeydi</span></div>
+                            <div class="dashboard-stat"><strong id="dashboard-quantity-total">—</strong><span>verilən miqdar</span></div>
+                        </div>
+                    </section>
                 </div>
             </section>
             <div class="home-launch-actions">
+                <div class="home-actions-heading">
+                    <span>GÜNDƏLİK ƏMƏLİYYATLAR</span>
+                    <h2>İş alətləri</h2>
+                </div>
                 <button id="home-area-measurement" class="home-scan-launch" type="button">
                     <span class="home-scan-launch-icon home-area-launch-icon" aria-hidden="true"><img src="images/saheolcumu.png" alt=""></span>
                     <span class="home-scan-launch-copy">
@@ -147,18 +162,48 @@
                     </span>
                     <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
                 </button>
+                <button id="home-issue-goods" class="home-scan-launch home-issue-launch" type="button">
+                    <span class="home-scan-launch-icon home-issue-launch-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"></path><path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12.2V21M15 11h6m-3-3 3 3-3 3"></path></svg>
+                    </span>
+                    <span class="home-scan-launch-copy">
+                        <span class="home-scan-kicker">PAYLAMA JURNALI</span>
+                        <strong>Mal ver</strong>
+                        <small>Mal paylama bölməsinə keç</small>
+                    </span>
+                    <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
+                </button>
             </div>
-            <section class="home-recent-section" aria-label="Son verilən mallar">
-                <div class="home-recent-heading">
-                    <div>
-                        <h2>Son verilənlər</h2>
+            <div class="home-lists-grid">
+                <section class="home-recent-section home-card-active" aria-label="Son verilən mallar">
+                    <div class="home-recent-heading">
+                        <div class="home-list-heading home-list-heading-recent">
+                            <span class="home-list-heading-mark" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"></path><path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12.2V21"></path></svg>
+                            </span>
+                            <span class="home-list-heading-copy"><span class="home-list-eyebrow">PAYLAMA JURNALI</span><h2>Son verilənlər</h2></span>
+                        </div>
+                        <button id="recent-distribution-open" class="recent-open-button" type="button" aria-label="Paylama jurnalına bax">Hamısına bax <span aria-hidden="true">›</span></button>
                     </div>
-                    <button id="recent-distribution-open" class="recent-open-button" type="button" aria-label="Paylama jurnalına bax">Hamısına bax <span aria-hidden="true">›</span></button>
-                </div>
-                <ul id="recent-distribution-list" class="recent-distribution-list" aria-live="polite">
-                    <li class="recent-empty">Son qeydlər yüklənir…</li>
-                </ul>
-            </section>
+                    <ul id="recent-distribution-list" class="recent-distribution-list" aria-live="polite">
+                        <li class="recent-empty">Son qeydlər yüklənir…</li>
+                    </ul>
+                </section>
+                <section class="dashboard-area-summary" aria-label="Sahədə uzun müddət qalanlar">
+                    <div class="home-recent-heading">
+                        <div class="home-list-heading home-list-heading-area">
+                            <span class="home-list-heading-mark" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7v5l3.3 2"></path><path d="M17.8 5.8 20 3.6"></path></svg>
+                            </span>
+                            <span class="home-list-heading-copy"><span class="home-list-eyebrow">YIĞILMA MÜDDƏTİ</span><h2>Sahədə uzun müddət qalanlar</h2></span>
+                        </div>
+                        <button id="area-summary-open" class="recent-open-button" type="button" aria-label="Sahə ölçülərinə bax">Hamısına bax <span aria-hidden="true">›</span></button>
+                    </div>
+                    <ul id="dashboard-oldest-list" class="recent-distribution-list dashboard-oldest-list" aria-live="polite">
+                        <li class="recent-empty">Sahə qeydləri yüklənir...</li>
+                    </ul>
+                </section>
+            </div>
         </section>
 
         <section id="distribution-view" class="view distribution-view" hidden>
@@ -444,6 +489,10 @@
             <span class="footer-version">Versiya 1.63.0</span>
         </footer>
     </main>
+    <dialog id="port-map-dialog" class="port-map-dialog" aria-label="Liman ərazisinin xəritəsi">
+        <button id="port-map-close" class="port-map-close" type="button" aria-label="Xəritəni bağla">×</button>
+        <img class="port-map-full" src="images/liman-xerite-xetler.png" alt="Liman ərazisinin xəritəsi">
+    </dialog>
     <dialog id="area-record-dialog" class="area-record-dialog" aria-labelledby="area-dialog-title">
         <div class="area-record-dialog-panel">
             <header class="area-record-dialog-header">
@@ -459,7 +508,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=49"></script>
+    <script src="script.js?v=57"></script>
 </body>
 </html>
 

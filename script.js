@@ -99,7 +99,13 @@ const distributionSearchClear = document.getElementById("distribution-search-cle
 const journalMatchCount = document.getElementById("journal-match-count");
 const recentDistributionList = document.getElementById("recent-distribution-list");
 const dashboardDate = document.getElementById("dashboard-date");
-const dashboardClock = document.getElementById("dashboard-clock");
+const dashboardClockHour = document.getElementById("dashboard-clock-hour");
+const dashboardClockMinute = document.getElementById("dashboard-clock-minute");
+const dashboardClockSecond = document.getElementById("dashboard-clock-second");
+const dashboardOldestList = document.getElementById("dashboard-oldest-list");
+const portMapDialog = document.getElementById("port-map-dialog");
+const portMapOpenButton = document.getElementById("port-map-open");
+const portMapCloseButton = document.getElementById("port-map-close");
 const dashboardRecordCount = document.getElementById("dashboard-record-count");
 const dashboardQuantityTotal = document.getElementById("dashboard-quantity-total");
 const issueGoodsButton = document.getElementById("issue-goods");
@@ -127,7 +133,41 @@ const accountModeToggle = document.getElementById("account-mode-toggle");
 const accountLoginError = document.getElementById("account-login-error");
 const currentAvatarElement = document.getElementById("account-current-avatar");
 const loginPlaceholderLabel = document.getElementById("login-placeholder-label");
+const homeRotatingCards = Array.from(document.querySelectorAll(".home-lists-grid > section"));
+let homeCardRotationIndex = 0;
+let homeCardRotationTimer = null;
+
+function activateHomeCard(index) {
+    homeCardRotationIndex = index;
+    homeRotatingCards.forEach((card, cardIndex) => {
+        const active = cardIndex === index;
+        card.classList.toggle("home-card-active", active);
+        card.setAttribute("aria-hidden", String(!active));
+        card.inert = !active;
+    });
+}
+
+function stopHomeCardRotation() {
+    if (homeCardRotationTimer !== null) {
+        clearInterval(homeCardRotationTimer);
+        homeCardRotationTimer = null;
+    }
+}
+
+function startHomeCardRotation() {
+    stopHomeCardRotation();
+    if (!homeRotatingCards.length) return;
+    activateHomeCard(0);
+    if (homeRotatingCards.length < 2) return;
+
+    homeCardRotationTimer = window.setInterval(() => {
+        if (!document.body.classList.contains("home-screen") || document.hidden) return;
+        activateHomeCard((homeCardRotationIndex + 1) % homeRotatingCards.length);
+    }, 5000);
+}
+
 document.body.classList.add("home-screen");
+startHomeCardRotation();
 
 // Tətbiq daxilində mətnin seçilib köçürülməsini və kontekst menyusunu bağla.
 ["copy", "cut", "contextmenu", "selectstart", "dragstart"].forEach(eventName => {
@@ -246,6 +286,8 @@ document.addEventListener("keydown", function (event) {
 
 function showView(view) {
     if (view === "approvals" && currentAuthUser?.uid !== LIMAN_ADMIN_UID) view = "home";
+    if (view === "home") startHomeCardRotation();
+    else stopHomeCardRotation();
     document.body.classList.toggle("home-screen", view === "home");
     document.body.classList.toggle("scan-screen", view === "scan");
     document.body.classList.toggle("distribution-screen", view === "distribution");
@@ -855,6 +897,7 @@ function getAreaMeasurementValues() {
 }
 
 function renderAreaMeasurements() {
+    renderLongestStoredAreas();
     areaRecordList.replaceChildren();
     const totalArea = areaMeasurementRecords.reduce((sum, record) => sum + (Number(record.area) || 0), 0);
     areaRecordCount.textContent = `${areaMeasurementRecords.length} qeyd`;
@@ -1824,6 +1867,13 @@ async function returnHome() {
 }
 
 document.getElementById("start-scan").addEventListener("click", startScan);
+portMapOpenButton.addEventListener("click", () => {
+    if (!portMapDialog.open) portMapDialog.showModal();
+});
+portMapCloseButton.addEventListener("click", () => portMapDialog.close());
+portMapDialog.addEventListener("click", event => {
+    if (event.target === portMapDialog) portMapDialog.close();
+});
 document.getElementById("home-area-measurement").addEventListener("click", function () {
     scanHandled = false;
     void stopScanner();
@@ -1836,6 +1886,12 @@ document.getElementById("about-home").addEventListener("click", returnHome);
 document.getElementById("recent-distribution-open").addEventListener("click", () => {
     showView("distribution");
     loadDistributionJournal();
+});
+document.getElementById("area-summary-open").addEventListener("click", () => {
+    scanHandled = false;
+    void stopScanner();
+    showView("area-measurement");
+    renderAreaMeasurements();
 });
 function showDistributionError(message) {
     distributionStatus.textContent = message;
@@ -1899,6 +1955,9 @@ distributionSearchInput.addEventListener("keydown", event => {
     }
 });
 issueGoodsButton.addEventListener("click", function () {
+    showActionToast("Mal vermək funksiyası hələ aktiv deyil.");
+});
+document.getElementById("home-issue-goods").addEventListener("click", function () {
     showActionToast("Mal vermək funksiyası hələ aktiv deyil.");
 });
 
@@ -2220,22 +2279,76 @@ function renderDailySummary() {
     dashboardQuantityTotal.textContent = Number.isInteger(total) ? String(total) : total.toLocaleString("az-AZ", { maximumFractionDigits: 2 });
 }
 
+function renderLongestStoredAreas() {
+    if (!dashboardOldestList) return;
+    dashboardOldestList.replaceChildren();
+
+    const entries = areaMeasurementRecords.flatMap(record => {
+        const areas = Array.isArray(record.areas) && record.areas.length
+            ? record.areas
+            : [{ location: record.location || "Sahə", area: record.area, length: record.length, width: record.width }];
+        return areas.map(area => ({
+            company: record.company || "Şirkət qeyd edilməyib",
+            vessel: record.vessel || "",
+            date: record.date || "",
+            location: area.location || "Sahə",
+            area,
+            squareMeters: Number(area.area) || ((Number(area.length) || 0) * (Number(area.width) || 0)),
+            days: currentAccumulationDays(area)
+        }));
+    });
+
+    entries.sort((first, second) => second.days - first.days || first.date.localeCompare(second.date));
+    const oldestEntries = entries.slice(0, 3);
+    if (!oldestEntries.length) {
+        const emptyItem = document.createElement("li");
+        emptyItem.className = "recent-empty";
+        emptyItem.textContent = "Hələ sahə qeydi yoxdur.";
+        dashboardOldestList.appendChild(emptyItem);
+        return;
+    }
+
+    oldestEntries.forEach(entry => {
+        const item = document.createElement("li");
+        item.className = "recent-distribution-item";
+
+        const info = document.createElement("div");
+        info.className = "recent-distribution-info";
+        const name = document.createElement("strong");
+        name.textContent = entry.company;
+        const detail = document.createElement("span");
+        detail.textContent = [entry.vessel ? `Gəmi: ${entry.vessel}` : "", entry.location,
+            `${formatMeasurementNumber(entry.squareMeters)} m²`].filter(Boolean).join(" · ");
+        info.append(name, detail);
+
+        const age = document.createElement("span");
+        age.className = "recent-distribution-quantity";
+        age.textContent = entry.days ? `${entry.days} gün` : "— gün";
+        item.append(info, age);
+        dashboardOldestList.appendChild(item);
+    });
+}
+
 function updateDashboardClock() {
     const now = new Date();
     const dayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
     if (dashboardDayKey && dashboardDayKey !== dayKey) {
         // Gün dəyişəndə xülasəni dərhal yenidən hesabla, sonra jurnalı təzələ.
         renderDailySummary();
+        renderLongestStoredAreas();
         void loadDistributionJournal();
     }
     dashboardDayKey = dayKey;
-    dashboardClock.textContent = new Intl.DateTimeFormat("az-AZ", {
+    const clockParts = new Intl.DateTimeFormat("az-AZ", {
         hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
-    }).format(now);
-    const dateText = new Intl.DateTimeFormat("az-AZ", {
-        weekday: "long", day: "numeric", month: "long", year: "numeric"
-    }).format(now);
-    dashboardDate.textContent = dateText.charAt(0).toLocaleUpperCase("az-AZ") + dateText.slice(1);
+    }).formatToParts(now);
+    const clockValues = Object.fromEntries(clockParts.map(({ type, value }) => [type, value]));
+    dashboardClockHour.textContent = clockValues.hour;
+    dashboardClockMinute.textContent = clockValues.minute;
+    dashboardClockSecond.textContent = `:${clockValues.second}`;
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    dashboardDate.textContent = `${day}.${month}.${now.getFullYear()}`;
 }
 
 function renderRecentMessage(message) {
@@ -2248,7 +2361,7 @@ function renderRecentMessage(message) {
 
 function renderRecentDistribution() {
     recentDistributionList.replaceChildren();
-    distributionRecords.slice(0, 2).forEach(row => {
+    distributionRecords.slice(0, 3).forEach(row => {
         const item = document.createElement("li");
         item.className = "recent-distribution-item";
 
