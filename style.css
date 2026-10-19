@@ -398,6 +398,7 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 .dashboard-kicker-row { display: flex; align-items: center; gap: 16px; }
 .dashboard-kicker { display: flex; align-items: center; gap: 7px; color: #75d59c; font-size: 9px; font-weight: 800; letter-spacing: 1.6px; }
 .dashboard-map-button { display: none; }
+.dashboard-map-button-mobile { display: none; }
 .dashboard-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #50d38a; box-shadow: 0 0 10px rgba(80,211,138,.68); }
 .dashboard-date { grid-column: 1 / -1; grid-row: 2; color: #a9b7af; font-size: 11px; line-height: 1.3; }
 .dashboard-clock { display: grid; flex: none; grid-template-columns: repeat(4, max-content); grid-template-rows: auto auto; column-gap: 0; row-gap: 4px; align-items: baseline; color: #92e8b3; font-size: 21px; font-variant-numeric: tabular-nums; font-weight: 750; letter-spacing: -.35px; line-height: 1.1; }
@@ -1972,11 +1973,21 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
         white-space: nowrap;
     }
     .home-screen .dashboard-map-button {
-        position: fixed;
-        z-index: 12;
-        top: calc(max(16px, env(safe-area-inset-top)) + 52px);
-        right: max(12px, calc((100vw - 480px) / 2 + 12px));
+        display: none;
+    }
+    .home-screen .app-menu-wrap {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+    }
+    .home-screen .account-control {
+        position: absolute;
+        top: 0;
+        right: 54px;
+    }
+    .home-screen .dashboard-map-button-mobile {
         display: inline-flex;
+        position: static;
         align-items: center;
         justify-content: center;
         gap: 6px;
@@ -1991,7 +2002,14 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
         font-weight: 700;
         -webkit-tap-highlight-color: transparent;
     }
+    .home-screen .app-menu { top: 88px; }
     .home-screen .dashboard-map-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-    .home-screen .port-map-dialog { padding: 20px 0; overflow: hidden; }
-    .home-screen .port-map-full { width: 100vw; height: auto; max-height: 88dvh; object-fit: contain; }
+    .home-screen .port-map-dialog { padding: 0; overflow: hidden; }
+    .home-screen .port-map-full {
+        width: min(88dvh, 200vw);
+        height: auto;
+        max-height: none;
+        object-fit: contain;
+        transform: rotate(90deg);
+    }
 }

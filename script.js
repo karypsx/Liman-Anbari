@@ -105,6 +105,7 @@ const dashboardClockSecond = document.getElementById("dashboard-clock-second");
 const dashboardOldestList = document.getElementById("dashboard-oldest-list");
 const portMapDialog = document.getElementById("port-map-dialog");
 const portMapOpenButton = document.getElementById("port-map-open");
+const portMapOpenMobileButton = document.getElementById("port-map-open-mobile");
 const portMapCloseButton = document.getElementById("port-map-close");
 const dashboardRecordCount = document.getElementById("dashboard-record-count");
 const dashboardQuantityTotal = document.getElementById("dashboard-quantity-total");
@@ -1867,9 +1868,11 @@ async function returnHome() {
 }
 
 document.getElementById("start-scan").addEventListener("click", startScan);
-portMapOpenButton.addEventListener("click", () => {
+function openPortMap() {
     if (!portMapDialog.open) portMapDialog.showModal();
-});
+}
+portMapOpenButton.addEventListener("click", openPortMap);
+portMapOpenMobileButton.addEventListener("click", openPortMap);
 portMapCloseButton.addEventListener("click", () => portMapDialog.close());
 portMapDialog.addEventListener("click", event => {
     if (event.target === portMapDialog) portMapDialog.close();
