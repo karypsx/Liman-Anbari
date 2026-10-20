@@ -14,6 +14,6 @@ window.APP_CONFIG = {
         appId: "1:17127953994:web:b63b5774f42d894df938b3"
     },
     firebaseVapidPublicKey: "BGS8Sp1oxxiFtu2uB5OPk9M_g8Kp2Nd9aaSADgCKnd2bqh7I_N76k4EOwBNGVJT_vJgkNrF2TUDxaID8zOmzkpY",
-    // Apps Script bağlantısı hamıya açıq yayımlandığı üçün linki yalnız tətbiqdə saxlayın.
-    areaMeasurementsApiUrl: "https://script.google.com/macros/s/AKfycbyTQ4C_aMLmLicem0rpK4ftvKLQCVfwL7XzA4cWxwJYhgTM8TDX6v7CwJXGmG2nr38/exec"
+    // Yeni, təsdiqlənmiş hesabı yoxlayan Apps Script Web App URL-ni burada yerləşdirin.
+    areaMeasurementsApiUrl: "https://script.google.com/macros/s/AKfycbyOl_QwNUDZYWYp9vDfUjUYjOgal6qVG1NVPN8Tt_ia2_HJ_xbaUobSIZ-zcZ-9DQtc/exec"
 };
