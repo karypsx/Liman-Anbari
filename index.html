@@ -65,6 +65,10 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
                 <span>Xəritə</span>
             </button>
+            <button id="maray-water-open-mobile" class="dashboard-map-button dashboard-map-button-mobile maray-water-open" type="button" aria-label="Məray Su qaimələrini aç">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.3 6 11a6 6 0 1 1-12 0c0-4.7 6-11 6-11Z"></path><path d="M9 15a3 3 0 0 0 3 3"></path></svg>
+                <span>Məray Su</span>
+            </button>
             <nav id="app-menu" class="app-menu" aria-label="Əsas menyu" hidden>
                 <div class="app-menu-heading">
                     <div><span class="app-menu-kicker">LİMAN ANBARI</span><strong>Bölmələr</strong></div>
@@ -129,6 +133,10 @@
                             <button id="port-map-open" class="dashboard-map-button" type="button" aria-label="Liman xəritəsini aç" aria-haspopup="dialog" aria-controls="port-map-dialog">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
                                 <span>Xəritə</span>
+                            </button>
+                            <button id="maray-water-open" class="dashboard-map-button maray-water-open" type="button" aria-label="Məray Su qaimələrini aç">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.3 6 11a6 6 0 1 1-12 0c0-4.7 6-11 6-11Z"></path><path d="M9 15a3 3 0 0 0 3 3"></path></svg>
+                                <span>Məray Su</span>
                             </button>
                         </div>
                     </div>
@@ -301,6 +309,46 @@
             </form>
         </section>
 
+        <section id="maray-water-view" class="view maray-water-view" hidden>
+            <div class="area-page-heading">
+                <div class="area-page-kicker"><span class="dashboard-live-dot"></span> SU TƏHVİL QEYDLƏRİ</div>
+                <h2>Məray Su</h2>
+                <p>Gələn suyu kimə və neçə butulka təhvil verdiyinizi qaimə kimi qeyd edin.</p>
+            </div>
+            <form id="maray-water-form" class="area-form maray-water-form">
+                <div class="area-form-grid">
+                    <label class="area-field area-field-full">
+                        <span>Tarix</span>
+                        <input id="maray-water-date" type="date" required>
+                    </label>
+                    <div class="area-field area-field-full maray-water-allocation-field">
+                        <span>Təhvil verilən yerlər</span>
+                        <div class="maray-water-allocation-head" aria-hidden="true"><span>Butulka sayı</span><span>Təhvil yeri</span></div>
+                        <div id="maray-water-allocation-rows" class="maray-water-allocation-rows"></div>
+                        <button id="maray-water-add-allocation" class="maray-water-add-allocation" type="button"><span aria-hidden="true">＋</span> Başqa yer əlavə et</button>
+                    </div>
+                    <label class="area-field area-field-full">
+                        <span>Qəbul edən şəxsin adı</span>
+                        <input id="maray-water-recipient" type="text" maxlength="100" autocomplete="name" placeholder="Ad və soyad" required>
+                    </label>
+                    <label class="area-field area-field-full">
+                        <span>Qeyd <small>istəyə bağlı</small></span>
+                        <textarea id="maray-water-note" rows="2" maxlength="300" placeholder="Əlavə məlumat"></textarea>
+                    </label>
+                </div>
+                <button class="primary-button area-save-button maray-water-save" type="submit"><span aria-hidden="true">＋</span> Qaiməni yadda saxla</button>
+                <p id="maray-water-sync-note" class="area-sync-note" role="status" aria-live="polite">Excel bağlantısı qurulur.</p>
+            </form>
+            <div class="maray-water-summary">
+                <div><span>ÜMUMİ TƏHVİLLƏR</span><strong id="maray-water-count">0 qaimə</strong></div>
+                <output id="maray-water-total">0 butulka</output>
+            </div>
+            <ul id="maray-water-record-list" class="maray-water-record-list" aria-live="polite">
+                <li class="maray-water-empty">Hələ Məray Su təhvili qeyd edilməyib.</li>
+            </ul>
+            <button id="maray-water-home" class="secondary-button maray-water-home" type="button"><span aria-hidden="true">⌂</span> Ana səhifəyə qayıt</button>
+        </section>
+
         <section id="reminders-view" class="view reminders-view" hidden>
             <div class="reminder-page-heading">
                 <div class="reminder-page-kicker"><span class="dashboard-live-dot"></span> GÜNDƏLİK QEYDLƏR</div>
@@ -399,8 +447,8 @@
                     <div class="about-icon" aria-hidden="true">i</div>
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
-                    <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, xatırlatma və paylama qeydlərini bir yerdə idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.63.0</strong></span>
+                    <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, su təhvil qeydləri, xatırlatma və paylama əməliyyatlarını bir yerdə idarə etmək üçün hazırlanıb.</p>
+                    <span class="about-version">Versiya <strong>1.64.0</strong></span>
                 </div>
                 <section class="about-feature-section" aria-labelledby="about-features-title">
                     <div class="about-section-heading">
@@ -501,7 +549,7 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.63.0</span>
+            <span class="footer-version">Versiya 1.64.0</span>
         </footer>
     </main>
     <dialog id="port-map-dialog" class="port-map-dialog" aria-label="Liman ərazisinin xəritəsi">
@@ -518,12 +566,12 @@
         </div>
     </dialog>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-    <script src="app-config.js?v=5"></script>
+    <script src="app-config.js?v=6"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=62"></script>
+    <script src="script.js?v=63"></script>
 </body>
 </html>
 

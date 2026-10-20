@@ -23,6 +23,10 @@ const areaCloudMigrationKey = `${areaMeasurementStorageKey}-cloud-migrated-v1`;
 const areaCloudPendingKey = `${areaMeasurementStorageKey}-cloud-pending-v1`;
 const areaMeasurementsApiUrl = window.APP_CONFIG?.areaMeasurementsApiUrl || "";
 let areaCloudQueue = Promise.resolve();
+const marayWaterStorageKey = "liman-maray-water-records-v1";
+const marayWaterPendingKey = "liman-maray-water-pending-v1";
+const marayWaterApiUrl = window.APP_CONFIG?.marayWaterApiUrl || "";
+let marayWaterRecords = [];
 const reminderStorageKey = "liman-reminders-v1";
 let reminders = [];
 let firebaseAuth = null;
@@ -51,6 +55,7 @@ const scanView = document.getElementById("scan-view");
 const resultView = document.getElementById("result-view");
 const distributionView = document.getElementById("distribution-view");
 const areaMeasurementView = document.getElementById("area-measurement-view");
+const marayWaterView = document.getElementById("maray-water-view");
 const aboutView = document.getElementById("about-view");
 const remindersView = document.getElementById("reminders-view");
 const approvalView = document.getElementById("approval-view");
@@ -90,6 +95,16 @@ const areaRecordDialog = document.getElementById("area-record-dialog");
 const areaRecordDialogContent = document.getElementById("area-record-dialog-content");
 const areaDialogCloseButton = document.getElementById("area-dialog-close");
 const areaDialogKicker = document.getElementById("area-dialog-kicker");
+const marayWaterForm = document.getElementById("maray-water-form");
+const marayWaterDateInput = document.getElementById("maray-water-date");
+const marayWaterAllocationRows = document.getElementById("maray-water-allocation-rows");
+const marayWaterAddAllocationButton = document.getElementById("maray-water-add-allocation");
+const marayWaterRecipientInput = document.getElementById("maray-water-recipient");
+const marayWaterNoteInput = document.getElementById("maray-water-note");
+const marayWaterRecordList = document.getElementById("maray-water-record-list");
+const marayWaterCount = document.getElementById("maray-water-count");
+const marayWaterTotal = document.getElementById("maray-water-total");
+const marayWaterSyncNote = document.getElementById("maray-water-sync-note");
 let activeAreaRecordId = null;
 let pendingAreaDelete = null;
 let pendingReminderDelete = null;
@@ -299,6 +314,7 @@ function showView(view) {
     document.body.classList.toggle("scan-screen", view === "scan");
     document.body.classList.toggle("distribution-screen", view === "distribution");
     document.body.classList.toggle("area-measurement-screen", view === "area-measurement");
+    document.body.classList.toggle("maray-water-screen", view === "maray-water");
     document.body.classList.toggle("reminders-screen", view === "reminders");
     document.body.classList.toggle("about-screen", view === "about");
     document.body.classList.toggle("approval-screen", view === "approvals");
@@ -308,6 +324,7 @@ function showView(view) {
     resultView.hidden = view !== "result";
     distributionView.hidden = view !== "distribution";
     areaMeasurementView.hidden = view !== "area-measurement";
+    marayWaterView.hidden = view !== "maray-water";
     remindersView.hidden = view !== "reminders";
     approvalView.hidden = view !== "approvals";
     accountView.hidden = view !== "account";
@@ -424,6 +441,7 @@ function initializeFirebaseAccount() {
 
             if (stateVersion !== authStateVersion) return;
             currentAuthUser = user;
+            enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
             currentProfileAvatar = approvedProfile?.avatar || "box";
             updateAccountButton(user, currentProfileAvatar, approvedProfile?.displayName);
             approvalMenuLink.hidden = user.uid !== LIMAN_ADMIN_UID;
@@ -1407,8 +1425,10 @@ function normalizeAreaCloudRecords(payload) {
     return [...grouped.values()].sort((a, b) => b.id.localeCompare(a.id));
 }
 
-function fetchAreaMeasurementsFromCloud() {
+async function fetchAreaMeasurementsFromCloud() {
     if (!areaMeasurementsApiUrl) return Promise.reject(new Error("Google Sheets bağlantısı qurulmayıb."));
+    if (!currentAuthUser) throw new Error("Google Sheets üçün təsdiqlənmiş hesaba daxil olun.");
+    const idToken = await currentAuthUser.getIdToken();
     return new Promise((resolve, reject) => {
         const callbackName = `__limanAreaCallback_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const script = document.createElement("script");
@@ -1433,17 +1453,19 @@ function fetchAreaMeasurementsFromCloud() {
         script.async = true;
         script.onerror = () => finish(new Error("Google Sheets bağlantısı açıla bilmədi."));
         const separator = areaMeasurementsApiUrl.includes("?") ? "&" : "?";
-        script.src = `${areaMeasurementsApiUrl}${separator}callback=${encodeURIComponent(callbackName)}&_=${Date.now()}`;
+        script.src = `${areaMeasurementsApiUrl}${separator}callback=${encodeURIComponent(callbackName)}&idToken=${encodeURIComponent(idToken)}&_=${Date.now()}`;
         document.head.appendChild(script);
     });
 }
 
 async function postAreaMeasurementMutation(action, record) {
+    if (!currentAuthUser) throw new Error("Google Sheets üçün təsdiqlənmiş hesaba daxil olun.");
+    const idToken = await currentAuthUser.getIdToken();
     await fetch(areaMeasurementsApiUrl, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action, record })
+        body: JSON.stringify({ action, record, idToken })
     });
 }
 
@@ -1608,7 +1630,7 @@ function loadAreaMeasurements() {
     }
     if (areaMeasurementList.children.length === 0) areaMeasurementList.appendChild(createAreaMeasurementBlock(0));
     renderAreaMeasurements();
-    enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
+    if (currentAuthUser) enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
 }
 
 addAreaMeasurementButton.addEventListener("click", () => {
@@ -1872,6 +1894,357 @@ async function returnHome() {
     scanHandled = false;
     showView("home");
 }
+
+function readMarayWaterCache() {
+    try {
+        const records = JSON.parse(localStorage.getItem(marayWaterStorageKey) || "[]");
+        return Array.isArray(records) ? records : [];
+    } catch { return []; }
+}
+
+function readPendingMarayWaterRecords() {
+    try {
+        const records = JSON.parse(localStorage.getItem(marayWaterPendingKey) || "[]");
+        return Array.isArray(records) ? records : [];
+    } catch { return []; }
+}
+
+function saveMarayWaterCache(records) {
+    marayWaterRecords = records;
+    localStorage.setItem(marayWaterStorageKey, JSON.stringify(records));
+    renderMarayWaterRecords();
+}
+
+function formatMarayWaterDate(value) {
+    const [year, month, day] = String(value || "").split("-").map(Number);
+    if (!year || !month || !day) return "Tarix qeyd edilməyib";
+    return new Date(year, month - 1, day).toLocaleDateString("az-AZ", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+function refreshMarayWaterAllocationRowNumbers() {
+    const rows = [...marayWaterAllocationRows.querySelectorAll(".maray-water-allocation-row")];
+    rows.forEach((row, index) => {
+        const placeInput = row.querySelector("[data-allocation-place]");
+        placeInput.setAttribute("aria-label", `${index + 1}-ci təhvil yeri`);
+        if (!placeInput.value) placeInput.placeholder = index === 0 ? "1-ci post" : index === 1 ? "2-ci post" : index === 2 ? "İdarə" : "Təhvil yeri";
+        const quantityInput = row.querySelector("[data-allocation-quantity]");
+        quantityInput.setAttribute("aria-label", `${index + 1}-ci yer üçün butulka sayı`);
+    });
+    marayWaterAddAllocationButton.disabled = rows.length >= 20;
+    marayWaterAddAllocationButton.setAttribute("aria-disabled", String(rows.length >= 20));
+}
+
+function addMarayWaterAllocationRow(values = {}, removable = false) {
+    const row = document.createElement("div");
+    row.className = "maray-water-allocation-row";
+
+    const quantityLabel = document.createElement("label");
+    quantityLabel.className = "maray-water-allocation-quantity";
+    const quantityName = document.createElement("span");
+    quantityName.className = "visually-hidden";
+    quantityName.textContent = "Butulka sayı";
+    const quantityInput = document.createElement("input");
+    quantityInput.type = "number";
+    quantityInput.min = "1";
+    quantityInput.max = "100000";
+    quantityInput.step = "1";
+    quantityInput.inputMode = "numeric";
+    quantityInput.placeholder = "0";
+    quantityInput.dataset.allocationQuantity = "";
+    quantityInput.value = values.bottles || "";
+    quantityLabel.append(quantityName, quantityInput);
+
+    const placeLabel = document.createElement("label");
+    placeLabel.className = "maray-water-allocation-place";
+    const placeName = document.createElement("span");
+    placeName.className = "visually-hidden";
+    placeName.textContent = "Təhvil yeri";
+    const placeInput = document.createElement("input");
+    placeInput.type = "text";
+    placeInput.maxLength = 100;
+    placeInput.autocomplete = "off";
+    placeInput.dataset.allocationPlace = "";
+    placeInput.value = values.destination || "";
+    placeLabel.append(placeName, placeInput);
+
+    row.append(quantityLabel, placeLabel);
+    if (removable) {
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "maray-water-remove-allocation";
+        removeButton.setAttribute("aria-label", "Bu təhvil yerini sil");
+        removeButton.textContent = "×";
+        removeButton.addEventListener("click", () => {
+            row.remove();
+            refreshMarayWaterAllocationRowNumbers();
+        });
+        row.appendChild(removeButton);
+    }
+    marayWaterAllocationRows.appendChild(row);
+    refreshMarayWaterAllocationRowNumbers();
+}
+
+function resetMarayWaterAllocationRows() {
+    marayWaterAllocationRows.replaceChildren();
+    addMarayWaterAllocationRow();
+    addMarayWaterAllocationRow();
+    addMarayWaterAllocationRow();
+}
+
+function collectMarayWaterAllocations() {
+    const rows = [...marayWaterAllocationRows.querySelectorAll(".maray-water-allocation-row")];
+    const allocations = [];
+    for (const row of rows) {
+        const destinationInput = row.querySelector("[data-allocation-place]");
+        const quantityInput = row.querySelector("[data-allocation-quantity]");
+        const destination = destinationInput.value.trim();
+        const rawQuantity = quantityInput.value.trim();
+        if (!destination && !rawQuantity) continue;
+        const bottles = Number(rawQuantity);
+        if (!destination || !Number.isInteger(bottles) || bottles < 1 || bottles > 100000) {
+            showActionToast("Hər sətirdə təhvil yerini və butulka sayını tamamlayın.");
+            (destination ? quantityInput : destinationInput).focus();
+            return null;
+        }
+        allocations.push({ destination, bottles });
+    }
+    if (!allocations.length) {
+        showActionToast("Ən azı bir təhvil yeri və butulka sayı yazın.");
+        marayWaterAllocationRows.querySelector("[data-allocation-place]")?.focus();
+        return null;
+    }
+    return allocations;
+}
+
+function renderMarayWaterRecords() {
+    const records = [...marayWaterRecords].sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.id).localeCompare(String(a.id)));
+    marayWaterCount.textContent = `${records.length} qaimə`;
+    marayWaterTotal.textContent = `${records.reduce((sum, record) => sum + (record.allocations || []).reduce((total, item) => total + (Number(item.bottles) || 0), 0), 0)} butulka`;
+    marayWaterRecordList.replaceChildren();
+    if (!records.length) {
+        const empty = document.createElement("li");
+        empty.className = "maray-water-empty";
+        empty.textContent = "Hələ Məray Su təhvili qeyd edilməyib.";
+        marayWaterRecordList.appendChild(empty);
+        return;
+    }
+    records.forEach(record => {
+        const card = document.createElement("li");
+        card.className = "maray-water-record-card";
+        const top = document.createElement("div");
+        top.className = "maray-water-record-top";
+        const destination = document.createElement("strong");
+        destination.className = "maray-water-record-destination";
+        destination.textContent = formatMarayWaterDate(record.date);
+        const quantity = document.createElement("span");
+        quantity.className = "maray-water-record-quantity";
+        const bottleTotal = (record.allocations || []).reduce((sum, item) => sum + (Number(item.bottles) || 0), 0);
+        quantity.textContent = `${bottleTotal} butulka`;
+        top.append(destination, quantity);
+
+        const allocationList = document.createElement("div");
+        allocationList.className = "maray-water-record-allocations";
+        (record.allocations || []).forEach(allocation => {
+            const allocationLine = document.createElement("div");
+            allocationLine.className = "maray-water-record-allocation";
+            const place = document.createElement("span");
+            place.textContent = allocation.destination || "Təhvil yeri qeyd edilməyib";
+            const amount = document.createElement("strong");
+            amount.textContent = `${Number(allocation.bottles) || 0} butulka`;
+            allocationLine.append(place, amount);
+            allocationList.appendChild(allocationLine);
+        });
+
+        const details = document.createElement("div");
+        details.className = "maray-water-record-details";
+        const date = document.createElement("span");
+        date.textContent = "Təhvil qaiməsi";
+        const recipient = document.createElement("span");
+        recipient.textContent = `Qəbul edən: ${record.recipient || "—"}`;
+        details.append(date, recipient);
+        card.append(top, allocationList, details);
+        if (record.note) {
+            const note = document.createElement("p");
+            note.className = "maray-water-record-note";
+            note.textContent = record.note;
+            card.appendChild(note);
+        }
+        marayWaterRecordList.appendChild(card);
+    });
+}
+
+function normalizeMarayWaterRecords(payload) {
+    if (payload?.ok === false || payload?.success === false) {
+        throw new Error(payload.error || payload.message || "Məray Su cədvəlindən cavab alınmadı.");
+    }
+    const source = Array.isArray(payload) ? payload : payload?.records;
+    if (!Array.isArray(source)) throw new Error("Məray Su cədvəlində qeydlər tapılmadı.");
+    return source.map(record => ({
+        id: String(record.id || record.recordId || ""),
+        date: String(record.date || ""),
+        allocations: Array.isArray(record.allocations)
+            ? record.allocations.map(item => ({ destination: String(item.destination || ""), bottles: Math.max(0, Math.floor(Number(item.bottles) || 0)) }))
+            : record.destination ? [{ destination: String(record.destination), bottles: Math.max(0, Math.floor(Number(record.bottles) || 0)) }] : [],
+        recipient: String(record.recipient || ""),
+        note: String(record.note || "")
+    })).filter(record => record.id);
+}
+
+async function fetchMarayWaterRecordsFromCloud() {
+    if (!marayWaterApiUrl) throw new Error("Məray Su üçün Google Sheets bağlantısı qurulmayıb.");
+    if (!currentAuthUser) throw new Error("Məray Su qeydləri üçün təsdiqlənmiş hesaba daxil olun.");
+    const idToken = await currentAuthUser.getIdToken();
+    return new Promise((resolve, reject) => {
+        const callbackName = `__limanMarayCallback_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const script = document.createElement("script");
+        let settled = false;
+        const cleanup = () => {
+            clearTimeout(timeout);
+            script.remove();
+            try { delete window[callbackName]; } catch { window[callbackName] = undefined; }
+        };
+        const finish = (error, result) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            if (error) reject(error);
+            else resolve(result);
+        };
+        const timeout = setTimeout(() => finish(new Error("Google Sheets-dən cavab gecikdi.")), 20000);
+        window[callbackName] = payload => {
+            try { finish(null, normalizeMarayWaterRecords(payload)); }
+            catch (error) { finish(error); }
+        };
+        script.async = true;
+        script.onerror = () => finish(new Error("Məray Su Google Sheets bağlantısı açıla bilmədi."));
+        const separator = marayWaterApiUrl.includes("?") ? "&" : "?";
+        script.src = `${marayWaterApiUrl}${separator}callback=${encodeURIComponent(callbackName)}&idToken=${encodeURIComponent(idToken)}&_=${Date.now()}`;
+        document.head.appendChild(script);
+    });
+}
+
+async function postMarayWaterRecord(record) {
+    if (!currentAuthUser) throw new Error("Məray Su qaiməsi üçün hesaba daxil olun.");
+    const idToken = await currentAuthUser.getIdToken();
+    await fetch(marayWaterApiUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "save", record, idToken })
+    });
+}
+
+async function loadMarayWaterRecords() {
+    if (!currentAuthUser) {
+        marayWaterRecords = [];
+        renderMarayWaterRecords();
+        marayWaterSyncNote.textContent = "Qaimələri görmək və yazmaq üçün təsdiqlənmiş hesabınıza daxil olun.";
+        return;
+    }
+    if (!marayWaterApiUrl) {
+        marayWaterRecords = [];
+        renderMarayWaterRecords();
+        marayWaterSyncNote.textContent = "Google Sheets bağlantısı qurulandan sonra qeydlər Excel-ə də yazılacaq.";
+        return;
+    }
+    marayWaterRecords = readMarayWaterCache();
+    renderMarayWaterRecords();
+    marayWaterSyncNote.textContent = "Məray Su qaimələri yüklənir…";
+    try {
+        for (const record of readPendingMarayWaterRecords()) {
+            try { await postMarayWaterRecord(record); } catch (_) { /* İnternet qayıdanda yenidən yoxlanacaq. */ }
+        }
+        const records = await fetchMarayWaterRecordsFromCloud();
+        const cloudIds = new Set(records.map(record => record.id));
+        const remainingPending = readPendingMarayWaterRecords().filter(record => !cloudIds.has(record.id));
+        const pendingIds = new Set(remainingPending.map(record => record.id));
+        const pending = readMarayWaterCache().filter(record => pendingIds.has(record.id));
+        const merged = [...records];
+        pending.forEach(record => { if (!merged.some(item => item.id === record.id)) merged.push(record); });
+        saveMarayWaterCache(merged);
+        localStorage.setItem(marayWaterPendingKey, JSON.stringify(remainingPending));
+        marayWaterSyncNote.textContent = remainingPending.length
+            ? `${remainingPending.length} qaimə internet bərpa olunanda cədvələ göndəriləcək.`
+            : "Qeydlər Google Sheets-lə sinxronlaşdırıldı.";
+    } catch (error) {
+        marayWaterSyncNote.textContent = error.message || "Məray Su qeydləri yüklənmədi.";
+    }
+}
+
+function addPendingMarayWaterRecord(record) {
+    const pending = readPendingMarayWaterRecords().filter(item => item.id !== record.id);
+    pending.push(record);
+    localStorage.setItem(marayWaterPendingKey, JSON.stringify(pending));
+}
+
+function removePendingMarayWaterRecord(recordId) {
+    localStorage.setItem(marayWaterPendingKey, JSON.stringify(readPendingMarayWaterRecords().filter(item => item.id !== recordId)));
+}
+
+async function openMarayWaterPage() {
+    await stopScanner();
+    showView("maray-water");
+    if (!marayWaterDateInput.value) marayWaterDateInput.value = localDateInputValue();
+    await loadMarayWaterRecords();
+}
+
+marayWaterForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!marayWaterForm.reportValidity()) return;
+    if (!currentAuthUser) {
+        showActionToast("Qaimə yazmaq üçün təsdiqlənmiş hesabınıza daxil olun.");
+        openAccountPage("login");
+        return;
+    }
+    if (!marayWaterApiUrl) {
+        marayWaterSyncNote.textContent = "Google Sheets bağlantısı hələ qurulmayıb. Tətbiq ayarlarına Web App linki əlavə edilməlidir.";
+        showActionToast("Google Sheets bağlantısı hələ qurulmayıb.");
+        return;
+    }
+    const allocations = collectMarayWaterAllocations();
+    if (!allocations) return;
+    const record = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        date: marayWaterDateInput.value,
+        allocations,
+        recipient: marayWaterRecipientInput.value.trim(),
+        note: marayWaterNoteInput.value.trim()
+    };
+    addPendingMarayWaterRecord(record);
+    saveMarayWaterCache([record, ...marayWaterRecords]);
+    marayWaterForm.reset();
+    resetMarayWaterAllocationRows();
+    marayWaterDateInput.value = localDateInputValue();
+    marayWaterSyncNote.textContent = "Qaimə Google Sheets-ə göndərilir…";
+    try {
+        await postMarayWaterRecord(record);
+        let confirmed = false;
+        for (let attempt = 0; attempt < 4; attempt++) {
+            const cloudRecords = await fetchMarayWaterRecordsFromCloud();
+            if (cloudRecords.some(item => item.id === record.id)) {
+                saveMarayWaterCache(cloudRecords);
+                confirmed = true;
+                break;
+            }
+            if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        if (!confirmed) throw new Error("Qaimə cədvəldə təsdiqlənmədi.");
+        removePendingMarayWaterRecord(record.id);
+        marayWaterSyncNote.textContent = "Qaimə Google Sheets-də yadda saxlanıldı.";
+        showActionToast("Məray Su qaiməsi yadda saxlanıldı.");
+    } catch (error) {
+        addPendingMarayWaterRecord(record);
+        marayWaterSyncNote.textContent = "Qaimə cihazda qaldı, amma Google Sheets-ə göndərilməsi təsdiqlənmədi.";
+        showActionToast(error.message || "Qaiməni Google Sheets-ə göndərmək olmadı.");
+    }
+});
+
+document.querySelectorAll(".maray-water-open").forEach(button => button.addEventListener("click", () => void openMarayWaterPage()));
+document.getElementById("maray-water-home").addEventListener("click", () => showView("home"));
+marayWaterAddAllocationButton.addEventListener("click", () => {
+    if (marayWaterAllocationRows.querySelectorAll(".maray-water-allocation-row").length < 20) addMarayWaterAllocationRow({}, true);
+});
+resetMarayWaterAllocationRows();
 
 document.getElementById("start-scan").addEventListener("click", startScan);
 function openPortMap() {

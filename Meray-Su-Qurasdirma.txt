@@ -1,0 +1,23 @@
+LIMAN ANBARI · MƏRAY SU QURAŞDIRMA
+
+Bu paketdə tətbiqin 1.64.0 versiyası, Google Apps Script kodu və quraşdırma addımları var.
+
+Forma əvvəlcədən 3 təhvil yeri sətri açır. Hər sətirdə solda butulka sayı, yanında təhvil yeri yazılır. “Başqa yer əlavə et” düyməsi ilə 20-yə qədər sətir artırmaq olar. Məsələn, ilk üç sətirdə 1-ci post, 2-ci post və idarə yazılır; tərəzi üçün əlavə sətir açılır. Qəbul edən şəxsin adı və qeyd bütün qaiməyə aiddir.
+
+1. Google Sheets-də göndərdiyin əsas “Ceyhun anbar” faylını aç.
+2. Extensions → Apps Script seç.
+3. Açılan layihədə Code.gs faylının içini təmizlə, bu paketdəki Meray-Su-Code.gs faylının bütün mətnini ora köçür və Save et.
+4. Yuxarıdakı funksiya siyahısından authorizeMarayWater seçib Run bas. İcazə pəncərəsində davam et. Bu addım “Məray Su” vərəqini başlıqlar və formatla yaradır.
+5. Deploy → New deployment → Web app seç.
+6. Execute as: Me seç. Who has access: Anyone seç. Tətbiq məlumatı göndərərkən Firebase-də təsdiqlənmiş hesabı ayrıca yoxlayır; Google Sheets paylaşımını açıq etmə.
+7. Deploy et, icazəni təsdiqlə və yaranan /exec linkini köçür.
+8. Paketdəki app-config.js faylında aşağıdakı sətri tap:
+   marayWaterApiUrl: ""
+   Dırnaqların içinə yeni /exec linkini əlavə et, məsələn:
+   marayWaterApiUrl: "https://script.google.com/macros/s/.../exec"
+9. Dəyişən app-config.js faylını GitHub-dakı tətbiq faylı ilə əvəz et. Digər faylları yenidən yükləmək lazım deyil.
+10. Tətbiqi yenilə, təsdiqlənmiş hesabla daxil ol və Məray Su bölməsindən sınaq qaiməsi yaz. Hər təhvil yeri “Ceyhun anbar” faylındakı “Məray Su” vərəqinə ayrıca sərhədli sətir kimi düşməlidir.
+
+Vacib: Web App linki texniki olaraq açıq linkdir, ancaq Apps Script hər sorğuda Firebase girişini və “approved” hesab statusunu yoxlayır. Sheet-in paylaşımı “Anyone” edilməməlidir. Apps Script-i əsas Ceyhun anbar faylına giriş hüququ olan Google hesabında yarat və yayımla.
+
+Qeyd sahələri: tarix, bir neçə təhvil yeri və hər yer üçün butulka sayı, qəbul edən şəxsin adı və istəyə bağlı qeyd.
