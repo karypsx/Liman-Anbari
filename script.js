@@ -1,9 +1,9 @@
 // Buraya Google Sheets-də "Anbar Qalığı" vərəqinin CSV linkini yerləşdir.
-const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=870115945&single=true&output=csv";
+const googleSheetsCSVLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSAhFgg-Ct0Vvq3wty9ybPtUc7qVzgIXR-Fm8Nxi0fy2bOuIZyVI_Nd4j4r_n_r19tGc4xn0m-vD9NT/pub?gid=1441912411&single=true&output=csv";
 // Yalnız yayımlanmış Paylanma Jurnalı vərəqinin oxu linkidir.
-const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=2059277788&single=true&output=csv";
+const distributionPublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSAhFgg-Ct0Vvq3wty9ybPtUc7qVzgIXR-Fm8Nxi0fy2bOuIZyVI_Nd4j4r_n_r19tGc4xn0m-vD9NT/pub?gid=1178170056&single=true&output=csv";
 // Yalnız yayımlanmış Mal Girişi vərəqinin oxu linkidir.
-const purchasePublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpme-5hAwFc4KhH1w4m3gdL99J-ey9g4QsMiSAR3sGyUDOGgSs6gNGgOZahMTw-S_eLsysg7kEY_P/pub?gid=1580400712&single=true&output=csv";
+const purchasePublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSAhFgg-Ct0Vvq3wty9ybPtUc7qVzgIXR-Fm8Nxi0fy2bOuIZyVI_Nd4j4r_n_r19tGc4xn0m-vD9NT/pub?gid=657890178&single=true&output=csv";
 const LIMAN_ADMIN_UID = "WvDIKF4R5SNNEGBpMy6oZdcA1Ub2";
 
 let anbarData = [];
