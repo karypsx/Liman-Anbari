@@ -108,6 +108,7 @@ const marayWaterSyncNote = document.getElementById("maray-water-sync-note");
 let activeAreaRecordId = null;
 let pendingAreaDelete = null;
 let pendingReminderDelete = null;
+let pendingMarayWaterDelete = null;
 const distributionStatus = document.getElementById("distribution-status");
 const distributionResults = document.getElementById("distribution-results");
 const distributionList = document.getElementById("distribution-list");
@@ -1147,6 +1148,36 @@ function renderReminderDeleteConfirmation(item) {
     areaRecordDialogContent.appendChild(confirmation);
 }
 
+function renderMarayWaterDeleteConfirmation(record) {
+    areaRecordDialogContent.replaceChildren();
+    const confirmation = document.createElement("div");
+    confirmation.className = "area-delete-confirmation";
+    const icon = document.createElement("span");
+    icon.className = "area-delete-confirmation-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "!";
+    const title = document.createElement("h2");
+    title.id = "area-dialog-title";
+    title.textContent = "Məray Su qaiməsi silinsin?";
+    const message = document.createElement("p");
+    message.textContent = `${formatMarayWaterDate(record.date)} tarixli qaimə tətbiqdən və Google Sheets-dən silinəcək.`;
+    const actions = document.createElement("div");
+    actions.className = "area-dialog-actions area-delete-confirmation-actions";
+    const cancelButton = document.createElement("button");
+    cancelButton.className = "area-dialog-secondary";
+    cancelButton.type = "button";
+    cancelButton.dataset.cancelMarayWaterDelete = "";
+    cancelButton.textContent = "Ləğv et";
+    const confirmButton = document.createElement("button");
+    confirmButton.className = "area-dialog-delete-record";
+    confirmButton.type = "button";
+    confirmButton.dataset.confirmMarayWaterDelete = "";
+    confirmButton.textContent = "Bəli, sil";
+    actions.append(cancelButton, confirmButton);
+    confirmation.append(icon, title, message, actions);
+    areaRecordDialogContent.appendChild(confirmation);
+}
+
 function openAreaRecordDialog(recordId) {
     const record = getAreaRecordById(recordId);
     if (!record) return;
@@ -1217,6 +1248,28 @@ areaRecordDialog.addEventListener("click", async event => {
         return;
     }
 
+    if (event.target.closest("[data-cancel-maray-water-delete]")) {
+        if (pendingMarayWaterDelete?.busy) return;
+        pendingMarayWaterDelete = null;
+        areaRecordDialog.close();
+        return;
+    }
+
+    if (event.target.closest("[data-confirm-maray-water-delete]") && pendingMarayWaterDelete) {
+        const confirmButton = event.target.closest("[data-confirm-maray-water-delete]");
+        if (pendingMarayWaterDelete.busy) return;
+        pendingMarayWaterDelete.busy = true;
+        confirmButton.disabled = true;
+        confirmButton.textContent = "Silinir…";
+        const deleted = await deleteMarayWaterRecord(pendingMarayWaterDelete.record.id);
+        if (!deleted && pendingMarayWaterDelete) {
+            pendingMarayWaterDelete.busy = false;
+            confirmButton.disabled = false;
+            confirmButton.textContent = "Yenidən yoxla";
+        }
+        return;
+    }
+
     if (event.target.closest("[data-confirm-reminder-delete]") && pendingReminderDelete) {
         const reminderId = pendingReminderDelete.id;
         try {
@@ -1269,6 +1322,7 @@ areaRecordDialog.addEventListener("click", async event => {
 areaRecordDialog.addEventListener("close", () => {
     pendingAreaDelete = null;
     pendingReminderDelete = null;
+    pendingMarayWaterDelete = null;
     activeAreaRecordId = null;
     areaDialogKicker.textContent = "ƏRAZİ QEYDİ";
 });
@@ -2061,7 +2115,13 @@ function renderMarayWaterRecords() {
         date.textContent = "Təhvil qaiməsi";
         const recipient = document.createElement("span");
         recipient.textContent = `Qəbul edən: ${record.recipient || "—"}`;
-        details.append(date, recipient);
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "maray-water-delete-button";
+        deleteButton.type = "button";
+        deleteButton.dataset.deleteMarayWater = record.id;
+        deleteButton.setAttribute("aria-label", "Məray Su qaiməsini sil");
+        deleteButton.textContent = "Sil";
+        details.append(date, recipient, deleteButton);
         card.append(top, allocationList, details);
         if (record.note) {
             const note = document.createElement("p");
@@ -2123,15 +2183,37 @@ async function fetchMarayWaterRecordsFromCloud() {
     });
 }
 
-async function postMarayWaterRecord(record) {
+async function postMarayWaterMutation(action, record) {
     if (!currentAuthUser) throw new Error("Məray Su qaiməsi üçün hesaba daxil olun.");
     const idToken = await currentAuthUser.getIdToken();
     await fetch(marayWaterApiUrl, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "save", record, idToken })
+        body: JSON.stringify({ action, record, idToken })
     });
+}
+
+async function deleteMarayWaterRecord(recordId) {
+    try {
+        await postMarayWaterMutation("delete", { id: recordId });
+        const cloudRecords = await fetchMarayWaterRecordsFromCloud();
+        if (cloudRecords.some(record => record.id === recordId)) {
+            throw new Error("Qaimənin silinməsi Google Sheets-də təsdiqlənmədi. İnterneti yoxlayıb yenidən cəhd edin.");
+        }
+        saveMarayWaterCache(marayWaterRecords.filter(record => record.id !== recordId));
+        removePendingMarayWaterRecord(recordId);
+        marayWaterSyncNote.textContent = "Qaimə tətbiqdən və Google Sheets-dən silindi.";
+        pendingMarayWaterDelete = null;
+        areaRecordDialog.close();
+        showActionToast("Məray Su qaiməsi silindi.");
+        return true;
+    } catch (error) {
+        console.error("Məray Su qaiməsi silinmədi", error);
+        marayWaterSyncNote.textContent = "Qaimə silinmədi. Google Sheets ilə bağlantını yoxlayın.";
+        showActionToast(error.message || "Qaiməni silmək olmadı. İnterneti yoxlayın.");
+        return false;
+    }
 }
 
 async function loadMarayWaterRecords() {
@@ -2152,7 +2234,7 @@ async function loadMarayWaterRecords() {
     marayWaterSyncNote.textContent = "Məray Su qaimələri yüklənir…";
     try {
         for (const record of readPendingMarayWaterRecords()) {
-            try { await postMarayWaterRecord(record); } catch (_) { /* İnternet qayıdanda yenidən yoxlanacaq. */ }
+            try { await postMarayWaterMutation("save", record); } catch (_) { /* İnternet qayıdanda yenidən yoxlanacaq. */ }
         }
         const records = await fetchMarayWaterRecordsFromCloud();
         const cloudIds = new Set(records.map(record => record.id));
@@ -2217,7 +2299,7 @@ marayWaterForm.addEventListener("submit", async event => {
     marayWaterDateInput.value = localDateInputValue();
     marayWaterSyncNote.textContent = "Qaimə Google Sheets-ə göndərilir…";
     try {
-        await postMarayWaterRecord(record);
+        await postMarayWaterMutation("save", record);
         let confirmed = false;
         for (let attempt = 0; attempt < 4; attempt++) {
             const cloudRecords = await fetchMarayWaterRecordsFromCloud();
@@ -2240,6 +2322,16 @@ marayWaterForm.addEventListener("submit", async event => {
 });
 
 document.querySelectorAll(".maray-water-open").forEach(button => button.addEventListener("click", () => void openMarayWaterPage()));
+marayWaterRecordList.addEventListener("click", event => {
+    const deleteButton = event.target.closest("[data-delete-maray-water]");
+    if (!deleteButton || !currentAuthUser) return;
+    const record = marayWaterRecords.find(item => item.id === deleteButton.dataset.deleteMarayWater);
+    if (!record) return;
+    pendingMarayWaterDelete = { record, busy: false };
+    areaDialogKicker.textContent = "MƏRAY SU QAİMƏSİ";
+    renderMarayWaterDeleteConfirmation(record);
+    if (!areaRecordDialog.open) areaRecordDialog.showModal();
+});
 document.getElementById("maray-water-home").addEventListener("click", () => showView("home"));
 marayWaterAddAllocationButton.addEventListener("click", () => {
     if (marayWaterAllocationRows.querySelectorAll(".maray-water-allocation-row").length < 20) addMarayWaterAllocationRow({}, true);

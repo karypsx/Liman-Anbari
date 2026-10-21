@@ -2094,6 +2094,10 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
 .maray-water-record-allocation span { min-width: 0; overflow-wrap: anywhere; }
 .maray-water-record-allocation strong { flex: none; color: #b9e5df; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .maray-water-record-details { justify-content: flex-start; flex-wrap: wrap; color: #91a59b; font-size: 10px; line-height: 1.45; }
+.maray-water-delete-button { flex: none; margin: -6px 0 -6px auto; padding: 6px 2px 6px 10px; border: 0; color: #d89a9a; background: transparent; font: inherit; font-size: 10px; font-weight: 750; cursor: pointer; transition: color .16s ease, transform .16s ease; }
+.maray-water-delete-button:hover { color: #ffb2b2; transform: translateY(-1px); }
+.maray-water-delete-button:active { transform: scale(.97); }
+.maray-water-delete-button:disabled { opacity: .55; cursor: wait; }
 .maray-water-record-note { margin: 0; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.055); color: #a8b8b0; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
 .maray-water-empty {
     padding: 16px;
