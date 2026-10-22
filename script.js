@@ -15,6 +15,8 @@ let distributionLoading = false;
 let distributionRefreshQueued = false;
 let dashboardDayKey = "";
 let areaMeasurementRecords = [];
+let areaMeasurementsLoading = true;
+let areaMeasurementsCloudLoaded = false;
 let scanner = null;
 let scannerRunning = false;
 let scanHandled = false;
@@ -331,6 +333,9 @@ function showView(view) {
     accountView.hidden = view !== "account";
     aboutView.hidden = view !== "about";
     dataStatus.hidden = true;
+    if (view === "area-measurement" && currentAuthUser) {
+        enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
+    }
 }
 
 function initializeFirebaseAccount() {
@@ -365,6 +370,10 @@ function initializeFirebaseAccount() {
             renderReminders();
 
             if (!user) {
+                areaMeasurementRecords = [];
+                areaMeasurementsLoading = false;
+                areaMeasurementsCloudLoaded = false;
+                renderAreaMeasurements();
                 showView("home");
                 updateReminderPermissionState();
                 return;
@@ -932,7 +941,13 @@ function renderAreaMeasurements() {
     if (areaMeasurementRecords.length === 0) {
         const emptyItem = document.createElement("li");
         emptyItem.className = "area-empty";
-        emptyItem.textContent = "Hələ ölçü qeydi yoxdur.";
+        emptyItem.textContent = areaMeasurementsLoading
+            ? "Google Sheets-dən qeydlər yüklənir…"
+            : areaMeasurementsCloudLoaded
+                ? "Google Sheets-də hələ ölçü qeydi yoxdur."
+                : currentAuthUser
+                    ? "Google Sheets məlumatlarını yükləmək olmadı. Yenidən cəhd edin."
+                    : "Qeydləri görmək üçün tətbiqə daxil olun.";
         areaRecordList.appendChild(emptyItem);
         return;
     }
@@ -1192,36 +1207,52 @@ function openAreaRecordDialog(recordId) {
 function deleteAreaRecord(recordId) {
     const record = getAreaRecordById(recordId);
     if (!record) return;
-    const updatedRecords = areaMeasurementRecords.filter(item => item.id !== recordId);
-    if (saveAreaMeasurementRecords(updatedRecords)) {
-        areaRecordDialog.close();
-        pendingAreaDelete = null;
-        activeAreaRecordId = null;
-        syncAreaMeasurementMutation("delete", { id: recordId }, "Qeyd və bütün sahələri Google Sheets-dən silindi.", "Qeyd cihazdan silindi, amma Google Sheets-dən silinmədi.");
-    }
+    syncAreaMeasurementMutation(
+        "delete",
+        { id: recordId },
+        "Qeyd və bütün sahələri Google Sheets-dən silindi.",
+        "Qeyd Google Sheets-dən silinmədi. İnterneti yoxlayıb yenidən cəhd edin.",
+        () => {
+            areaRecordDialog.close();
+            pendingAreaDelete = null;
+            activeAreaRecordId = null;
+        }
+    );
 }
 
 function deleteAreaRecordSection(recordId, areaIndex) {
     const record = getAreaRecordById(recordId);
     if (!record || !record.areas?.[areaIndex]) return;
     const remainingAreas = record.areas.filter((_, index) => index !== areaIndex);
-    const updatedRecords = remainingAreas.length
-        ? areaMeasurementRecords.map(item => item.id === recordId ? {
-            ...item,
+    if (remainingAreas.length) {
+        const updatedRecord = {
+            ...record,
             areas: remainingAreas,
             area: remainingAreas.reduce((sum, measurement) => sum + measurement.area, 0)
-        } : item)
-        : areaMeasurementRecords.filter(item => item.id !== recordId);
-
-    if (!saveAreaMeasurementRecords(updatedRecords)) return;
-    pendingAreaDelete = null;
-    if (remainingAreas.length) {
-        renderAreaRecordDetails(getAreaRecordById(recordId));
-        syncAreaMeasurementMutation("save", getAreaRecordById(recordId), "Sahə silindi və Google Sheets yeniləndi.", "Sahə cihazdan silindi, amma Google Sheets yenilənmədi.");
+        };
+        syncAreaMeasurementMutation(
+            "save",
+            updatedRecord,
+            "Sahə silindi və Google Sheets yeniləndi.",
+            "Sahə Google Sheets-də silinmədi. İnterneti yoxlayıb yenidən cəhd edin.",
+            cloudRecords => {
+                pendingAreaDelete = null;
+                const savedRecord = cloudRecords.find(item => item.id === recordId);
+                if (savedRecord) renderAreaRecordDetails(savedRecord);
+            }
+        );
     } else {
-        areaRecordDialog.close();
-        activeAreaRecordId = null;
-        syncAreaMeasurementMutation("delete", { id: recordId }, "Son sahə və qeyd Google Sheets-dən silindi.", "Son sahə cihazdan silindi, amma Google Sheets-dən silinmədi.");
+        syncAreaMeasurementMutation(
+            "delete",
+            { id: recordId },
+            "Son sahə və qeyd Google Sheets-dən silindi.",
+            "Qeyd Google Sheets-dən silinmədi. İnterneti yoxlayıb yenidən cəhd edin.",
+            () => {
+                areaRecordDialog.close();
+                activeAreaRecordId = null;
+                pendingAreaDelete = null;
+            }
+        );
     }
 }
 
@@ -1523,25 +1554,6 @@ async function postAreaMeasurementMutation(action, record) {
     });
 }
 
-function readPendingAreaCloudMutations() {
-    try {
-        const pending = JSON.parse(localStorage.getItem(areaCloudPendingKey) || "[]");
-        return Array.isArray(pending) ? pending : [];
-    } catch { return []; }
-}
-
-function savePendingAreaCloudMutation(action, record) {
-    const pending = readPendingAreaCloudMutations().filter(item => String(item.record?.id) !== String(record.id));
-    pending.push({ mutationId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, action, record });
-    localStorage.setItem(areaCloudPendingKey, JSON.stringify(pending));
-    return pending[pending.length - 1];
-}
-
-function removePendingAreaCloudMutation(mutationId) {
-    const pending = readPendingAreaCloudMutations().filter(item => item.mutationId !== mutationId);
-    localStorage.setItem(areaCloudPendingKey, JSON.stringify(pending));
-}
-
 function enqueueAreaCloudTask(task) {
     const current = areaCloudQueue.then(task, task);
     areaCloudQueue = current.catch(() => {});
@@ -1571,117 +1583,85 @@ async function confirmAreaCloudMutation(action, record) {
     for (let attempt = 0; attempt < 5; attempt++) {
         const cloudRecords = await fetchAreaMeasurementsFromCloud();
         const storedRecord = cloudRecords.find(item => item.id === String(record.id));
-        if ((action === "delete" && !storedRecord) || (action === "save" && storedRecord && isAreaCloudRecordEquivalent(storedRecord, record))) return true;
+        if ((action === "delete" && !storedRecord) || (action === "save" && storedRecord && isAreaCloudRecordEquivalent(storedRecord, record))) return cloudRecords;
         if (attempt < 4) await new Promise(resolve => setTimeout(resolve, 450));
     }
-    return false;
+    return null;
 }
 
-function syncAreaMeasurementMutation(action, record, successMessage, failureMessage) {
-    if (!areaMeasurementsApiUrl) {
-        showActionToast("Qeyd bu cihazda saxlanıldı.");
-        return;
+function syncAreaMeasurementMutation(action, record, successMessage, failureMessage, onSuccess) {
+    if (!areaMeasurementsApiUrl || !currentAuthUser) {
+        showActionToast("Google Sheets məlumatları üçün tətbiqə daxil olun.");
+        return Promise.resolve(false);
     }
-    let mutation;
-    try { mutation = savePendingAreaCloudMutation(action, record); }
-    catch (error) {
-        console.warn("Google Sheets üçün gözləyən qeyd saxlanıla bilmədi:", error);
-        showActionToast(failureMessage);
-        return;
-    }
-    showActionToast("Google Sheets-ə yadda saxlanılır…");
-    enqueueAreaCloudTask(async () => {
+    showActionToast("Google Sheets yenilənir…");
+    return enqueueAreaCloudTask(async () => {
         try {
             await postAreaMeasurementMutation(action, record);
-            if (!await confirmAreaCloudMutation(action, record)) throw new Error("Google Sheets dəyişiklik təsdiqləmədi.");
-            removePendingAreaCloudMutation(mutation.mutationId);
-            localStorage.setItem(areaCloudMigrationKey, "true");
+            const cloudRecords = await confirmAreaCloudMutation(action, record);
+            if (!cloudRecords) throw new Error("Google Sheets dəyişiklik təsdiqləmədi.");
+
+            areaMeasurementRecords = cloudRecords;
+            areaMeasurementsCloudLoaded = true;
+            areaMeasurementsLoading = false;
+            renderAreaMeasurements();
+            if (typeof onSuccess === "function") onSuccess(cloudRecords);
             showActionToast(successMessage);
+            return true;
         } catch (error) {
             console.warn("Sahə ölçüsü Google Sheets-ə sinxronlaşdırıla bilmədi:", error);
+            try {
+                areaMeasurementRecords = await fetchAreaMeasurementsFromCloud();
+                areaMeasurementsCloudLoaded = true;
+            } catch (_) {
+                areaMeasurementsCloudLoaded = false;
+            }
+            areaMeasurementsLoading = false;
+            renderAreaMeasurements();
             showActionToast(failureMessage);
+            return false;
         }
     });
 }
 
 async function synchronizeAreaMeasurementsOnStart() {
-    if (!areaMeasurementsApiUrl) return;
-    try {
-        let cloudRecords = await fetchAreaMeasurementsFromCloud();
-        if (localStorage.getItem(areaCloudMigrationKey) !== "true") {
-            const cloudIds = new Set(cloudRecords.map(record => record.id));
-            const localRecordsToMigrate = areaMeasurementRecords.slice();
-            for (const record of localRecordsToMigrate) {
-                if (!cloudIds.has(String(record.id))) await postAreaMeasurementMutation("save", record);
-            }
-            cloudRecords = await fetchAreaMeasurementsFromCloud();
-            const migratedIds = new Set(cloudRecords.map(record => record.id));
-            if (localRecordsToMigrate.some(record => !migratedIds.has(String(record.id)))) {
-                throw new Error("Cihazdakı əvvəlki qeydlərin hamısı Google Sheets-də təsdiqlənmədi.");
-            }
-            localStorage.setItem(areaCloudMigrationKey, "true");
-        }
-
-        const pending = readPendingAreaCloudMutations();
-        for (const mutation of pending) {
-            await postAreaMeasurementMutation(mutation.action, mutation.record);
-            if (!await confirmAreaCloudMutation(mutation.action, mutation.record)) {
-                throw new Error("Gözləyən dəyişiklik Google Sheets-də təsdiqlənmədi.");
-            }
-            removePendingAreaCloudMutation(mutation.mutationId);
-        }
-        if (pending.length) cloudRecords = await fetchAreaMeasurementsFromCloud();
-
-        areaMeasurementRecords = cloudRecords;
-        localStorage.setItem(areaMeasurementStorageKey, JSON.stringify(cloudRecords));
+    if (!areaMeasurementsApiUrl || !currentAuthUser) {
+        areaMeasurementsLoading = false;
         renderAreaMeasurements();
-    } catch (error) {
-        console.warn("Sahə ölçüləri Google Sheets-dən yüklənə bilmədi:", error);
-        showActionToast("Google Sheets-ə qoşulmadı. Qeydlər bu cihazdan göstərilir.");
+        return;
     }
-}
 
-function saveAreaMeasurementRecords(records) {
+    areaMeasurementsLoading = true;
+    areaMeasurementsCloudLoaded = false;
+    areaMeasurementRecords = [];
+    renderAreaMeasurements();
     try {
-        localStorage.setItem(areaMeasurementStorageKey, JSON.stringify(records));
-        areaMeasurementRecords = records;
-        renderAreaMeasurements();
-        return true;
+        areaMeasurementRecords = await fetchAreaMeasurementsFromCloud();
+        areaMeasurementsCloudLoaded = true;
     } catch (error) {
-        console.warn("Sahə ölçüsü qeydləri saxlanıla bilmədi:", error);
-        showActionToast("Dəyişiklik bu cihazda saxlanıla bilmədi.");
-        return false;
+        areaMeasurementRecords = [];
+        areaMeasurementsCloudLoaded = false;
+        console.warn("Sahə ölçüləri Google Sheets-dən yüklənə bilmədi:", error);
+        showActionToast("Sahə ölçülərini Google Sheets-dən yükləmək olmadı. İnterneti yoxlayın.");
+    } finally {
+        areaMeasurementsLoading = false;
+        renderAreaMeasurements();
     }
 }
 
 function loadAreaMeasurements() {
+    // Köhnə cihaz yaddaşındakı siyahı və növbədə qalmış dəyişikliklər artıq istifadə olunmur.
     try {
-        const storedRecords = JSON.parse(localStorage.getItem(areaMeasurementStorageKey) || "[]");
-        areaMeasurementRecords = Array.isArray(storedRecords) ? storedRecords.map(record => {
-            if (Array.isArray(record.areas) && record.areas.length) {
-                const areas = record.areas.map(area => ({
-                    location: area.location || "Sahə",
-                    length: Number(area.length) || 0,
-                    width: Number(area.width) || 0,
-                    area: Number(area.area) || ((Number(area.length) || 0) * (Number(area.width) || 0)),
-                    initialDays: Math.floor(Number(area.initialDays) || 0),
-                    daysCountedOn: normalizeAreaCloudDate(area.daysCountedOn)
-                }));
-                return { ...record, areas, area: areas.reduce((sum, area) => sum + area.area, 0) };
-            }
-
-            const length = Number(record.length) || 0;
-            const width = Number(record.width) || 0;
-            return {
-                ...record,
-                areas: [{ location: record.location || "Sahə 1", length, width, area: Number(record.area) || (length * width) }],
-                area: Number(record.area) || (length * width)
-            };
-        }) : [];
+        localStorage.removeItem(areaMeasurementStorageKey);
+        localStorage.removeItem(areaCloudMigrationKey);
+        localStorage.removeItem(areaCloudPendingKey);
     } catch (error) {
-        areaMeasurementRecords = [];
-        console.warn("Sahə ölçüsü qeydləri oxuna bilmədi:", error);
+        console.warn("Köhnə yerli sahə ölçüsü yaddaşı təmizlənmədi:", error);
     }
+
+    areaMeasurementRecords = [];
+    areaMeasurementsLoading = true;
+    areaMeasurementsCloudLoaded = false;
     if (areaMeasurementList.children.length === 0) areaMeasurementList.appendChild(createAreaMeasurementBlock(0));
     renderAreaMeasurements();
     if (currentAuthUser) enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
@@ -1719,10 +1699,12 @@ areaRecordList.addEventListener("click", event => {
     if (deleteRecordButton) {
         const confirmed = window.confirm(`${record.company} qeydi və bütün sahələri silinsin?`);
         if (!confirmed) return;
-        const updatedRecords = areaMeasurementRecords.filter(item => item.id !== record.id);
-        if (saveAreaMeasurementRecords(updatedRecords)) {
-            syncAreaMeasurementMutation("delete", { id: record.id }, "Qeyd və sahələri Google Sheets-dən silindi.", "Qeyd cihazdan silindi, amma Google Sheets-dən silinmədi.");
-        }
+        syncAreaMeasurementMutation(
+            "delete",
+            { id: record.id },
+            "Qeyd və sahələri Google Sheets-dən silindi.",
+            "Qeyd Google Sheets-dən silinmədi. İnterneti yoxlayıb yenidən cəhd edin."
+        );
         return;
     }
 
@@ -1732,16 +1714,26 @@ areaRecordList.addEventListener("click", event => {
     const confirmed = window.confirm(`${targetArea.location || `Sahə ${areaIndex + 1}`} ölçüsü silinsin?`);
     if (!confirmed) return;
 
-    const updatedRecords = areaMeasurementRecords.map(item => {
-        if (item.id !== record.id) return item;
-        const remainingAreas = item.areas.filter((_, index) => index !== areaIndex);
-        return { ...item, areas: remainingAreas, area: remainingAreas.reduce((sum, measurement) => sum + measurement.area, 0) };
-    }).filter(item => item.id !== record.id || item.areas.length > 0);
-
-    if (saveAreaMeasurementRecords(updatedRecords)) {
-        const updatedRecord = updatedRecords.find(item => item.id === record.id);
-        if (updatedRecord) syncAreaMeasurementMutation("save", updatedRecord, "Sahə silindi və Google Sheets yeniləndi.", "Sahə cihazdan silindi, amma Google Sheets yenilənmədi.");
-        else syncAreaMeasurementMutation("delete", { id: record.id }, "Son sahə və qeyd Google Sheets-dən silindi.", "Son sahə cihazdan silindi, amma Google Sheets-dən silinmədi.");
+    const remainingAreas = record.areas.filter((_, index) => index !== areaIndex);
+    if (remainingAreas.length) {
+        const updatedRecord = {
+            ...record,
+            areas: remainingAreas,
+            area: remainingAreas.reduce((sum, measurement) => sum + measurement.area, 0)
+        };
+        syncAreaMeasurementMutation(
+            "save",
+            updatedRecord,
+            "Sahə silindi və Google Sheets yeniləndi.",
+            "Sahə Google Sheets-də silinmədi. İnterneti yoxlayıb yenidən cəhd edin."
+        );
+    } else {
+        syncAreaMeasurementMutation(
+            "delete",
+            { id: record.id },
+            "Son sahə və qeyd Google Sheets-dən silindi.",
+            "Qeyd Google Sheets-dən silinmədi. İnterneti yoxlayıb yenidən cəhd edin."
+        );
     }
 });
 
@@ -1778,12 +1770,18 @@ areaMeasurementForm.addEventListener("submit", event => {
         note: areaNoteInput.value.trim()
     };
 
-    if (!saveAreaMeasurementRecords([record, ...areaMeasurementRecords])) return;
-    areaMeasurementForm.reset();
-    areaMeasurementList.replaceChildren(createAreaMeasurementBlock(0));
-    areaDateInput.value = localDateInputValue();
-    updateAreaCalculation();
-    syncAreaMeasurementMutation("save", record, "Sahə ölçüsü Google Sheets-də yadda saxlanıldı.", "Sahə bu cihazda saxlanıldı, amma Google Sheets-ə göndərilmədi.");
+    syncAreaMeasurementMutation(
+        "save",
+        record,
+        "Sahə ölçüsü Google Sheets-də yadda saxlanıldı.",
+        "Google Sheets-ə yazılmadı. Qeyd bu cihazda saxlanmayıb.",
+        () => {
+            areaMeasurementForm.reset();
+            areaMeasurementList.replaceChildren(createAreaMeasurementBlock(0));
+            areaDateInput.value = localDateInputValue();
+            updateAreaCalculation();
+        }
+    );
 });
 
 function normalizeCell(value) {
@@ -3087,5 +3085,10 @@ void loadMonthlyExpenses();
 setInterval(updateDashboardClock, 1000);
 setInterval(renderMonthlyExpense, 60 * 1000);
 document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) updateDashboardClock();
+    if (!document.hidden) {
+        updateDashboardClock();
+        if (!areaMeasurementView.hidden && currentAuthUser) {
+            enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
+        }
+    }
 });
