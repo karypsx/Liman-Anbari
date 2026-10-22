@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
-    <link rel="stylesheet" href="style.css?v=122">
+    <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
+    <link rel="stylesheet" href="style.css?v=126">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -14,35 +15,55 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <div id="splash-screen" class="splash-screen" role="status" aria-label="Liman Anbarı açılır">
-        <div class="splash-topline" aria-hidden="true">
-            <span class="splash-brandline"><span class="splash-brand-dot"></span>LİMAN <i></i> ANBAR SİSTEMİ</span>
-            <span class="splash-top-status">SİSTEM YÜKLƏNİR</span>
+    <div id="splash-screen" class="splash-screen boot-screen" role="status" aria-label="Liman Anbarı işə düşür">
+        <div class="boot-topbar" aria-hidden="true">
+            <span class="boot-brand"><span class="boot-brand-mark">L</span><span>LİMAN <i></i> ƏMƏLİYYAT SİSTEMİ</span></span>
+            <span class="boot-location"><span class="boot-live-dot"></span> BAKI · AZƏRBAYCAN</span>
         </div>
-        <div class="splash-content">
-            <div class="splash-hero">
-                <div class="splash-art" aria-hidden="true">
-                    <span class="splash-scanner-frame">
-                        <i class="splash-frame-corner corner-tl"></i>
-                        <i class="splash-frame-corner corner-tr"></i>
-                        <i class="splash-frame-corner corner-bl"></i>
-                        <i class="splash-frame-corner corner-br"></i>
-                    </span>
-                    <span class="splash-logo-float"><img class="splash-logo" src="images/liman-logo-splash.png" alt=""></span>
-                    <span class="splash-scan-beam"></span>
-                </div>
-                <div class="splash-copy">
-                    <p class="splash-kicker"><span></span> ANBAR İDARƏETMƏ SİSTEMİ</p>
-                    <h2 class="splash-title"><span>Liman</span><span class="splash-title-accent">Anbarı</span></h2>
-                    <p class="splash-subtitle">QR ilə rəf axtarışı və paylama qeydləri</p>
-                    <div class="splash-loading">
-                        <div class="splash-progress" aria-hidden="true"><span></span></div>
-                        <div class="splash-progress-meta"><span class="splash-loading-note">İş sahəsi hazırlanır</span><span class="splash-progress-index">01 / 01</span></div>
-                    </div>
-                </div>
+        <div class="boot-stage">
+            <div class="boot-yard" aria-hidden="true">
+                <img class="boot-yard-logo" src="images/liman-logo-splash.png" alt="Liman Anbarı loqosu">
+                <div class="boot-yard-glow"></div>
+                <svg class="boot-port-art" viewBox="0 0 560 330" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bootSweepGradient" x1="72" y1="0" x2="489" y2="0" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#70DF99" stop-opacity="0" />
+                            <stop offset="0.5" stop-color="#A5F0BA" stop-opacity="0.72" />
+                            <stop offset="1" stop-color="#70DF99" stop-opacity="0" />
+                        </linearGradient>
+                    </defs>
+                    <path class="boot-horizon" d="M30 257H530" />
+                    <path class="boot-waterline" d="M36 276H524M72 291H488M120 306H440" />
+                    <path class="boot-crane" d="M401 248V62H443L496 99H417M431 64V246M443 99V166M443 166L457 181V207" />
+                    <path class="boot-crane-base" d="M383 249H462M415 235H447" />
+                    <rect class="boot-container boot-container-back" x="281" y="175" width="103" height="73" rx="4" />
+                    <path class="boot-container-lines" d="M297 183V240M314 183V240M331 183V240M348 183V240M365 183V240" />
+                    <rect class="boot-container boot-container-front" x="163" y="196" width="107" height="52" rx="4" />
+                    <path class="boot-container-lines" d="M179 202V241M197 202V241M215 202V241M233 202V241M251 202V241" />
+                    <rect class="boot-container boot-container-small" x="95" y="215" width="59" height="33" rx="3" />
+                    <path class="boot-container-lines" d="M109 219V244M124 219V244M139 219V244" />
+                    <path class="boot-route" d="M108 262C184 246 256 271 326 255C374 244 421 254 468 237" />
+                    <circle class="boot-route-node" cx="108" cy="262" r="3" />
+                    <circle class="boot-route-node boot-route-node-end" cx="468" cy="237" r="4" />
+                    <path class="boot-sweep" d="M72 94H489" />
+                </svg>
+                <span class="boot-scene-label boot-scene-label-left">ANBAR SAHƏSİ <b>01</b></span>
+                <span class="boot-scene-label boot-scene-label-right">LİMAN <b>AZ</b></span>
             </div>
+            <section class="boot-console" aria-label="Tətbiqin yüklənməsi">
+                <p class="boot-eyebrow">ANBAR İDARƏETMƏ PLATFORMASI</p>
+                <h1 class="boot-title">Liman Anbarı</h1>
+                <p class="boot-caption">İş sahəsi hazırlanır</p>
+                <div class="boot-modules" aria-hidden="true">
+                    <div class="boot-module boot-module-one"><span>01</span><i></i><b>ANBAR</b></div>
+                    <div class="boot-module boot-module-two"><span>02</span><i></i><b>SAHƏ</b></div>
+                    <div class="boot-module boot-module-three"><span>03</span><i></i><b>PAYLAMA</b></div>
+                </div>
+                <div class="boot-progress" aria-hidden="true"><span></span></div>
+                <div class="boot-status"><span class="boot-status-dot"></span><span>Sistem işə salınır</span><b>GÖZLƏYİN</b></div>
+            </section>
         </div>
-        <div class="splash-footer" aria-hidden="true"><span>ANBAR</span><i></i><span>PAYLAMA</span><i></i><span>QR AXTARIŞI</span></div>
+        <div class="boot-bottomline" aria-hidden="true"><span>PORT OPERATIONS</span><span class="boot-bottom-rule"></span><span>WAREHOUSE CONTROL</span></div>
     </div>
 
     <main class="container">
