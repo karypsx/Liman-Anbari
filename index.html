@@ -267,7 +267,7 @@
             <div class="area-page-heading">
                 <div class="area-page-kicker"><span class="dashboard-live-dot"></span> ƏRAZİ QEYDLƏRİ</div>
                 <h2>Sahə ölçümü</h2>
-                <p>Ölçüləri və neçə gündür yığıldığını yazın. Sahə və gün sayı avtomatik hesablansın.</p>
+                <p id="area-page-description">Ölçüləri və neçə gündür yığıldığını yazın. Sahə və gün sayı avtomatik hesablansın.</p>
             </div>
             <div class="area-records-heading">
                 <div><span>YADDA SAXLANANLAR</span><strong id="area-record-count">0 qeyd</strong></div>
@@ -305,7 +305,7 @@
                     <output id="area-calculated-value">0,00 m²</output>
                 </div>
                 <button class="primary-button area-save-button" type="submit"><span aria-hidden="true">＋</span> Ölçünü yadda saxla</button>
-                <p class="area-sync-note">Google Sheets bağlantısı qurulana qədər qeydlər bu cihazda saxlanacaq.</p>
+                <p class="area-sync-note">Qeydlər Google Sheets-də saxlanılır.</p>
             </form>
         </section>
 
@@ -566,12 +566,12 @@
         </div>
     </dialog>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-    <script src="app-config.js?v=6"></script>
+    <script src="app-config.js?v=7"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=65"></script>
+    <script src="script.js?v=66"></script>
 </body>
 </html>
 

@@ -83,6 +83,7 @@ const reminderPermissionButton = document.getElementById("reminder-notification-
 const reminderPermissionTitle = document.getElementById("reminder-permission-title");
 const reminderPermissionNote = document.getElementById("reminder-permission-note");
 const areaMeasurementForm = document.getElementById("area-measurement-form");
+const areaPageDescription = document.getElementById("area-page-description");
 const areaCompanyInput = document.getElementById("area-company");
 const areaVesselInput = document.getElementById("area-vessel");
 const areaMeasurementList = document.getElementById("area-measurement-list");
@@ -317,6 +318,13 @@ function showView(view) {
     document.body.classList.toggle("scan-screen", view === "scan");
     document.body.classList.toggle("distribution-screen", view === "distribution");
     document.body.classList.toggle("area-measurement-screen", view === "area-measurement");
+    const publicAreaView = view === "area-measurement" && !currentAuthUser;
+    document.body.classList.toggle("area-public-view", publicAreaView);
+    if (areaPageDescription) {
+        areaPageDescription.textContent = currentAuthUser
+            ? "Ölçüləri və neçə gündür yığıldığını yazın. Sahə və gün sayı avtomatik hesablansın."
+            : "Sahə qeydlərinə baxış. Ölçü əlavə etmək və silmək üçün təsdiqlənmiş hesabla daxil olun.";
+    }
     document.body.classList.toggle("maray-water-screen", view === "maray-water");
     document.body.classList.toggle("reminders-screen", view === "reminders");
     document.body.classList.toggle("about-screen", view === "about");
@@ -333,7 +341,7 @@ function showView(view) {
     accountView.hidden = view !== "account";
     aboutView.hidden = view !== "about";
     dataStatus.hidden = true;
-    if (view === "area-measurement" && currentAuthUser) {
+    if (view === "area-measurement") {
         enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
     }
 }
@@ -374,6 +382,7 @@ function initializeFirebaseAccount() {
                 areaMeasurementsLoading = false;
                 areaMeasurementsCloudLoaded = false;
                 renderAreaMeasurements();
+                enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
                 showView("home");
                 updateReminderPermissionState();
                 return;
@@ -945,9 +954,7 @@ function renderAreaMeasurements() {
             ? "Google Sheets-dən qeydlər yüklənir…"
             : areaMeasurementsCloudLoaded
                 ? "Google Sheets-də hələ ölçü qeydi yoxdur."
-                : currentAuthUser
-                    ? "Google Sheets məlumatlarını yükləmək olmadı. Yenidən cəhd edin."
-                    : "Qeydləri görmək üçün tətbiqə daxil olun.";
+                : "Sahə qeydlərini yükləmək olmadı. Yenidən cəhd edin.";
         areaRecordList.appendChild(emptyItem);
         return;
     }
@@ -1058,12 +1065,14 @@ function renderAreaRecordDetails(record) {
         age.textContent = formatAccumulationDays(measurement);
         areaCard.appendChild(age);
 
-        const deleteAreaButton = document.createElement("button");
-        deleteAreaButton.className = "area-dialog-area-delete";
-        deleteAreaButton.type = "button";
-        deleteAreaButton.dataset.deleteDialogArea = String(index);
-        deleteAreaButton.textContent = "Bu sahəni sil";
-        areaCard.appendChild(deleteAreaButton);
+        if (currentAuthUser) {
+            const deleteAreaButton = document.createElement("button");
+            deleteAreaButton.className = "area-dialog-area-delete";
+            deleteAreaButton.type = "button";
+            deleteAreaButton.dataset.deleteDialogArea = String(index);
+            deleteAreaButton.textContent = "Bu sahəni sil";
+            areaCard.appendChild(deleteAreaButton);
+        }
         areaList.appendChild(areaCard);
     });
     areaRecordDialogContent.appendChild(areaList);
@@ -1077,17 +1086,20 @@ function renderAreaRecordDetails(record) {
 
     const actions = document.createElement("div");
     actions.className = "area-dialog-actions";
-    const deleteRecordButton = document.createElement("button");
-    deleteRecordButton.className = "area-dialog-delete-record";
-    deleteRecordButton.type = "button";
-    deleteRecordButton.dataset.deleteDialogRecord = "";
-    deleteRecordButton.textContent = "Bütün qeydi sil";
     const closeButton = document.createElement("button");
     closeButton.className = "area-dialog-secondary";
     closeButton.type = "button";
     closeButton.dataset.closeAreaDialog = "";
     closeButton.textContent = "Bağla";
-    actions.append(deleteRecordButton, closeButton);
+    if (currentAuthUser) {
+        const deleteRecordButton = document.createElement("button");
+        deleteRecordButton.className = "area-dialog-delete-record";
+        deleteRecordButton.type = "button";
+        deleteRecordButton.dataset.deleteDialogRecord = "";
+        deleteRecordButton.textContent = "Bütün qeydi sil";
+        actions.append(deleteRecordButton);
+    }
+    actions.append(closeButton);
     areaRecordDialogContent.appendChild(actions);
 }
 
@@ -1512,8 +1524,6 @@ function normalizeAreaCloudRecords(payload) {
 
 async function fetchAreaMeasurementsFromCloud() {
     if (!areaMeasurementsApiUrl) return Promise.reject(new Error("Google Sheets bağlantısı qurulmayıb."));
-    if (!currentAuthUser) throw new Error("Google Sheets üçün təsdiqlənmiş hesaba daxil olun.");
-    const idToken = await currentAuthUser.getIdToken();
     return new Promise((resolve, reject) => {
         const callbackName = `__limanAreaCallback_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const script = document.createElement("script");
@@ -1538,7 +1548,7 @@ async function fetchAreaMeasurementsFromCloud() {
         script.async = true;
         script.onerror = () => finish(new Error("Google Sheets bağlantısı açıla bilmədi."));
         const separator = areaMeasurementsApiUrl.includes("?") ? "&" : "?";
-        script.src = `${areaMeasurementsApiUrl}${separator}callback=${encodeURIComponent(callbackName)}&idToken=${encodeURIComponent(idToken)}&_=${Date.now()}`;
+        script.src = `${areaMeasurementsApiUrl}${separator}callback=${encodeURIComponent(callbackName)}&_=${Date.now()}`;
         document.head.appendChild(script);
     });
 }
@@ -1625,7 +1635,7 @@ function syncAreaMeasurementMutation(action, record, successMessage, failureMess
 }
 
 async function synchronizeAreaMeasurementsOnStart() {
-    if (!areaMeasurementsApiUrl || !currentAuthUser) {
+    if (!areaMeasurementsApiUrl) {
         areaMeasurementsLoading = false;
         renderAreaMeasurements();
         return;
@@ -1642,7 +1652,7 @@ async function synchronizeAreaMeasurementsOnStart() {
         areaMeasurementRecords = [];
         areaMeasurementsCloudLoaded = false;
         console.warn("Sahə ölçüləri Google Sheets-dən yüklənə bilmədi:", error);
-        showActionToast("Sahə ölçülərini Google Sheets-dən yükləmək olmadı. İnterneti yoxlayın.");
+        showActionToast(error?.message || "Sahə ölçülərini Google Sheets-dən yükləmək olmadı.");
     } finally {
         areaMeasurementsLoading = false;
         renderAreaMeasurements();
@@ -1664,7 +1674,7 @@ function loadAreaMeasurements() {
     areaMeasurementsCloudLoaded = false;
     if (areaMeasurementList.children.length === 0) areaMeasurementList.appendChild(createAreaMeasurementBlock(0));
     renderAreaMeasurements();
-    if (currentAuthUser) enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
+    if (areaMeasurementsApiUrl) enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
 }
 
 addAreaMeasurementButton.addEventListener("click", () => {
@@ -3087,7 +3097,7 @@ setInterval(renderMonthlyExpense, 60 * 1000);
 document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
         updateDashboardClock();
-        if (!areaMeasurementView.hidden && currentAuthUser) {
+        if (!areaMeasurementView.hidden) {
             enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
         }
     }

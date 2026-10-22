@@ -545,6 +545,7 @@ h1 { margin: 0; font-size: 25px; letter-spacing: -.4px; }
 .area-page-heading h2 { margin: 12px 0 0; color: #eff5f0; font-size: clamp(24px, 6vw, 29px); font-weight: 700; letter-spacing: -.55px; }
 .area-page-heading p { max-width: 310px; margin: 7px 0 0; color: #9eafa5; font-size: 12px; line-height: 1.5; }
 .area-form { display: grid; gap: 12px; margin: 0; padding: 14px; border: 1px solid rgba(106,153,128,.2); border-radius: 19px; background: linear-gradient(155deg, rgba(25,39,33,.9), rgba(13,21,18,.92)); box-shadow: 0 12px 28px rgba(0,0,0,.16); }
+.area-public-view #area-measurement-form { display: none !important; }
 .area-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px 9px; }
 .area-measurement-list { display: grid; gap: 9px; margin-top: 8px; }
 .area-measurement-block { display: grid; gap: 10px; min-width: 0; padding: 11px; border: 1px solid rgba(106,153,128,.2); border-radius: 15px; background: rgba(7,14,11,.36); }
@@ -1375,6 +1376,12 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
     .area-measurement-screen .area-field textarea { min-height: 50px; padding-inline: 14px; font-size: 14px; }
     .area-measurement-screen .area-records-heading { grid-column: 2; grid-row: 2; align-self: start; margin: 0 2px 0; font-size: 10px; }
     .area-measurement-screen .area-record-list { grid-column: 2; grid-row: 2; align-self: start; margin-top: 44px; align-content: start; gap: 12px; }
+    .area-public-view #area-measurement-view { grid-template-columns: minmax(0, 1fr); }
+    .area-public-view .area-page-heading,
+    .area-public-view .area-records-heading,
+    .area-public-view .area-record-list { grid-column: 1; }
+    .area-public-view .area-records-heading { grid-row: auto; }
+    .area-public-view .area-record-list { grid-row: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; }
     .area-measurement-screen .area-record-card { padding: 17px; border-radius: 18px; }
     .area-measurement-screen .area-record-company { font-size: 15px; }
     .area-measurement-screen .area-record-vessel,
