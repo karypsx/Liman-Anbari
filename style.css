@@ -231,7 +231,7 @@ body.account-screen .app-menu-wrap,
 body.account-screen .app-header,
 body.account-screen .app-footer { display: none; }
 body.account-screen .container {
-    width: min(100%, 700px);
+    width: min(94%, 660px);
     min-height: 100vh;
     min-height: 100dvh;
     padding: max(22px, env(safe-area-inset-top)) 22px max(22px, env(safe-area-inset-bottom));
@@ -1122,7 +1122,7 @@ button.secondary-button:not(:disabled):hover { border-color: rgba(92,220,145,.48
 .reminder-card {
     grid-template-columns: 52px minmax(0, 1fr) auto;
     align-items: start;
-    gap: 13px;
+    gap: 10px;
     padding: 15px 2px;
     border: 0;
     border-bottom: 1px solid rgba(255,255,255,.075);
@@ -2062,43 +2062,57 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
 .maray-water-record-list {
     display: grid;
     align-content: start;
-    gap: 9px;
+    gap: 12px;
+    width: min(100%, 700px);
     min-width: 0;
     margin: 0;
     padding: 0;
+    justify-self: center;
     list-style: none;
 }
 .maray-water-record-card {
     display: grid;
-    gap: 9px;
-    min-width: 0;
-    padding: 13px 14px;
-    border: 1px solid rgba(107, 166, 157, .17);
-    border-left: 2px solid rgba(78, 197, 194, .78);
-    border-radius: 15px;
-    background: linear-gradient(145deg, rgba(24, 41, 37, .84), rgba(13, 22, 20, .9));
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .11);
-}
-.maray-water-record-top,
-.maray-water-record-details {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
     gap: 10px;
     min-width: 0;
+    padding: 13px 14px 12px;
+    border: 1px solid rgba(133, 184, 158, .13);
+    border-left: 2px solid rgba(77, 207, 153, .72);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(25, 42, 36, .8), rgba(13, 22, 19, .9));
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .15);
+    transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
 }
-.maray-water-record-destination { color: #e3efea; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
-.maray-water-record-quantity { flex: none; color: #8ce3dc; font-size: 13px; font-weight: 760; white-space: nowrap; }
-.maray-water-record-allocations { display: grid; gap: 6px; }
-.maray-water-record-allocation { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: #a9b8b0; font-size: 11px; line-height: 1.4; }
+.maray-water-record-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(133, 202, 163, .24);
+    border-left-color: rgba(77, 226, 159, .95);
+    background: linear-gradient(145deg, rgba(29, 50, 42, .92), rgba(15, 25, 21, .95));
+    box-shadow: 0 16px 34px rgba(0, 0, 0, .21);
+}
+.maray-water-record-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-width: 0;
+}
+.maray-water-record-heading { display: grid; gap: 4px; min-width: 0; }
+.maray-water-record-kicker { color: #70d6a2; font-size: 8px; font-weight: 800; letter-spacing: 1px; }
+.maray-water-record-destination { color: #f0f6f2; font-size: 16px; line-height: 1.25; font-weight: 760; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.maray-water-record-actions { display: flex; flex: none; align-items: center; gap: 8px; }
+.maray-water-record-quantity { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 0 11px; border-radius: 999px; color: #a1f0c5; background: rgba(55, 184, 118, .12); font-size: 12px; font-weight: 780; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.maray-water-record-allocations { display: grid; gap: 5px; }
+.maray-water-record-allocation { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 38px; padding: 7px 10px; border-radius: 11px; color: #bdcbc3; background: rgba(255, 255, 255, .027); font-size: 12px; line-height: 1.35; }
 .maray-water-record-allocation span { min-width: 0; overflow-wrap: anywhere; }
-.maray-water-record-allocation strong { flex: none; color: #b9e5df; font-size: 11px; font-weight: 700; white-space: nowrap; }
-.maray-water-record-details { justify-content: flex-start; flex-wrap: wrap; color: #91a59b; font-size: 10px; line-height: 1.45; }
-.maray-water-delete-button { flex: none; margin: -6px 0 -6px auto; padding: 6px 2px 6px 10px; border: 0; color: #d89a9a; background: transparent; font: inherit; font-size: 10px; font-weight: 750; cursor: pointer; transition: color .16s ease, transform .16s ease; }
-.maray-water-delete-button:hover { color: #ffb2b2; transform: translateY(-1px); }
-.maray-water-delete-button:active { transform: scale(.97); }
+.maray-water-record-allocation strong { min-width: 80px; color: #d9f1e2; font-size: 11px; font-weight: 780; text-align: right; white-space: nowrap; }
+.maray-water-record-details { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; padding-top: 1px; color: #9eafa5; font-size: 11px; line-height: 1.4; }
+.maray-water-delete-button { display: grid; flex: none; width: 31px; height: 31px; place-items: center; padding: 0; border: 1px solid rgba(238, 151, 151, .13); border-radius: 50%; color: #b98787; background: rgba(255, 255, 255, .025); cursor: pointer; transition: transform .18s ease, color .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
+.maray-water-delete-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.maray-water-delete-button:hover { transform: translateY(-1px); border-color: rgba(255, 133, 133, .32); color: #ffbcbc; background: rgba(231, 91, 91, .11); box-shadow: 0 5px 14px rgba(0, 0, 0, .15); }
+.maray-water-delete-button:active { transform: scale(.94); }
+.maray-water-delete-button:focus-visible { outline: 2px solid rgba(116, 227, 166, .78); outline-offset: 3px; }
 .maray-water-delete-button:disabled { opacity: .55; cursor: wait; }
-.maray-water-record-note { margin: 0; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.055); color: #a8b8b0; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+.maray-water-record-note { margin: -2px 0 0; padding: 8px 10px; border-radius: 10px; color: #a9bbb0; background: rgba(255, 255, 255, .025); font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
 .maray-water-empty {
     padding: 16px;
     border: 1px dashed rgba(111, 169, 158, .2);
@@ -2115,11 +2129,20 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
     .maray-water-screen #maray-water-view { gap: 13px; }
     .maray-water-screen .maray-water-form { padding: 14px; }
     .maray-water-screen .maray-water-summary { margin-top: 3px; }
+    .maray-water-screen .maray-water-record-list { width: 100%; max-width: none; justify-self: stretch; }
     .maray-water-allocation-head,
     .maray-water-allocation-row { grid-template-columns: minmax(68px, 82px) minmax(0, 1fr) 28px; gap: 6px; }
     .maray-water-allocation-row input { min-height: 42px; padding-inline: 8px; font-size: 11px; }
-    .maray-water-record-card { padding: 12px; }
-    .maray-water-record-destination { font-size: 12px; }
+    .maray-water-record-card { gap: 9px; padding: 11px 12px 10px; border-radius: 15px; }
+    .maray-water-record-top { gap: 8px; }
+    .maray-water-record-kicker { font-size: 7px; letter-spacing: .8px; }
+    .maray-water-record-destination { font-size: 15px; }
+    .maray-water-record-actions { gap: 6px; }
+    .maray-water-record-quantity { min-height: 28px; padding: 0 9px; font-size: 10px; }
+    .maray-water-delete-button { width: 30px; height: 30px; }
+    .maray-water-record-allocation { min-height: 36px; padding: 6px 9px; font-size: 11px; }
+    .maray-water-record-allocation strong { min-width: 74px; font-size: 10px; }
+    .maray-water-record-details { font-size: 10px; }
 }
 
 @media (min-width: 900px) {
@@ -2151,17 +2174,17 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
     .maray-water-screen .maray-water-record-list {
         grid-column: 2;
         grid-row: 3;
-        width: 100%;
+        width: min(94%, 660px);
         max-height: min(58vh, 620px);
         overflow-y: auto;
-        padding: 2px 5px 4px 0;
+        padding: 2px 0 4px;
         gap: 12px;
     }
-    .maray-water-screen .maray-water-record-card { padding: 17px; border-radius: 18px; }
-    .maray-water-screen .maray-water-record-destination,
-    .maray-water-screen .maray-water-record-quantity { font-size: 15px; }
+    .maray-water-screen .maray-water-record-card { padding: 16px 17px 14px; border-radius: 18px; }
+    .maray-water-screen .maray-water-record-destination { font-size: 16px; }
+    .maray-water-screen .maray-water-record-quantity { font-size: 12px; }
     .maray-water-screen .maray-water-record-details,
-    .maray-water-screen .maray-water-record-note { font-size: 12px; }
+    .maray-water-screen .maray-water-record-note { font-size: 11px; }
     .maray-water-screen .maray-water-home { grid-column: 1 / -1; grid-row: 4; }
 }
 

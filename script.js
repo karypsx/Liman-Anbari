@@ -2087,14 +2087,31 @@ function renderMarayWaterRecords() {
         card.className = "maray-water-record-card";
         const top = document.createElement("div");
         top.className = "maray-water-record-top";
+        const heading = document.createElement("div");
+        heading.className = "maray-water-record-heading";
+        const kicker = document.createElement("span");
+        kicker.className = "maray-water-record-kicker";
+        kicker.textContent = "MƏRAY SU  ·  TƏHVİL QAİMƏSİ";
         const destination = document.createElement("strong");
         destination.className = "maray-water-record-destination";
         destination.textContent = formatMarayWaterDate(record.date);
+        heading.append(kicker, destination);
+
+        const actions = document.createElement("div");
+        actions.className = "maray-water-record-actions";
         const quantity = document.createElement("span");
         quantity.className = "maray-water-record-quantity";
         const bottleTotal = (record.allocations || []).reduce((sum, item) => sum + (Number(item.bottles) || 0), 0);
         quantity.textContent = `${bottleTotal} butulka`;
-        top.append(destination, quantity);
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "maray-water-delete-button";
+        deleteButton.type = "button";
+        deleteButton.dataset.deleteMarayWater = record.id;
+        deleteButton.setAttribute("aria-label", "Məray Su qaiməsini sil");
+        deleteButton.title = "Qaiməni sil";
+        deleteButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>';
+        actions.append(quantity, deleteButton);
+        top.append(heading, actions);
 
         const allocationList = document.createElement("div");
         allocationList.className = "maray-water-record-allocations";
@@ -2111,17 +2128,9 @@ function renderMarayWaterRecords() {
 
         const details = document.createElement("div");
         details.className = "maray-water-record-details";
-        const date = document.createElement("span");
-        date.textContent = "Təhvil qaiməsi";
         const recipient = document.createElement("span");
         recipient.textContent = `Qəbul edən: ${record.recipient || "—"}`;
-        const deleteButton = document.createElement("button");
-        deleteButton.className = "maray-water-delete-button";
-        deleteButton.type = "button";
-        deleteButton.dataset.deleteMarayWater = record.id;
-        deleteButton.setAttribute("aria-label", "Məray Su qaiməsini sil");
-        deleteButton.textContent = "Sil";
-        details.append(date, recipient, deleteButton);
+        details.append(recipient);
         card.append(top, allocationList, details);
         if (record.note) {
             const note = document.createElement("p");

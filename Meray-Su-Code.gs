@@ -2,8 +2,6 @@ const SPREADSHEET_ID = "1LDc79H0tk0u5yblJAujz3NOJfdCvM2iLaQsbEv6ojPU";
 const SHEET_NAME = "Məray Su";
 const FIREBASE_PROJECT_ID = "limananbari";
 const LIMAN_ADMIN_UID = "WvDIKF4R5SNNEGBpMy6oZdcA1Ub2";
-const HEADER_ROW = 3;
-const DATA_START_ROW = 4;
 const COLUMN_COUNT = 9;
 const VISIBLE_COLUMN_COUNT = 5;
 
@@ -30,34 +28,21 @@ function doPost(e) {
   try {
     const data = JSON.parse(e && e.postData ? e.postData.contents || "{}" : "{}");
     const uid = requireApprovedUser_(data.idToken || "");
-    if (data.action !== "save") throw new Error("Sorğu növü tanınmadı.");
+    if (data.action !== "save" && data.action !== "delete") throw new Error("Sorğu növü tanınmadı.");
     lock.waitLock(15000);
-    const record = validateRecord_(data.record);
+
     const sheet = getMarayWaterSheet_();
-    const existingRows = findRowsById_(sheet, record.id);
-    const existingByIndex = new Map(existingRows.map(item => [item.index, item.row]));
-    const usedRows = new Set();
-    let nextRow = Math.max(sheet.getLastRow() + 1, DATA_START_ROW);
-    record.allocations.forEach(function (allocation, index) {
-      const rowNumber = existingByIndex.get(index) || nextRow++;
-      const row = [
-        dateValue_(record.date),
-        safeText_(allocation.destination, 100),
-        allocation.bottles,
-        safeText_(record.recipient, 100),
-        safeText_(record.note, 300),
-        record.id,
-        new Date(),
-        uid,
-        index + 1
-      ];
-      sheet.getRange(rowNumber, 1, 1, COLUMN_COUNT).setValues([row]);
-      styleDataRow_(sheet, rowNumber);
-      usedRows.add(rowNumber);
-    });
-    existingRows.forEach(function (item) {
-      if (!usedRows.has(item.row)) sheet.getRange(item.row, 1, 1, COLUMN_COUNT).clearContent();
-    });
+    if (data.action === "delete") {
+      const id = String(data.record && data.record.id || "").trim();
+      if (!/^[A-Za-z0-9._-]{5,80}$/.test(id)) throw new Error("Silinəcək qaimə nömrəsi düzgün deyil.");
+      deleteInvoiceRows_(sheet, id);
+      return output_({ ok: true, id: id, deleted: true });
+    }
+
+    const record = validateRecord_(data.record);
+    // Təkrar göndərilən qaimə iki dəfə görünməsin: əvvəl köhnə bloku silib sonra yenisini yazırıq.
+    deleteInvoiceRows_(sheet, record.id);
+    appendInvoiceBlock_(sheet, record, uid);
     return output_({ ok: true, id: record.id });
   } catch (error) {
     return output_({ ok: false, error: safeErrorMessage_(error) });
@@ -112,58 +97,138 @@ function getMarayWaterSheet_() {
   let sheet = spreadsheet.getSheetByName(SHEET_NAME);
   if (!sheet) sheet = spreadsheet.insertSheet(SHEET_NAME);
 
-  if (sheet.getLastRow() === 0) {
-    sheet.getRange(1, 1, 1, COLUMN_COUNT).merge();
-    sheet.getRange(1, 1).setValue("MƏRAY SU  ·  TƏHVİL JURNALI");
-    sheet.getRange(2, 1, 1, COLUMN_COUNT).merge();
-    sheet.getRange(2, 1).setValue("Tətbiqdən daxil edilən su təhvili qeydləri");
-    sheet.getRange(HEADER_ROW, 1, 1, COLUMN_COUNT).setValues([[
-      "Tarix", "Təhvil yeri", "Butulka sayı", "Qəbul edən şəxs", "Qeyd", "Qaimə ID", "Yaradılma vaxtı", "Qeyd edən UID", "Sətir №"
-    ]]);
-    styleSheet_(sheet);
-  } else {
-    const headers = sheet.getRange(HEADER_ROW, 1, 1, VISIBLE_COLUMN_COUNT).getDisplayValues()[0]
-      .map(normalizeHeader_);
-    if (headers[0] !== "tarix" || headers[1] !== "tehvil yeri" || headers[2] !== "butulka sayi"
-        || headers[3] !== "qebul eden sexs" || headers[4] !== "qeyd") {
-      throw new Error("“Məray Su” vərəqinin 3-cü sətirində Tarix, Təhvil yeri, Butulka sayı, Qəbul edən şəxs, Qeyd başlıqları olmalıdır.");
-    }
+  if (sheet.getLastRow() > 0) {
+    const rows = sheet.getRange(1, 1, sheet.getLastRow(), COLUMN_COUNT).getValues();
+    const hasInvoiceMarkers = rows.some(function (row) { return String(row[5] || "") && Number(row[8]) === -1; });
+    if (!hasInvoiceMarkers) migrateLegacySheetToInvoices_(sheet, rows);
   }
+  styleInvoiceSheet_(sheet);
   return sheet;
 }
 
-function styleSheet_(sheet) {
-  sheet.setFrozenRows(HEADER_ROW);
-  sheet.setRowHeight(1, 42);
-  sheet.setRowHeight(2, 26);
-  sheet.setRowHeight(HEADER_ROW, 36);
-  sheet.getRange(1, 1, 1, COLUMN_COUNT)
-    .setBackground("#123c31").setFontColor("#eafff1").setFontSize(15).setFontWeight("bold")
-    .setHorizontalAlignment("left").setVerticalAlignment("middle");
-  sheet.getRange(2, 1, 1, COLUMN_COUNT)
-    .setBackground("#eaf4ef").setFontColor("#587064").setFontSize(10).setFontStyle("italic")
-    .setVerticalAlignment("middle");
-  sheet.getRange(HEADER_ROW, 1, 1, COLUMN_COUNT)
+function migrateLegacySheetToInvoices_(sheet, rows) {
+  let headerIndex = -1;
+  const headerMatches = ["tarix", "tehvil yeri", "butulka sayi", "qebul eden sexs", "qeyd"];
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+    const candidate = rows[i].slice(0, VISIBLE_COLUMN_COUNT).map(normalizeHeader_);
+    if (headerMatches.every(function (header, index) { return candidate[index] === header; })) {
+      headerIndex = i;
+      break;
+    }
+  }
+  if (headerIndex < 0) {
+    throw new Error("“Məray Su” vərəqində köhnə cədvəl başlıqları tapılmadı. Məlumatı qorumaq üçün vərəqi avtomatik dəyişmədim.");
+  }
+
+  const timeZone = sheet.getParent().getSpreadsheetTimeZone();
+  const grouped = new Map();
+  rows.slice(headerIndex + 1).forEach(function (row) {
+    const id = String(row[5] || "").trim();
+    const destination = String(row[1] || "").trim();
+    const bottles = Number(row[2]);
+    if (!id || !destination || !Number.isFinite(bottles) || bottles < 1) return;
+    if (!grouped.has(id)) {
+      grouped.set(id, {
+        id: id,
+        date: row[0] instanceof Date ? Utilities.formatDate(row[0], timeZone, "yyyy-MM-dd") : String(row[0] || ""),
+        recipient: String(row[3] || ""),
+        note: String(row[4] || ""),
+        allocations: []
+      });
+    }
+    grouped.get(id).allocations.push({
+      index: Number(row[8]) || grouped.get(id).allocations.length + 1,
+      destination: destination,
+      bottles: Math.floor(bottles)
+    });
+  });
+
+  const records = Array.from(grouped.values()).map(function (record) {
+    record.allocations.sort(function (a, b) { return a.index - b.index; });
+    record.allocations = record.allocations.map(function (item) { return { destination: item.destination, bottles: item.bottles }; });
+    return record;
+  });
+  rows.slice(headerIndex + 1).forEach(function (row) {
+    const visibleDataExists = row.slice(0, VISIBLE_COLUMN_COUNT).some(function (value) { return String(value || "").trim() !== ""; });
+    if (visibleDataExists && !String(row[5] || "").trim()) {
+      throw new Error("Köhnə “Məray Su” vərəqində Qaimə ID-si olmayan məlumat var. Məlumatı qorumaq üçün avtomatik çevirməni dayandırdım.");
+    }
+  });
+  sheet.clear();
+  sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns()).breakApart();
+  styleInvoiceSheet_(sheet);
+  records.forEach(function (record) { appendInvoiceBlock_(sheet, record, "köhnə qeyd"); });
+}
+
+function styleInvoiceSheet_(sheet) {
+  sheet.setColumnWidth(1, 112);
+  sheet.setColumnWidth(2, 185);
+  sheet.setColumnWidth(3, 118);
+  sheet.setColumnWidth(4, 190);
+  sheet.setColumnWidth(5, 260);
+  sheet.setColumnWidth(6, 145);
+  sheet.setColumnWidth(7, 165);
+  sheet.setColumnWidth(8, 175);
+  sheet.setColumnWidth(9, 95);
+  sheet.hideColumns(6, 4);
+  if (sheet.getFilter()) sheet.getFilter().remove();
+  sheet.setFrozenRows(0);
+  sheet.setHiddenGridlines(true);
+}
+
+function appendInvoiceBlock_(sheet, record, uid) {
+  const lastUsedRow = sheet.getLastRow();
+  const firstRow = lastUsedRow ? lastUsedRow + 2 : 1;
+  const titleRow = firstRow;
+  const headerRow = firstRow + 1;
+  const firstAllocationRow = firstRow + 2;
+  const totalRow = firstAllocationRow + record.allocations.length;
+  const spacerRow = totalRow + 1;
+  const totalBottles = record.allocations.reduce(function (sum, item) { return sum + item.bottles; }, 0);
+
+  sheet.getRange(titleRow, 1, 1, VISIBLE_COLUMN_COUNT).merge();
+  sheet.getRange(titleRow, 1).setValue("MƏRAY SU  ·  TƏHVİL QAİMƏSİ  ·  " + displayDate_(record.date, sheet));
+  sheet.getRange(titleRow, 6, 1, 4).setValues([[record.id, new Date(), uid, -1]]);
+  sheet.setRowHeight(titleRow, 42);
+  sheet.getRange(titleRow, 1, 1, VISIBLE_COLUMN_COUNT)
+    .setBackground("#123c31").setFontColor("#eafff1").setFontSize(14).setFontWeight("bold")
+    .setHorizontalAlignment("left").setVerticalAlignment("middle").setWrap(true)
+    .setBorder(true, true, false, true, false, false, "#24704f", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+
+  sheet.getRange(headerRow, 1, 1, COLUMN_COUNT).setValues([[
+    "Tarix", "Təhvil yeri", "Butulka sayı", "Qəbul edən şəxs", "Qeyd", record.id, new Date(), uid, -2
+  ]]);
+  sheet.setRowHeight(headerRow, 34);
+  sheet.getRange(headerRow, 1, 1, VISIBLE_COLUMN_COUNT)
     .setBackground("#24704f").setFontColor("#ffffff").setFontSize(10).setFontWeight("bold")
     .setHorizontalAlignment("center").setVerticalAlignment("middle").setWrap(true)
     .setBorder(true, true, true, true, true, true, "#174d38", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
-  sheet.setColumnWidth(1, 120);
-  sheet.setColumnWidth(2, 210);
-  sheet.setColumnWidth(3, 125);
-  sheet.setColumnWidth(4, 210);
-  sheet.setColumnWidth(5, 300);
-  sheet.setColumnWidth(6, 150);
-  sheet.setColumnWidth(7, 165);
-  sheet.setColumnWidth(8, 190);
-  sheet.hideColumns(6, 4);
-  if (sheet.getFilter()) sheet.getFilter().remove();
-  sheet.getRange(HEADER_ROW, 1, Math.max(sheet.getMaxRows() - HEADER_ROW + 1, 1), VISIBLE_COLUMN_COUNT).createFilter();
+
+  const allocationRows = record.allocations.map(function (allocation, index) {
+    return [dateValue_(record.date), safeText_(allocation.destination, 100), allocation.bottles,
+      safeText_(record.recipient, 100), safeText_(record.note, 300), record.id, new Date(), uid, index + 1];
+  });
+  sheet.getRange(firstAllocationRow, 1, allocationRows.length, COLUMN_COUNT).setValues(allocationRows);
+  for (let i = 0; i < allocationRows.length; i++) styleInvoiceAllocationRow_(sheet, firstAllocationRow + i, i);
+
+  sheet.getRange(totalRow, 1, 1, 2).merge();
+  sheet.getRange(totalRow, 1).setValue("CƏMİ BUTULKA");
+  sheet.getRange(totalRow, 3).setValue(totalBottles);
+  sheet.getRange(totalRow, 4, 1, 2).merge();
+  sheet.getRange(totalRow, 4).setValue(record.allocations.length + " təhvil yeri");
+  sheet.getRange(totalRow, 6, 1, 4).setValues([[record.id, new Date(), uid, -3]]);
+  sheet.setRowHeight(totalRow, 36);
+  sheet.getRange(totalRow, 1, 1, VISIBLE_COLUMN_COUNT)
+    .setBackground("#dff2e8").setFontColor("#174d38").setFontSize(11).setFontWeight("bold")
+    .setVerticalAlignment("middle").setBorder(true, true, true, true, false, false, "#6eaa87", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  sheet.getRange(totalRow, 3).setHorizontalAlignment("center").setNumberFormat("0");
+  sheet.setRowHeight(spacerRow, 14);
 }
 
-function styleDataRow_(sheet, rowNumber) {
+function styleInvoiceAllocationRow_(sheet, rowNumber, index) {
   sheet.setRowHeight(rowNumber, 34);
-  sheet.getRange(rowNumber, 1, 1, COLUMN_COUNT)
-    .setBackground(rowNumber % 2 === 0 ? "#eef7f1" : "#ffffff")
+  sheet.getRange(rowNumber, 1, 1, VISIBLE_COLUMN_COUNT)
+    .setBackground(index % 2 === 0 ? "#eef7f1" : "#ffffff")
     .setFontColor("#17231c").setFontSize(10).setVerticalAlignment("middle")
     .setBorder(true, true, true, true, true, true, "#a8c4b2", SpreadsheetApp.BorderStyle.SOLID);
   sheet.getRange(rowNumber, 1).setNumberFormat("dd.mm.yyyy").setHorizontalAlignment("center");
@@ -176,13 +241,14 @@ function styleDataRow_(sheet, rowNumber) {
 function readMarayWaterRecords_() {
   const sheet = getMarayWaterSheet_();
   const lastRow = sheet.getLastRow();
-  if (lastRow < DATA_START_ROW) return [];
-  const rows = sheet.getRange(DATA_START_ROW, 1, lastRow - DATA_START_ROW + 1, COLUMN_COUNT).getValues();
+  if (!lastRow) return [];
+  const rows = sheet.getRange(1, 1, lastRow, COLUMN_COUNT).getValues();
   const timeZone = sheet.getParent().getSpreadsheetTimeZone();
   const grouped = new Map();
   rows.forEach(function (row) {
     const id = String(row[5] || "").trim();
-    if (!id) return;
+    const index = Number(row[8]);
+    if (!id || !Number.isFinite(index) || index < 1) return;
     if (!grouped.has(id)) {
       grouped.set(id, {
         id: id,
@@ -192,17 +258,24 @@ function readMarayWaterRecords_() {
         allocations: []
       });
     }
-    grouped.get(id).allocations.push({
-      index: Number(row[8]) || 1,
-      destination: String(row[1] || ""),
-      bottles: Math.max(0, Math.floor(Number(row[2]) || 0))
-    });
+    grouped.get(id).allocations.push({ index: index, destination: String(row[1] || ""), bottles: Math.max(0, Math.floor(Number(row[2]) || 0)) });
   });
   return Array.from(grouped.values()).map(function (record) {
     record.allocations.sort(function (a, b) { return a.index - b.index; });
     record.allocations = record.allocations.map(function (item) { return { destination: item.destination, bottles: item.bottles }; });
     return record;
   });
+}
+
+function deleteInvoiceRows_(sheet, id) {
+  const lastRow = sheet.getLastRow();
+  if (!lastRow) return;
+  const ids = sheet.getRange(1, 6, lastRow, 1).getDisplayValues();
+  const matchingRows = [];
+  ids.forEach(function (row, index) { if (row[0] === id) matchingRows.push(index + 1); });
+  if (!matchingRows.length) return;
+  // Silmə zamanı metadata daşıyan qaimə sətirlərinin hamısını götürürük; qonşu qaimələrə toxunmuruq.
+  matchingRows.reverse().forEach(function (rowNumber) { sheet.deleteRow(rowNumber); });
 }
 
 function validateRecord_(record) {
@@ -231,19 +304,14 @@ function validateRecord_(record) {
   return { id: id, date: date, recipient: recipient, note: String(record.note || "").trim(), allocations: allocations };
 }
 
-function findRowsById_(sheet, id) {
-  const lastRow = sheet.getLastRow();
-  if (lastRow < DATA_START_ROW) return [];
-  const rows = sheet.getRange(DATA_START_ROW, 6, lastRow - DATA_START_ROW + 1, 4).getDisplayValues();
-  return rows.reduce(function (matches, row, index) {
-    if (row[0] === id) matches.push({ row: DATA_START_ROW + index, index: Math.max(0, Number(row[3]) - 1) });
-    return matches;
-  }, []);
-}
-
 function dateValue_(value) {
   const parts = String(value).split("-").map(Number);
   return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+}
+
+function displayDate_(value, sheet) {
+  const date = dateValue_(value);
+  return isNaN(date.getTime()) ? String(value) : Utilities.formatDate(date, sheet.getParent().getSpreadsheetTimeZone(), "dd.MM.yyyy");
 }
 
 function safeText_(value, maxLength) {

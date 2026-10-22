@@ -1,22 +1,21 @@
-LIMAN ANBARI · MƏRAY SU QURAŞDIRMA
+LİMAN ANBARI · MƏRAY SU QURAŞDIRMA
 
-Bu paketdə tətbiqin 1.64.0 versiyası, Google Apps Script kodu və quraşdırma addımları var.
+Bu paketdə tətbiqin 1.65.0 versiyası, Google Apps Script kodu və quraşdırma addımları var.
 
 Forma əvvəlcədən 3 təhvil yeri sətri açır. Hər sətirdə solda butulka sayı, yanında təhvil yeri yazılır. “Başqa yer əlavə et” düyməsi ilə 20-yə qədər sətir artırmaq olar. Məsələn, ilk üç sətirdə 1-ci post, 2-ci post və idarə yazılır; tərəzi üçün əlavə sətir açılır. Qəbul edən şəxsin adı və qeyd bütün qaiməyə aiddir.
 
 1. Google Sheets-də göndərdiyin əsas “Ceyhun anbar” faylını aç.
 2. Extensions → Apps Script seç.
 3. Açılan layihədə Code.gs faylının içini təmizlə, bu paketdəki Meray-Su-Code.gs faylının bütün mətnini ora köçür və Save et.
-4. Yuxarıdakı funksiya siyahısından authorizeMarayWater seçib Run bas. İcazə pəncərəsində davam et. Bu addım “Məray Su” vərəqini başlıqlar və formatla yaradır.
-5. Deploy → New deployment → Web app seç.
-6. Execute as: Me seç. Who has access: Anyone seç. Tətbiq məlumatı göndərərkən Firebase-də təsdiqlənmiş hesabı ayrıca yoxlayır; Google Sheets paylaşımını açıq etmə.
-7. Deploy et, icazəni təsdiqlə və yaranan /exec linkini köçür.
-8. Paketdəki app-config.js faylında aşağıdakı sətri tap:
-   marayWaterApiUrl: ""
-   Dırnaqların içinə yeni /exec linkini əlavə et, məsələn:
-   marayWaterApiUrl: "https://script.google.com/macros/s/.../exec"
-9. Dəyişən app-config.js faylını GitHub-dakı tətbiq faylı ilə əvəz et. Digər faylları yenidən yükləmək lazım deyil.
-10. Tətbiqi yenilə, təsdiqlənmiş hesabla daxil ol və Məray Su bölməsindən sınaq qaiməsi yaz. Hər təhvil yeri “Ceyhun anbar” faylındakı “Məray Su” vərəqinə ayrıca sərhədli sətir kimi düşməlidir.
+4. Yuxarıdakı funksiya siyahısından authorizeMarayWater seçib Run bas. Əgər “Məray Su” vərəqində köhnə cədvəl varsa, əvvəlki qaimələr qorunaraq hər biri ayrıca qaimə blokuna çevriləcək.
+5. Deploy → Manage deployments aç. Mövcud Web App deployment-in yanındakı qələmə bas, Version yerindən New version seç və Deploy et. Execute as: Me, Who has access: Anyone olaraq qalsın. Eyni deployment-i yenilə, yeni deployment yaratma; beləliklə /exec linki dəyişməz.
+6. Google Sheets paylaşımını açıq etmə. Tətbiq hər sorğuda Firebase-də təsdiqlənmiş hesabı yoxlayır.
+7. GitHub-a bu paketdəki index.html, script.js və style.css fayllarını yüklə; digər faylların dəyişməsinə ehtiyac yoxdur.
+8. Tətbiqi yenilə, təsdiqlənmiş hesabla daxil ol və Məray Su bölməsindən sınaq qaiməsi yaz. Qaiməni silmək üçün kartdakı “Sil” düyməsini basıb təsdiqlə.
+
+Google Sheets-də hər qaimə ayrıca başlıq, təkrarlanan sütun adları, təhvil yerləri və butulka cəmi ilə yazılır. Mövcud köhnə qaimələr də ilk dəfə script işə düşəndə eyni görünüşə keçirilir.
+
+Yalnız deployment linki dəyişibsə, app-config.js faylında marayWaterApiUrl sətrindəki mövcud linki yeni /exec linki ilə əvəz et. Link eyni qalıbsa app-config.js faylına toxunma.
 
 Vacib: Web App linki texniki olaraq açıq linkdir, ancaq Apps Script hər sorğuda Firebase girişini və “approved” hesab statusunu yoxlayır. Sheet-in paylaşımı “Anyone” edilməməlidir. Apps Script-i əsas Ceyhun anbar faylına giriş hüququ olan Google hesabında yarat və yayımla.
 
