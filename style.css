@@ -2484,3 +2484,98 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
         transform: translate(-50%, -50%) rotate(90deg);
     }
 }
+
+/* Premium English sentence practice, styled to match Liman Anbarı. */
+.english-menu-icon { color: #8de7ad; font-size: 14px; font-weight: 850; letter-spacing: -1px; }
+.english-practice-screen .app-header { display: none; }
+.english-practice-screen #english-practice-view { display: grid; align-content: start; gap: 19px; width: min(100%, 1060px); margin: 62px auto 30px; }
+.english-page-heading { display: grid; gap: 8px; padding: 0 2px; }
+.english-page-kicker { display: flex; align-items: center; gap: 8px; color: #7bd99e; font-size: 9px; font-weight: 850; letter-spacing: 1.55px; }
+.english-page-kicker .dashboard-live-dot { width: 6px; height: 6px; }
+.english-page-heading h2 { margin: 1px 0 0; color: #f0f7f2; font-size: clamp(29px, 4vw, 39px); font-weight: 760; letter-spacing: -1.25px; line-height: 1.1; }
+.english-page-heading p { max-width: 590px; margin: 0; color: #9caf9f; font-size: 12px; line-height: 1.6; }
+.english-practice-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(245px, .75fr); align-items: start; gap: 17px; }
+.english-game-card, .english-side-card { min-width: 0; border: 1px solid rgba(153, 211, 171, .09); border-radius: 22px; background: linear-gradient(145deg, rgba(22, 39, 30, .9), rgba(12, 23, 17, .94)); box-shadow: 0 18px 45px rgba(0, 0, 0, .16); }
+.english-game-card { padding: clamp(19px, 3vw, 28px); }
+.english-game-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.english-level { padding: 7px 10px; border-radius: 999px; color: #a8efbd; background: rgba(57, 201, 130, .1); font-size: 10px; font-weight: 800; letter-spacing: .3px; }
+.english-counter { color: #93a99a; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.english-progress { height: 3px; margin: 16px 0 18px; overflow: hidden; border-radius: 99px; background: rgba(220, 244, 226, .08); }
+.english-progress span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #37c77f, #a4efb9); transition: width .25s ease; }
+.english-mistake-meter { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -5px 0 24px; color: #82988a; font-size: 8px; font-weight: 800; letter-spacing: 1px; }
+.english-mistake-meter > div { display: flex; gap: 5px; }
+.english-mistake-meter i { width: 7px; height: 7px; border-radius: 50%; background: rgba(231, 239, 232, .13); transition: background .18s, box-shadow .18s; }
+.english-mistake-meter i.is-filled { background: #ed8e79; box-shadow: 0 0 9px rgba(237, 142, 121, .35); }
+.english-prompt-label { color: #7e9987; font-size: 9px; font-weight: 820; letter-spacing: 1.15px; }
+.english-meaning { min-height: 33px; margin: 8px 0 17px; color: #f0f7f2; font-size: clamp(19px, 2.4vw, 24px); font-weight: 720; letter-spacing: -.4px; line-height: 1.35; }
+.english-answer { display: flex; min-height: 68px; flex-wrap: wrap; align-content: center; gap: 8px; padding: 11px; border: 1px dashed rgba(144, 191, 156, .2); border-radius: 15px; background: rgba(4, 13, 8, .2); }
+.english-answer.empty::after { padding: 5px; color: #65796c; content: "Sözləri aşağıdan seç..."; font-size: 11px; }
+.english-word-bank { display: flex; min-height: 43px; flex-wrap: wrap; align-content: flex-start; gap: 8px; margin: 14px 0 18px; }
+.english-word { min-height: 37px; padding: 8px 12px; border: 1px solid rgba(162, 200, 172, .13); border-radius: 11px; color: #dcebe0; background: rgba(255, 255, 255, .035); box-shadow: 0 3px 10px rgba(0, 0, 0, .1); font: inherit; font-size: 12px; font-weight: 680; cursor: pointer; transition: transform .16s ease, color .16s ease, border-color .16s ease, background .16s ease; }
+.english-word:hover { transform: translateY(-2px); border-color: rgba(106, 222, 149, .35); color: #f2fff5; background: rgba(57, 201, 130, .08); }
+.english-word.answer-word { border-color: rgba(92, 199, 131, .22); color: #b9f2cb; background: rgba(57, 201, 130, .09); }
+.english-word:disabled { opacity: .55; cursor: default; }
+.english-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.english-primary-button, .english-secondary-button, .english-text-button { min-height: 42px; padding: 0 15px; border: 0; border-radius: 12px; font: inherit; font-size: 11px; font-weight: 760; cursor: pointer; transition: transform .17s ease, background .17s ease, color .17s ease; }
+.english-primary-button { display: inline-flex; align-items: center; gap: 10px; color: #092213; background: linear-gradient(110deg, #4ed38e, #7ce5a6); box-shadow: 0 8px 21px rgba(38, 171, 104, .18); }
+.english-primary-button span { font-size: 16px; transition: transform .17s ease; }
+.english-primary-button:hover { background: linear-gradient(110deg, #69e5a2, #9af0b7); transform: translateY(-1px); }
+.english-primary-button:hover span { transform: translateX(2px); }
+.english-secondary-button { color: #bde8ca; background: rgba(57, 201, 130, .09); }
+.english-secondary-button:hover { color: #e2ffeb; background: rgba(57, 201, 130, .16); }
+.english-text-button { color: #91a698; background: transparent; }
+.english-text-button:hover { color: #d1e7d8; background: rgba(255, 255, 255, .04); }
+.english-feedback { min-height: 19px; margin: 13px 0 0; color: #88a18f; font-size: 11px; font-weight: 650; line-height: 1.45; }
+.english-feedback.good { color: #80e5a4; }
+.english-feedback.bad { color: #f09b88; }
+.english-side-card { padding: 20px; }
+.english-side-heading { display: flex; align-items: center; gap: 11px; }
+.english-side-mark { display: grid; width: 37px; height: 37px; place-items: center; border-radius: 12px; color: #89e5a8; background: rgba(57, 201, 130, .1); font-size: 17px; }
+.english-side-heading > div { display: grid; gap: 3px; }
+.english-side-heading > div > span, .english-custom-heading > span { color: #79c995; font-size: 8px; font-weight: 850; letter-spacing: 1.35px; }
+.english-side-heading h3 { margin: 0; color: #e8f2eb; font-size: 15px; font-weight: 720; }
+.english-side-copy { margin: 15px 0 17px; color: #95a99a; font-size: 10px; line-height: 1.65; }
+.english-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px 0; border-top: 1px solid rgba(177, 215, 187, .08); border-bottom: 1px solid rgba(177, 215, 187, .08); }
+.english-stats > div { display: grid; gap: 6px; min-width: 0; }
+.english-stats span { color: #82978a; font-size: 8px; }
+.english-stats strong { color: #d9f5e1; font-size: 19px; font-variant-numeric: tabular-nums; }
+.english-add-panel { margin-top: 14px; }
+.english-add-panel summary { display: flex; min-height: 38px; align-items: center; justify-content: space-between; gap: 10px; color: #bfe9cb; font-size: 10px; font-weight: 740; cursor: pointer; list-style: none; }
+.english-add-panel summary::-webkit-details-marker { display: none; }
+.english-add-panel summary b { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 9px; color: #80dda0; background: rgba(57, 201, 130, .1); font-size: 15px; transition: transform .18s ease; }
+.english-add-panel[open] summary b { transform: rotate(45deg); }
+.english-add-form { display: grid; gap: 10px; padding: 7px 0 3px; }
+.english-add-form label { display: grid; gap: 5px; color: #91a799; font-size: 9px; font-weight: 650; }
+.english-add-form input, .english-add-form select { width: 100%; min-height: 37px; padding: 8px 10px; border: 1px solid rgba(151, 192, 164, .13); border-radius: 10px; outline: 0; color: #e0ece3; background: rgba(3, 11, 7, .32); font: inherit; font-size: 10px; }
+.english-add-form input::placeholder { color: #64766a; }
+.english-add-form input:focus, .english-add-form select:focus { border-color: rgba(95, 220, 144, .43); }
+.english-add-form select option { color: #e0ece3; background: #14221a; }
+.english-add-form button { display: flex; min-height: 37px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 10px; color: #0b2716; background: #63d994; font: inherit; font-size: 10px; font-weight: 800; cursor: pointer; }
+.english-add-form button:hover { background: #83e8a8; }
+.english-local-note { margin: 5px 0 0; color: #74897b; font-size: 8px; line-height: 1.45; }
+.english-custom-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 17px; }
+.english-custom-heading strong { color: #95d9aa; font-size: 10px; font-variant-numeric: tabular-nums; }
+.english-custom-list { display: grid; gap: 7px; max-height: 165px; overflow: auto; margin: 9px 0 0; padding: 0; list-style: none; }
+.english-custom-list > li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 8px 0; border-bottom: 1px solid rgba(177, 215, 187, .06); color: #c7d9cc; font-size: 9px; }
+.english-custom-list > li > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.english-custom-list > li > button { flex: none; padding: 4px 6px; border: 0; border-radius: 7px; color: #9b756d; background: transparent; font: inherit; font-size: 9px; cursor: pointer; }
+.english-custom-list > li > button:hover { color: #ffaaa0; background: rgba(237, 142, 121, .08); }
+.english-custom-list > li.english-custom-empty { color: #74897b; border: 0; }
+@media (min-width: 761px) {
+    .english-practice-screen .container { width: min(100%, 1120px); padding-right: 32px; padding-left: 32px; }
+}
+@media (max-width: 760px) {
+    .english-practice-screen #english-practice-view { gap: 16px; margin-top: 36px; }
+    .english-practice-grid { grid-template-columns: minmax(0, 1fr); gap: 13px; }
+    .english-side-card { padding: 18px; }
+}
+@media (max-width: 390px) {
+    .english-practice-screen #english-practice-view { margin-top: 29px; }
+    .english-game-card { padding: 17px; }
+    .english-side-card { padding: 16px; }
+    .english-word { padding: 8px 10px; font-size: 11px; }
+    .english-stats { gap: 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .english-word, .english-progress span, .english-add-panel summary b, .english-primary-button, .english-primary-button span { transition: none; }
+}

@@ -62,6 +62,7 @@ const aboutView = document.getElementById("about-view");
 const remindersView = document.getElementById("reminders-view");
 const approvalView = document.getElementById("approval-view");
 const accountView = document.getElementById("account-view");
+const englishPracticeView = document.getElementById("english-practice-view");
 const accountBackButton = document.getElementById("account-back");
 const accountAvatarField = document.getElementById("account-avatar-field");
 const accountAvatarOptions = document.getElementById("account-avatar-options");
@@ -330,6 +331,7 @@ function showView(view) {
     document.body.classList.toggle("about-screen", view === "about");
     document.body.classList.toggle("approval-screen", view === "approvals");
     document.body.classList.toggle("account-screen", view === "account");
+    document.body.classList.toggle("english-practice-screen", view === "english-practice");
     homeView.hidden = view !== "home";
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
@@ -339,6 +341,7 @@ function showView(view) {
     remindersView.hidden = view !== "reminders";
     approvalView.hidden = view !== "approvals";
     accountView.hidden = view !== "account";
+    englishPracticeView.hidden = view !== "english-practice";
     aboutView.hidden = view !== "about";
     dataStatus.hidden = true;
     if (view === "area-measurement") {

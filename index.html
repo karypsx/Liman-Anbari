@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=126">
+    <link rel="stylesheet" href="style.css?v=127">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -99,6 +99,11 @@
                 <button type="button" data-menu-view="home">
                     <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-home.png" alt="" onerror="this.hidden=true"></span>
                     <span class="app-menu-item-copy"><strong>Ana səhifə</strong><small>Ümumi baxış</small></span>
+                    <span class="app-menu-item-arrow" aria-hidden="true">›</span>
+                </button>
+                <button type="button" data-menu-view="english-practice">
+                    <span class="app-menu-icon english-menu-icon" aria-hidden="true">Aa</span>
+                    <span class="app-menu-item-copy"><strong>Cümlə Ustası</strong><small>İngiliscə sözləri sırala</small></span>
                     <span class="app-menu-item-arrow" aria-hidden="true">›</span>
                 </button>
 
@@ -247,6 +252,55 @@
                         <li class="recent-empty">Sahə qeydləri yüklənir...</li>
                     </ul>
                 </section>
+            </div>
+        </section>
+
+        <section id="english-practice-view" class="view english-practice-view" hidden>
+            <div class="english-page-heading">
+                <div class="english-page-kicker"><span class="dashboard-live-dot"></span> İNGİLİS DİLİ · GÜNDƏLİK MƏŞQ</div>
+                <h2>Cümlə Ustası</h2>
+                <p>Qarışıq sözləri düzərək cümləni qur. Düz cavabdan sonra növbəti məşqə keç.</p>
+            </div>
+            <div class="english-practice-grid">
+                <article class="english-game-card">
+                    <div class="english-game-top">
+                        <span id="english-level" class="english-level">A1 · Başlanğıc</span>
+                        <span id="english-counter" class="english-counter">1 / 10</span>
+                    </div>
+                    <div class="english-progress"><span id="english-progress-bar"></span></div>
+                    <div class="english-mistake-meter"><span id="english-run-error-label">BU RAUNDA SƏHV: 0 / 5</span><div id="english-mistake-pips" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
+                    <div class="english-prompt-label">BU CÜMLƏNİ İNGİLİSCƏ QUR</div>
+                    <p id="english-meaning" class="english-meaning"></p>
+                    <div id="english-answer" class="english-answer empty" aria-label="Cümləni quracağınız sahə"></div>
+                    <div id="english-word-bank" class="english-word-bank" aria-label="Seçiləcək sözlər"></div>
+                    <div class="english-actions">
+                        <button id="english-check" class="english-primary-button" type="button">Yoxla <span aria-hidden="true">→</span></button>
+                        <button id="english-hint" class="english-secondary-button" type="button">İpucu</button>
+                        <button id="english-clear" class="english-text-button" type="button">Təmizlə</button>
+                    </div>
+                    <p id="english-feedback" class="english-feedback" role="status" aria-live="polite"></p>
+                </article>
+                <aside class="english-side-card">
+                    <div class="english-side-heading"><span class="english-side-mark" aria-hidden="true">✦</span><div><span>MƏŞQ PANELİ</span><h3>Davam et</h3></div></div>
+                    <p class="english-side-copy">Sözlərə basıb yuxarıdakı yerə yığ. Seçdiyin sözü geri qaytarmaq üçün onun özünə bas.</p>
+                    <div class="english-stats">
+                        <div><span>Düz cavab</span><strong id="english-score">0</strong></div>
+                        <div><span>Səhv cavab</span><strong id="english-wrong">0</strong></div>
+                        <div><span>Cümlələr</span><strong id="english-sentence-count">10</strong></div>
+                    </div>
+                    <details class="english-add-panel">
+                        <summary><span>Öz cümləni əlavə et</span><b aria-hidden="true">＋</b></summary>
+                        <form id="english-add-form" class="english-add-form">
+                            <label>İngiliscə cümlə<input id="english-new-sentence" type="text" maxlength="140" placeholder="Məsələn: The ship is ready." required></label>
+                            <label>Azərbaycanca mənası<input id="english-new-meaning" type="text" maxlength="180" placeholder="Gəmi hazırdır." required></label>
+                            <label>Səviyyə<select id="english-new-level"><option value="A1">A1 · Başlanğıc</option><option value="A2">A2 · Əsas</option><option value="B1">B1 · Orta</option></select></label>
+                            <button type="submit">Yadda saxla <span aria-hidden="true">＋</span></button>
+                        </form>
+                        <p class="english-local-note">Əlavə etdiyin cümlələr bu cihazda saxlanılır.</p>
+                    </details>
+                    <div class="english-custom-heading"><span>ƏLAVƏ ETDİKLƏRİM</span><strong id="english-custom-count">0</strong></div>
+                    <ul id="english-custom-list" class="english-custom-list"><li>Hələ cümlə əlavə edilməyib.</li></ul>
+                </aside>
             </div>
         </section>
 
@@ -592,7 +646,8 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=66"></script>
+    <script src="script.js?v=67"></script>
+    <script src="english-words.js?v=1"></script>
 </body>
 </html>
 
