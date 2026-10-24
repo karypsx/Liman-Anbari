@@ -56,6 +56,7 @@
     const feedback = $("english-feedback");
     const customForm = $("english-add-form");
     const customList = $("english-custom-list");
+    const backButton = $("english-back");
 
     function save(key, value) {
         try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { /* İcra davam etsin. */ }
@@ -303,6 +304,9 @@
     checkButton.addEventListener("click", checkAnswer);
     hintButton.addEventListener("click", showHint);
     clearButton.addEventListener("click", clearAnswer);
+    backButton.addEventListener("click", () => {
+        if (typeof window.showView === "function") window.showView("home");
+    });
     beginRound();
     updateStats();
 })();

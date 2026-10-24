@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b1110">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=127">
+    <link rel="stylesheet" href="style.css?v=128">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -103,7 +103,7 @@
                 </button>
                 <button type="button" data-menu-view="english-practice">
                     <span class="app-menu-icon english-menu-icon" aria-hidden="true">Aa</span>
-                    <span class="app-menu-item-copy"><strong>Cümlə Ustası</strong><small>İngiliscə sözləri sırala</small></span>
+                    <span class="app-menu-item-copy"><strong>Word Shuffle</strong><small>İngiliscə cümlə oyunu</small></span>
                     <span class="app-menu-item-arrow" aria-hidden="true">›</span>
                 </button>
 
@@ -256,10 +256,15 @@
         </section>
 
         <section id="english-practice-view" class="view english-practice-view" hidden>
+            <div class="english-app-topbar">
+                <button id="english-back" class="english-back-button" type="button"><span aria-hidden="true">←</span> Əsas tətbiq</button>
+                <div class="english-brand"><span class="english-brand-mark">W</span><span><strong>WORD SHUFFLE</strong><small>ENGLISH MINI GAME</small></span></div>
+                <span class="english-app-tag">A1—B1</span>
+            </div>
             <div class="english-page-heading">
-                <div class="english-page-kicker"><span class="dashboard-live-dot"></span> İNGİLİS DİLİ · GÜNDƏLİK MƏŞQ</div>
-                <h2>Cümlə Ustası</h2>
-                <p>Qarışıq sözləri düzərək cümləni qur. Düz cavabdan sonra növbəti məşqə keç.</p>
+                <div class="english-page-kicker">DAILY CHALLENGE <span>· 01</span></div>
+                <h2>Sözləri düz. Cümləni qur.</h2>
+                <p>Qarışıq ingilis sözlərini düzgün sırala. Hər düzgün cavab yeni məşq açır.</p>
             </div>
             <div class="english-practice-grid">
                 <article class="english-game-card">
@@ -646,8 +651,8 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=67"></script>
-    <script src="english-words.js?v=1"></script>
+    <script src="script.js?v=68"></script>
+    <script src="english-words.js?v=2"></script>
 </body>
 </html>
 

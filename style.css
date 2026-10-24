@@ -2579,3 +2579,110 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
 @media (prefers-reduced-motion: reduce) {
     .english-word, .english-progress span, .english-add-panel summary b, .english-primary-button, .english-primary-button span { transition: none; }
 }
+
+/* Word Shuffle is presented as its own mini-app, separate from the warehouse theme. */
+body.english-practice-screen { min-height: 100dvh; background: radial-gradient(ellipse at 16% 0%, #e5edff 0%, #f3f5fa 48%, #edf1f8 100%); color: #17243d; }
+.english-practice-screen .top-label,
+.english-practice-screen .app-menu-wrap,
+.english-practice-screen .app-header,
+.english-practice-screen .app-footer { display: none; }
+.english-practice-screen .container { display: flex; width: min(100%, 1160px); min-height: 100dvh; padding: 0 clamp(16px, 4vw, 42px) 38px; background: transparent; }
+.english-practice-screen #english-practice-view { display: grid; align-content: start; gap: 30px; width: 100%; max-width: 1040px; margin: 0 auto; padding-bottom: 30px; }
+.english-practice-screen .english-app-topbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 76px; border-bottom: 1px solid rgba(35, 55, 91, .09); }
+.english-practice-screen .english-back-button { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 13px; border: 1px solid #e1e6ef; border-radius: 12px; color: #4f607c; background: rgba(255,255,255,.68); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; transition: transform .16s ease, background .16s ease, color .16s ease; }
+.english-practice-screen .english-back-button span { font-size: 17px; line-height: 1; }
+.english-practice-screen .english-back-button:hover { transform: translateX(-2px); color: #1b3e85; background: #fff; }
+.english-practice-screen .english-brand { display: flex; align-items: center; gap: 10px; color: #182b51; }
+.english-practice-screen .english-brand-mark { display: grid; width: 37px; height: 37px; place-items: center; border-radius: 12px; color: #fff; background: linear-gradient(145deg, #355fd3, #203f91); box-shadow: 0 7px 16px rgba(46, 81, 177, .2); font-size: 17px; font-weight: 850; }
+.english-practice-screen .english-brand > span:last-child { display: grid; gap: 3px; }
+.english-practice-screen .english-brand strong { font-size: 11px; font-weight: 850; letter-spacing: 1.1px; }
+.english-practice-screen .english-brand small { color: #8491a7; font-size: 7px; font-weight: 750; letter-spacing: 1.55px; }
+.english-practice-screen .english-app-tag { justify-self: end; padding: 7px 10px; border: 1px solid #e0e7f3; border-radius: 999px; color: #5c6c89; background: rgba(255,255,255,.7); font-size: 9px; font-weight: 800; letter-spacing: .7px; }
+.english-practice-screen .english-page-heading { gap: 9px; padding: 3px 1px 0; }
+.english-practice-screen .english-page-kicker { color: #4867c0; font-size: 9px; letter-spacing: 1.8px; }
+.english-practice-screen .english-page-kicker span { color: #9aa6bc; }
+.english-practice-screen .english-page-heading h2 { color: #1b2b4c; font-size: clamp(30px, 4.4vw, 43px); letter-spacing: -1.7px; }
+.english-practice-screen .english-page-heading p { color: #728099; font-size: 13px; }
+.english-practice-screen .english-practice-grid { grid-template-columns: minmax(0, 1.5fr) minmax(260px, .72fr); gap: 18px; }
+.english-practice-screen .english-game-card,
+.english-practice-screen .english-side-card { border: 1px solid rgba(31, 51, 88, .06); border-radius: 24px; background: rgba(255,255,255,.9); box-shadow: 0 18px 48px rgba(31, 51, 88, .075); }
+.english-practice-screen .english-game-card { padding: clamp(22px, 3.3vw, 34px); }
+.english-practice-screen .english-level { color: #3457b1; background: #edf2ff; font-size: 10px; }
+.english-practice-screen .english-counter { color: #7b879d; }
+.english-practice-screen .english-progress { background: #e9edf5; }
+.english-practice-screen .english-progress span { background: linear-gradient(90deg, #4368dc, #6b8bfa); }
+.english-practice-screen .english-mistake-meter { color: #8290a6; }
+.english-practice-screen .english-mistake-meter i { background: #e9edf3; }
+.english-practice-screen .english-mistake-meter i.is-filled { background: #e77c79; box-shadow: 0 0 9px rgba(231, 124, 121, .24); }
+.english-practice-screen .english-prompt-label { color: #8894a9; }
+.english-practice-screen .english-meaning { color: #1b2b4c; }
+.english-practice-screen .english-answer { border-color: #dce3ef; border-radius: 16px; background: #f8f9fc; }
+.english-practice-screen .english-answer.empty::after { color: #9ba6b7; }
+.english-practice-screen .english-word { border-color: #e0e5ef; color: #314362; background: #fff; box-shadow: 0 3px 8px rgba(31, 51, 88, .045); }
+.english-practice-screen .english-word:hover { border-color: #b7c7fa; color: #244795; background: #f6f8ff; }
+.english-practice-screen .english-word.answer-word { border-color: #cfd9f5; color: #244a9f; background: #edf2ff; }
+.english-practice-screen .english-feedback { color: #7b879d; }
+.english-practice-screen .english-feedback.good { color: #25815e; }
+.english-practice-screen .english-feedback.bad { color: #bf5354; }
+.english-practice-screen .english-primary-button { color: #fff; background: linear-gradient(110deg, #355fd3, #5279ed); box-shadow: 0 9px 20px rgba(52, 91, 205, .2); }
+.english-practice-screen .english-primary-button:hover { background: linear-gradient(110deg, #426fe4, #6589f6); }
+.english-practice-screen .english-secondary-button { color: #3e5eb2; background: #eef2ff; }
+.english-practice-screen .english-secondary-button:hover { color: #274b9e; background: #e3eaff; }
+.english-practice-screen .english-text-button { color: #7a879c; }
+.english-practice-screen .english-text-button:hover { color: #455b88; background: #f2f4f9; }
+.english-practice-screen .english-side-card { padding: 22px; }
+.english-practice-screen .english-side-mark { color: #4368d9; background: #edf2ff; }
+.english-practice-screen .english-side-heading > div > span,
+.english-practice-screen .english-custom-heading > span { color: #7082b5; }
+.english-practice-screen .english-side-heading h3 { color: #1c2d4e; }
+.english-practice-screen .english-side-copy { color: #718099; }
+.english-practice-screen .english-stats { border-color: #edf0f5; }
+.english-practice-screen .english-stats span { color: #8390a5; }
+.english-practice-screen .english-stats strong { color: #29467f; }
+.english-practice-screen .english-add-panel summary { color: #3d5fb9; }
+.english-practice-screen .english-add-panel summary b { color: #4569d3; background: #edf2ff; }
+.english-practice-screen .english-add-form label { color: #708099; }
+.english-practice-screen .english-add-form input,
+.english-practice-screen .english-add-form select { border-color: #e0e6f0; color: #253956; background: #f9fafe; }
+.english-practice-screen .english-add-form input::placeholder { color: #a5afbf; }
+.english-practice-screen .english-add-form input:focus,
+.english-practice-screen .english-add-form select:focus { border-color: #8ca5ef; }
+.english-practice-screen .english-add-form select option { color: #253956; background: #fff; }
+.english-practice-screen .english-add-form button { color: #fff; background: #4268dc; }
+.english-practice-screen .english-add-form button:hover { background: #3158ca; }
+.english-practice-screen .english-local-note,
+.english-practice-screen .english-custom-list > li.english-custom-empty { color: #8b96a8; }
+.english-practice-screen .english-custom-heading strong { color: #4969c4; }
+.english-practice-screen .english-custom-list > li { border-color: #edf0f5; color: #43536d; }
+.english-practice-screen .english-custom-list > li > button { color: #9c7779; }
+.english-practice-screen .english-custom-list > li > button:hover { color: #b74f50; background: #fff1f0; }
+@media (max-width: 760px) {
+    .english-practice-screen .container { padding: 0 15px 28px; }
+    .english-practice-screen #english-practice-view { gap: 23px; margin-top: 0; }
+    .english-practice-screen .english-app-topbar { min-height: 66px; grid-template-columns: auto 1fr auto; }
+    .english-practice-screen .english-brand { justify-self: center; }
+    .english-practice-screen .english-back-button { min-height: 34px; padding: 0 9px; font-size: 9px; }
+    .english-practice-screen .english-brand { gap: 7px; }
+    .english-practice-screen .english-brand-mark { width: 32px; height: 32px; border-radius: 10px; }
+    .english-practice-screen .english-brand strong { font-size: 9px; letter-spacing: .75px; }
+    .english-practice-screen .english-brand small { font-size: 6px; letter-spacing: 1.15px; }
+    .english-practice-screen .english-app-tag { padding: 6px 8px; font-size: 8px; }
+    .english-practice-screen .english-page-heading { gap: 7px; }
+    .english-practice-screen .english-page-heading h2 { font-size: clamp(27px, 8vw, 36px); }
+    .english-practice-screen .english-page-heading p { font-size: 11px; }
+    .english-practice-screen .english-practice-grid { grid-template-columns: minmax(0, 1fr); gap: 13px; }
+    .english-practice-screen .english-game-card { padding: 20px; border-radius: 21px; }
+    .english-practice-screen .english-side-card { padding: 18px; border-radius: 20px; }
+}
+@media (max-width: 390px) {
+    .english-practice-screen .container { padding-right: 12px; padding-left: 12px; }
+    .english-practice-screen .english-back-button { gap: 4px; padding: 0 7px; font-size: 8px; }
+    .english-practice-screen .english-brand-mark { width: 29px; height: 29px; }
+    .english-practice-screen .english-app-tag { padding: 5px 7px; font-size: 7px; }
+    .english-practice-screen .english-game-card { padding: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .english-practice-screen .english-back-button,
+    .english-practice-screen .english-word,
+    .english-practice-screen .english-add-panel summary b { transition: none; }
+}

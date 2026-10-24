@@ -312,6 +312,7 @@ document.addEventListener("keydown", function (event) {
 });
 
 function showView(view) {
+    document.title = view === "english-practice" ? "Word Shuffle" : "Liman Anbarı";
     if (view === "approvals" && currentAuthUser?.uid !== LIMAN_ADMIN_UID) view = "home";
     if (view === "home") startHomeCardRotation();
     else stopHomeCardRotation();
