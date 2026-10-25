@@ -59,6 +59,68 @@
     { id: "starter-48", en: "When will the ship arrive?", az: "Gəmi nə vaxt çatacaq?", level: "A2" },
     { id: "starter-49", en: "Please put the boxes near the door.", az: "Zəhmət olmasa, qutuları qapının yanına qoyun.", level: "A2" },
     { id: "starter-50", en: "We received the shipment this morning.", az: "Yükü bu səhər qəbul etdik.", level: "A2" }
+
+
+
+    // Dəniz limanı və gəmiçilik
+    { id: "starter-51", en: "The vessel arrived at the port.", az: "Gəmi limana çatdı.", level: "A2" },
+    { id: "starter-52", en: "The ship will leave the port tomorrow.", az: "Gəmi sabah limandan çıxacaq.", level: "A2" },
+    { id: "starter-53", en: "The captain spoke to the port officer.", az: "Kapitan liman əməkdaşı ilə danışdı.", level: "A2" },
+    { id: "starter-54", en: "The vessel is waiting for a berth.", az: "Gəmi yanalma yeri gözləyir.", level: "A2" },
+    { id: "starter-55", en: "The pilot boarded the ship.", az: "Liman bələdçisi gəmiyə mindi.", level: "A2" },
+    { id: "starter-56", en: "The tugboat helped the vessel.", az: "Yedək gəmisi əsas gəmiyə kömək etdi.", level: "A2" },
+    { id: "starter-57", en: "The ship is ready to depart.", az: "Gəmi yola düşməyə hazırdır.", level: "A2" },
+    { id: "starter-58", en: "The port is closed because of bad weather.", az: "Pis hava şəraitinə görə liman bağlıdır.", level: "A2" },
+    { id: "starter-59", en: "When will the vessel arrive?", az: "Gəmi nə vaxt çatacaq?", level: "A2" },
+    { id: "starter-60", en: "The ship arrived two hours late.", az: "Gəmi iki saat gec çatdı.", level: "A2" },
+
+    { id: "starter-61", en: "The crane is loading the container.", az: "Kran konteyneri yükləyir.", level: "A2" },
+    { id: "starter-62", en: "The workers unloaded the cargo.", az: "İşçilər yükü boşaltdılar.", level: "A2" },
+    { id: "starter-63", en: "The cargo is ready for inspection.", az: "Yük yoxlama üçün hazırdır.", level: "A2" },
+    { id: "starter-64", en: "We counted all the containers.", az: "Bütün konteynerləri saydıq.", level: "A2" },
+    { id: "starter-65", en: "The container arrived by sea.", az: "Konteyner dəniz yolu ilə çatdı.", level: "A2" },
+    { id: "starter-66", en: "Please check the cargo documents.", az: "Zəhmət olmasa, yük sənədlərini yoxlayın.", level: "A2" },
+    { id: "starter-67", en: "The cargo ship is near the pier.", az: "Yük gəmisi körpünün yaxınlığındadır.", level: "A2" },
+    { id: "starter-68", en: "The customs officer checked the cargo.", az: "Gömrük əməkdaşı yükü yoxladı.", level: "A2" },
+    { id: "starter-69", en: "The cargo has passed customs.", az: "Yük gömrük yoxlamasından keçib.", level: "A2" },
+    { id: "starter-70", en: "We sent the shipping documents.", az: "Gəmiçilik sənədlərini göndərdik.", level: "A2" },
+
+    { id: "starter-71", en: "The invoice is ready.", az: "Hesab-faktura hazırdır.", level: "A1" },
+    { id: "starter-72", en: "We received the payment today.", az: "Ödənişi bu gün aldıq.", level: "A2" },
+    { id: "starter-73", en: "The customer paid the bill yesterday.", az: "Müştəri hesabı dünən ödədi.", level: "A2" },
+    { id: "starter-74", en: "How much does the service cost?", az: "Xidmətin qiyməti nə qədərdir?", level: "A2" },
+    { id: "starter-75", en: "The total cost is five hundred dollars.", az: "Ümumi xərc beş yüz dollardır.", level: "A2" },
+    { id: "starter-76", en: "We need to pay the port charges.", az: "Liman rüsumlarını ödəməliyik.", level: "A2" },
+    { id: "starter-77", en: "The company received a large payment.", az: "Şirkət böyük məbləğdə ödəniş aldı.", level: "A2" },
+    { id: "starter-78", en: "Please send me the invoice.", az: "Zəhmət olmasa, mənə hesab-fakturanı göndərin.", level: "A1" },
+    { id: "starter-79", en: "The payment is still pending.", az: "Ödəniş hələ tamamlanmayıb.", level: "A2" },
+    { id: "starter-80", en: "We paid the fee by bank transfer.", az: "Rüsumu bank köçürməsi ilə ödədik.", level: "A2" },
+
+    { id: "starter-81", en: "The shipping cost has increased.", az: "Daşınma xərci artıb.", level: "A2" },
+    { id: "starter-82", en: "The freight rate is too high.", az: "Yükdaşıma tarifi çox yüksəkdir.", level: "A2" },
+    { id: "starter-83", en: "The company prepared its budget.", az: "Şirkət büdcəsini hazırladı.", level: "A2" },
+    { id: "starter-84", en: "We must reduce our expenses.", az: "Xərclərimizi azaltmalıyıq.", level: "A2" },
+    { id: "starter-85", en: "The company made a profit this month.", az: "Şirkət bu ay mənfəət əldə etdi.", level: "A2" },
+    { id: "starter-86", en: "The business lost money last year.", az: "Biznes keçən il pul itirdi.", level: "A2" },
+    { id: "starter-87", en: "The manager approved the payment.", az: "Menecer ödənişi təsdiqlədi.", level: "A2" },
+    { id: "starter-88", en: "We have not paid the invoice yet.", az: "Hesab-fakturanı hələ ödəməmişik.", level: "A2" },
+    { id: "starter-89", en: "The payment is due tomorrow.", az: "Ödəniş sabah edilməlidir.", level: "A2" },
+    { id: "starter-90", en: "The accountant checked the figures.", az: "Mühasib rəqəmləri yoxladı.", level: "A2" },
+
+    { id: "starter-91", en: "The port charges are included in the invoice.", az: "Liman rüsumları hesab-fakturaya daxildir.", level: "A2" },
+    { id: "starter-92", en: "The shipping company sent us a bill.", az: "Gəmiçilik şirkəti bizə hesab göndərdi.", level: "A2" },
+    { id: "starter-93", en: "The customer owes us money.", az: "Müştərinin bizə borcu var.", level: "A2" },
+    { id: "starter-94", en: "We need to check the exchange rate.", az: "Valyuta məzənnəsini yoxlamalıyıq.", level: "A2" },
+    { id: "starter-95", en: "The company paid the vessel's fuel bill.", az: "Şirkət gəminin yanacaq hesabını ödədi.", level: "A2" },
+    { id: "starter-96", en: "The freight payment arrived late.", az: "Yükdaşıma ödənişi gec gəldi.", level: "A2" },
+    { id: "starter-97", en: "How much did the port service cost?", az: "Liman xidməti neçəyə başa gəldi?", level: "A2" },
+    { id: "starter-98", en: "We calculated the total shipping expenses.", az: "Ümumi daşınma xərclərini hesabladıq.", level: "A2" },
+    { id: "starter-99", en: "The company will pay the fee next week.", az: "Şirkət rüsumu gələn həftə ödəyəcək.", level: "A2" },
+    { id: "starter-100", en: "We received the invoice for the port services.", az: "Liman xidmətləri üçün hesab-fakturanı aldıq.", level: "A2" }
+
+
+
+
 ];
 
     const $ = id => document.getElementById(id);
