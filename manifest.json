@@ -1,5 +1,5 @@
 {
-  "background_color": "#0b1110",
+  "background_color": "#edf0f5",
   "dir": "ltr",
   "display": "standalone",
   "name": "LimanAnbarı",
@@ -7,7 +7,7 @@
   "scope": "/Liman-Anbari/",
   "short_name": "LimanAnbarı",
   "start_url": "/Liman-Anbari/",
-  "theme_color": "#0b1110",
+  "theme_color": "#edf0f5",
   "id": "liman-anbari",
   "description": "Liman anbarı üçün QR axtarışı, sahə ölçümü, su təhvil qeydləri və xatırlatmalar.",
   "lang": "az",

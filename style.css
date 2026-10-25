@@ -1981,14 +1981,11 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
 #home-issue-goods .home-scan-launch-copy strong,
 #home-issue-goods .home-scan-launch-copy small,
 #home-issue-goods .home-scan-launch-arrow { color: #092c2b; }
-#home-issue-goods .home-issue-launch-icon svg {
-    width: 31px;
-    height: 31px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.65;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+#home-issue-goods .home-issue-launch-icon img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    display: block;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2581,7 +2578,7 @@ body.approval-screen .approval-approve-button { min-height: 42px; padding-inline
 }
 
 /* Word Shuffle is presented as its own mini-app, separate from the warehouse theme. */
-body.english-practice-screen { min-height: 100dvh; background: radial-gradient(ellipse at 16% 0%, #e5edff 0%, #f3f5fa 48%, #edf1f8 100%); color: #17243d; }
+body.english-practice-screen { min-height: 100dvh; background: radial-gradient(ellipse at 16% 0%, #e5e9f3 0%, #edf0f5 48%, #e8ecf2 100%); color: #17243d; }
 .english-practice-screen .top-label,
 .english-practice-screen .app-menu-wrap,
 .english-practice-screen .app-header,
@@ -2686,3 +2683,1000 @@ body.english-practice-screen { min-height: 100dvh; background: radial-gradient(e
     .english-practice-screen .english-word,
     .english-practice-screen .english-add-panel summary b { transition: none; }
 }
+
+/* Liman Anbarı ümumi görünüşü Word Shuffle-ın açıq mavi palitrasına uyğunlaşdırılıb. */
+:root {
+    color-scheme: light;
+    --bg: #edf0f5;
+    --panel: #ffffff;
+    --panel-soft: #f4f6fb;
+    --line: rgba(35, 55, 91, .1);
+    --text: #17243d;
+    --muted: #718099;
+    --green: #4268dc;
+    --green-dark: #e9efff;
+    --orange: #d99a42;
+    --liman-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 32 32'%3E%3Cpath d='M4 2v24l6-7 5 10 5-2-5-10 10-1L4 2z' fill='%2317243d' stroke='%2317243d' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M4 2v24l6-7 5 10 5-2-5-10 10-1L4 2z' fill='%234268dc' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+body:not(.english-practice-screen) {
+    background: radial-gradient(ellipse at 16% 0%, #e5e9f3 0%, #edf0f5 48%, #e8ecf2 100%);
+    color: #17243d;
+}
+body:not(.english-practice-screen) .container { color: #17243d; }
+body:not(.english-practice-screen) .top-label,
+body:not(.english-practice-screen) .app-header h1,
+body:not(.english-practice-screen) .intro-card h2,
+body:not(.english-practice-screen) .section-heading h2,
+body:not(.english-practice-screen) .dashboard-title,
+body:not(.english-practice-screen) .home-list-heading h2,
+body:not(.english-practice-screen) .scan-page-heading h2,
+body:not(.english-practice-screen) .journal-heading-row h2,
+body:not(.english-practice-screen) .area-page-heading h2,
+body:not(.english-practice-screen) .reminder-page-heading h2,
+body:not(.english-practice-screen) .approval-page-heading h2,
+body:not(.english-practice-screen) .about-hero h2,
+body:not(.english-practice-screen) .account-page-card h2,
+body:not(.english-practice-screen) #ref-title { color: #1b2b4c; text-shadow: none; }
+
+body:not(.english-practice-screen) :is(.app-header p, .section-heading p, .intro-card p,
+    .dashboard-date, .dashboard-stat span, .dashboard-expense-copy span,
+    .home-list-eyebrow, .recent-distribution-info span, .recent-empty,
+    .scan-page-heading p, .scan-camera-label, .scan-camera-status,
+    .journal-heading-row p, .journal-status-label, .journal-status,
+    .distribution-code, .distribution-details, .distribution-detail-label,
+    .journal-results-heading, .area-page-heading p, .area-field,
+    .area-field small, .area-section-calculation, .area-sync-note,
+    .area-records-heading, .area-records-heading strong, .area-record-vessel,
+    .area-record-note, .area-record-open-footer, .area-empty,
+    .reminder-page-heading p, .reminder-field, .reminder-offset,
+    .reminders-list-heading, .reminders-list-heading strong, .reminder-time span,
+    .reminder-card-copy p, .reminder-card-state, .reminder-empty,
+    .approval-page-heading p, .approval-toolbar > div > span, .approval-status,
+    .approval-card-copy span, .about-intro, .about-label, .about-purpose p,
+    .about-feature-card p, .about-feature-note, .account-page-description,
+    .account-page-brand, .account-login-field, .account-login-footnote,
+    .account-page-bottom, .app-footer, .app-footer .footer-credit,
+    .message, .scan-camera-hint p) { color: #718099; }
+
+body:not(.english-practice-screen) .top-label { text-shadow: none; }
+body:not(.english-practice-screen) .top-label-brand,
+body:not(.english-practice-screen) .app-mark,
+body:not(.english-practice-screen) .scan-symbol,
+body:not(.english-practice-screen) .scan-page-icon,
+body:not(.english-practice-screen) .home-list-heading-mark,
+body:not(.english-practice-screen) .dashboard-expense-icon,
+body:not(.english-practice-screen) .about-icon,
+body:not(.english-practice-screen) .about-detail-icon,
+body:not(.english-practice-screen) .about-feature-icon,
+body:not(.english-practice-screen) .account-login-mark,
+body:not(.english-practice-screen) .account-page-brand-icon,
+body:not(.english-practice-screen) .account-avatar-option > span,
+body:not(.english-practice-screen) .account-avatar-picker-preview,
+body:not(.english-practice-screen) .account-current-avatar,
+body:not(.english-practice-screen) .approval-card-avatar,
+body:not(.english-practice-screen) .reminder-notification-icon {
+    color: #4268dc;
+    border-color: rgba(66, 104, 220, .14);
+    background: #edf2ff;
+    box-shadow: none;
+}
+
+body:not(.english-practice-screen) .menu-backdrop { background: rgba(27, 43, 76, .16); }
+body:not(.english-practice-screen) .login-placeholder { color: #52627c; }
+body:not(.english-practice-screen) .login-placeholder:hover,
+body:not(.english-practice-screen) .login-placeholder:focus-visible { color: #3158bf; text-shadow: none; }
+body:not(.english-practice-screen) .menu-toggle { color: #263858; }
+body:not(.english-practice-screen) .menu-toggle span { background: #263858; }
+body:not(.english-practice-screen) .menu-toggle:hover,
+body:not(.english-practice-screen) .menu-toggle:focus-visible,
+body:not(.english-practice-screen) .menu-toggle[aria-expanded="true"] { border-color: rgba(66,104,220,.2); background: #edf2ff; box-shadow: 0 8px 22px rgba(52,82,164,.1); }
+body:not(.english-practice-screen) .menu-toggle:hover span,
+body:not(.english-practice-screen) .menu-toggle:focus-visible span,
+body:not(.english-practice-screen) .menu-toggle[aria-expanded="true"] span { background: #4268dc; }
+body:not(.english-practice-screen) .app-menu,
+body:not(.english-practice-screen) .account-logout-menu {
+    border-color: #e1e6ef;
+    color: #17243d;
+    background: rgba(255,255,255,.97);
+    box-shadow: 0 18px 42px rgba(31,51,88,.14);
+}
+body:not(.english-practice-screen) .app-menu-kicker,
+body:not(.english-practice-screen) .app-menu-item-arrow { color: #7082b5; }
+body:not(.english-practice-screen) .app-menu-heading strong,
+body:not(.english-practice-screen) .app-menu button { color: #253956; }
+body:not(.english-practice-screen) .app-menu-item-copy small { color: #8491a7; }
+body:not(.english-practice-screen) .app-menu-divider { background: linear-gradient(90deg, rgba(66,104,220,.18), rgba(35,55,91,.025)); }
+body:not(.english-practice-screen) .app-menu button:hover,
+body:not(.english-practice-screen) .app-menu button:focus-visible,
+body:not(.english-practice-screen) .app-menu button:active { color: #244795; background: #f1f4ff; box-shadow: none; }
+body:not(.english-practice-screen) .app-menu-icon,
+body:not(.english-practice-screen) .app-menu-heading-mark { border-color: #e3e9f7; color: #4268dc; background: #edf2ff; }
+body:not(.english-practice-screen) .app-menu-icon img { filter: saturate(.78); }
+
+body:not(.english-practice-screen) :is(.intro-card, .result-card, .section-heading,
+    .home-recent-section, .dashboard-area-summary, .scan-camera-card,
+    .journal-toolbar, .distribution-search-field, .distribution-entry,
+    .area-form, .area-measurement-block, .area-calculation, .area-record-card,
+    .area-empty, .area-record-dialog, .reminder-notification-panel,
+    .reminder-card, .approval-card, .about-card, .about-feature-card,
+    .about-detail, .about-purpose, .account-page-card, .account-avatar-option,
+    .maray-water-form, .maray-water-summary, .maray-water-record-card,
+    .maray-water-record-allocation, .maray-water-empty, .scan-back-button) {
+    border-color: #e3e8f1;
+    color: #253956;
+    background: #ffffff;
+    box-shadow: 0 12px 34px rgba(31,51,88,.065);
+}
+body:not(.english-practice-screen) .home-recent-section,
+body:not(.english-practice-screen) .dashboard-area-summary { border: 0; }
+body:not(.english-practice-screen) .dashboard-area-summary { background: linear-gradient(145deg, #fff, #f8f9fd); }
+body:not(.english-practice-screen) .home-recent-section::before { background: linear-gradient(180deg, #6e8ff0, rgba(66,104,220,.14)); }
+body:not(.english-practice-screen) .dashboard-area-summary::before { background: linear-gradient(180deg, #9ab0ee, rgba(66,104,220,.12)); }
+body:not(.english-practice-screen) .home-list-heading-area .home-list-heading-mark { color: #7188c8; background: #f0f3fc; }
+body:not(.english-practice-screen) .home-list-heading-area .home-list-eyebrow { color: #7383ab; }
+body:not(.english-practice-screen) .home-list-heading-area h2 { color: #1b2b4c; }
+body:not(.english-practice-screen) .recent-distribution-item + .recent-distribution-item,
+body:not(.english-practice-screen) .distribution-details,
+body:not(.english-practice-screen) .area-section-calculation,
+body:not(.english-practice-screen) .area-record-open-footer,
+body:not(.english-practice-screen) .area-record-note,
+body:not(.english-practice-screen) .reminder-card { border-color: #e8ecf3; }
+
+body:not(.english-practice-screen) .dashboard-clock { color: #4268dc; }
+body:not(.english-practice-screen) .dashboard-live-dot,
+body:not(.english-practice-screen) .journal-status::before { background: #5c7fe5; box-shadow: 0 0 10px rgba(66,104,220,.25); }
+body:not(.english-practice-screen) .dashboard-kicker,
+body:not(.english-practice-screen) .dashboard-stat strong,
+body:not(.english-practice-screen) .dashboard-expense-copy strong,
+body:not(.english-practice-screen) .home-list-eyebrow,
+body:not(.english-practice-screen) .recent-distribution-quantity,
+body:not(.english-practice-screen) .journal-page-kicker,
+body:not(.english-practice-screen) .area-page-kicker,
+body:not(.english-practice-screen) .scan-page-kicker,
+body:not(.english-practice-screen) .reminder-page-kicker,
+body:not(.english-practice-screen) .approval-page-kicker,
+body:not(.english-practice-screen) .about-page-kicker,
+body:not(.english-practice-screen) .area-record-measure,
+body:not(.english-practice-screen) .area-calculation output,
+body:not(.english-practice-screen) .area-section-calculation output,
+body:not(.english-practice-screen) .area-record-open-label,
+body:not(.english-practice-screen) .reminder-time,
+body:not(.english-practice-screen) .reminder-offset,
+body:not(.english-practice-screen) .reminder-card-state,
+body:not(.english-practice-screen) .approval-toolbar > div > strong,
+body:not(.english-practice-screen) .about-version strong,
+body:not(.english-practice-screen) .about-detail-icon,
+body:not(.english-practice-screen) .maray-water-record-kicker,
+body:not(.english-practice-screen) .maray-water-record-quantity,
+body:not(.english-practice-screen) .maray-water-summary output { color: #4268dc; }
+body:not(.english-practice-screen) .recent-open-button { color: #4668be; }
+body:not(.english-practice-screen) .home-recent-section .recent-distribution-quantity,
+body:not(.english-practice-screen) .dashboard-area-summary .recent-distribution-quantity { color: #355ab7; background: #edf2ff; }
+body:not(.english-practice-screen) .dashboard-monthly-expense { background: linear-gradient(105deg, #edf2ff, #f8f9ff); }
+body:not(.english-practice-screen) .dashboard-expense-icon { color: #4268dc; background: #e2eaff; }
+
+body:not(.english-practice-screen) .home-scan-launch,
+body:not(.english-practice-screen) .primary-button,
+body:not(.english-practice-screen) .account-login-submit,
+body:not(.english-practice-screen) .area-save-button,
+body:not(.english-practice-screen) .reminder-save-button,
+body:not(.english-practice-screen) .maray-water-save,
+body:not(.english-practice-screen) .approval-approve-button {
+    border-color: transparent;
+    color: #ffffff;
+    background: linear-gradient(110deg, #355fd3, #5279ed);
+    box-shadow: 0 9px 22px rgba(52,91,205,.18);
+}
+body:not(.english-practice-screen) .home-scan-launch-copy strong,
+body:not(.english-practice-screen) .home-scan-launch-arrow { color: #fff; }
+body:not(.english-practice-screen) .home-scan-kicker,
+body:not(.english-practice-screen) .home-scan-launch-copy small { color: rgba(255,255,255,.78); }
+body:not(.english-practice-screen) .home-scan-launch-icon,
+body:not(.english-practice-screen) .home-scan-launch-arrow { background: rgba(255,255,255,.15); }
+body:not(.english-practice-screen) .home-scan-launch:hover,
+body:not(.english-practice-screen) .primary-button:hover,
+body:not(.english-practice-screen) .account-login-submit:hover,
+body:not(.english-practice-screen) .area-save-button:hover,
+body:not(.english-practice-screen) .reminder-save-button:hover,
+body:not(.english-practice-screen) .maray-water-save:hover,
+body:not(.english-practice-screen) .approval-approve-button:hover { filter: brightness(1.06); box-shadow: 0 13px 26px rgba(52,91,205,.22); }
+body:not(.english-practice-screen) .secondary-button,
+body:not(.english-practice-screen) .reminder-permission-button,
+body:not(.english-practice-screen) .area-add-measurement,
+body:not(.english-practice-screen) .maray-water-add-allocation,
+body:not(.english-practice-screen) .account-mode-toggle,
+body:not(.english-practice-screen) .maray-water-home,
+body:not(.english-practice-screen) .about-screen #about-home {
+    border-color: #e0e6f0;
+    color: #3e5eb2;
+    background: #eef2ff;
+    box-shadow: none;
+}
+body:not(.english-practice-screen) .secondary-button:hover,
+body:not(.english-practice-screen) .reminder-permission-button:hover,
+body:not(.english-practice-screen) .area-add-measurement:hover,
+body:not(.english-practice-screen) .maray-water-add-allocation:hover,
+body:not(.english-practice-screen) .account-mode-toggle:hover { color: #274b9e; background: #e3eaff; }
+body:not(.english-practice-screen) .journal-actions .issue-goods-button { color: #3e5eb2; background: #eef2ff; }
+body:not(.english-practice-screen) .recent-open-button:hover { color: #244795; }
+
+body:not(.english-practice-screen) .area-field,
+body:not(.english-practice-screen) .reminder-field,
+body:not(.english-practice-screen) .account-login-field,
+body:not(.english-practice-screen) .account-avatar-field legend,
+body:not(.english-practice-screen) .maray-water-allocation-field,
+body:not(.english-practice-screen) .maray-water-allocation-row label { color: #52627c; }
+body:not(.english-practice-screen) :is(.area-field input, .area-field textarea,
+    .reminder-field input, .distribution-search-field, .distribution-search input,
+    .account-login-field input, .account-avatar-picker-toggle,
+    .maray-water-allocation-row input, .english-add-form input) {
+    border-color: #e0e6f0;
+    color: #253956;
+    background-color: #f9fafe;
+}
+body:not(.english-practice-screen) :is(.area-field input, .area-field textarea,
+    .reminder-field input, .distribution-search-field input,
+    .account-login-field input, .maray-water-allocation-row input)::placeholder { color: #a5afbf; }
+body:not(.english-practice-screen) .area-field input:focus,
+body:not(.english-practice-screen) .area-field textarea:focus,
+body:not(.english-practice-screen) .reminder-field input:focus,
+body:not(.english-practice-screen) .distribution-search-field:focus-within,
+body:not(.english-practice-screen) .account-login-field input:focus,
+body:not(.english-practice-screen) .maray-water-allocation-row input:focus {
+    border-color: #8ca5ef;
+    box-shadow: 0 0 0 3px rgba(66,104,220,.1);
+}
+body:not(.english-practice-screen) .area-field input[type="date"],
+body:not(.english-practice-screen) .reminder-field input[type="datetime-local"] { color-scheme: light; }
+body:not(.english-practice-screen) .account-avatar-option:hover,
+body:not(.english-practice-screen) .account-avatar-option.is-selected { border-color: #cfd9f5; color: #244a9f; background: #edf2ff; }
+body:not(.english-practice-screen) .account-avatar-picker-preview > span,
+body:not(.english-practice-screen) .account-avatar-image > span { color: #4268dc; }
+body:not(.english-practice-screen) .account-avatar-picker-chevron { color: #7082b5; }
+
+body:not(.english-practice-screen) .dashboard-area-summary .home-list-heading-mark { color: #7188c8; background: #f0f3fc; }
+body:not(.english-practice-screen) .dashboard-area-summary .home-list-eyebrow,
+body:not(.english-practice-screen) .dashboard-area-summary .recent-distribution-quantity { color: #7188c8; }
+body:not(.english-practice-screen) .home-lists-intro h2 { color: #1b2b4c; }
+body:not(.english-practice-screen) .home-lists-intro p { color: #718099; }
+body:not(.english-practice-screen) .home-screen .home-lists-grid > section.home-card-active { color: #52627c; }
+body:not(.english-practice-screen) .dashboard-map-button,
+body:not(.english-practice-screen) .maray-water-open {
+    border-color: #e0e6f0;
+    color: #3e5eb2;
+    background: rgba(255,255,255,.85);
+    box-shadow: 0 5px 15px rgba(31,51,88,.06);
+}
+body:not(.english-practice-screen) .dashboard-map-button:hover,
+body:not(.english-practice-screen) .dashboard-map-button:focus-visible,
+body:not(.english-practice-screen) .maray-water-open:hover,
+body:not(.english-practice-screen) .maray-water-open:focus-visible { border-color: #cad6f1; color: #244795; background: #edf2ff; box-shadow: 0 7px 18px rgba(52,82,164,.11); }
+body:not(.english-practice-screen) #home-area-measurement,
+body:not(.english-practice-screen) #home-issue-goods {
+    color: #ffffff;
+    background: linear-gradient(110deg, #355fd3, #5279ed);
+    box-shadow: 0 14px 30px rgba(52,91,205,.16);
+}
+body:not(.english-practice-screen) #home-area-measurement .home-scan-kicker,
+body:not(.english-practice-screen) #home-area-measurement .home-scan-launch-copy strong,
+body:not(.english-practice-screen) #home-area-measurement .home-scan-launch-copy small,
+body:not(.english-practice-screen) #home-area-measurement .home-scan-launch-arrow,
+body:not(.english-practice-screen) #home-issue-goods .home-scan-kicker,
+body:not(.english-practice-screen) #home-issue-goods .home-scan-launch-copy strong,
+body:not(.english-practice-screen) #home-issue-goods .home-scan-launch-copy small,
+body:not(.english-practice-screen) #home-issue-goods .home-scan-launch-arrow { color: #ffffff; }
+body:not(.english-practice-screen) #home-area-measurement .home-scan-launch-icon,
+body:not(.english-practice-screen) #home-area-measurement .home-scan-launch-arrow,
+body:not(.english-practice-screen) #home-issue-goods .home-scan-launch-icon,
+body:not(.english-practice-screen) #home-issue-goods .home-scan-launch-arrow { background: rgba(255,255,255,.15); }
+@media (hover: hover) and (pointer: fine) {
+    body:not(.english-practice-screen) #home-area-measurement:not(:disabled):hover,
+    body:not(.english-practice-screen) #home-issue-goods:not(:disabled):hover { background: linear-gradient(110deg, #426fe4, #6589f6); box-shadow: 0 17px 34px rgba(52,91,205,.22); }
+}
+body:not(.english-practice-screen) .scan-camera-window { background: #e9eef8; }
+body:not(.english-practice-screen) .scan-camera-status { color: #52627c; }
+body:not(.english-practice-screen) .scan-camera-status i { background: #5c7fe5; box-shadow: 0 0 9px rgba(66,104,220,.28); }
+body:not(.english-practice-screen) .scan-camera-sweep { background: linear-gradient(90deg, transparent, rgba(82,121,237,.85), transparent); box-shadow: 0 0 13px 2px rgba(66,104,220,.2); }
+body:not(.english-practice-screen) .scan-hint-icon { border-color: #d7e0f5; color: #4268dc; }
+body:not(.english-practice-screen) .journal-status { color: #52627c; }
+body:not(.english-practice-screen) .journal-status-error { color: #b84f52; }
+body:not(.english-practice-screen) .journal-status-error::before { background: #d66868; box-shadow: none; }
+body:not(.english-practice-screen) .journal-results-heading strong,
+body:not(.english-practice-screen) .count-badge { border-color: #dfe7fb; color: #355ab7; background: #edf2ff; }
+body:not(.english-practice-screen) .area-record-dialog::backdrop,
+body:not(.english-practice-screen) .port-map-dialog::backdrop { background: rgba(27,43,76,.3); }
+body:not(.english-practice-screen) .area-record-dialog-header,
+body:not(.english-practice-screen) .area-record-dialog-content { color: #253956; }
+body:not(.english-practice-screen) .area-dialog-close,
+body:not(.english-practice-screen) .port-map-close { border-color: #e1e6ef; color: #3e5eb2; background: rgba(255,255,255,.9); }
+body:not(.english-practice-screen) .port-map-dialog { background: rgba(243,245,250,.98); }
+body:not(.english-practice-screen) .action-toast { border-color: #dfe7fb; color: #253956; background: rgba(255,255,255,.97); box-shadow: 0 12px 32px rgba(31,51,88,.16); }
+body:not(.english-practice-screen) .product-row,
+body:not(.english-practice-screen) .empty-result { border-color: #e3e8f1; color: #253956; background: #ffffff; box-shadow: 0 10px 26px rgba(31,51,88,.06); }
+body:not(.english-practice-screen) .app-footer { border-color: #e2e7f0; }
+body:not(.english-practice-screen) .app-footer .footer-version { color: #5876c7; }
+body:not(.english-practice-screen) .error-message,
+body:not(.english-practice-screen) .account-login-error { color: #b84f52 !important; }
+
+/* Açılış ekranının da əsas səhifə ilə rəng keçidi saxlanılır. */
+.boot-screen.splash-screen {
+    background: radial-gradient(ellipse at 18% 8%, #e5e9f3 0%, #edf0f5 46%, #e8ecf2 100%);
+}
+.boot-screen .boot-brand,
+.boot-screen .boot-location,
+.boot-screen .boot-scene-label,
+.boot-screen .boot-module,
+.boot-screen .boot-module span,
+.boot-screen .boot-status,
+.boot-screen .boot-bottomline { color: #718099; }
+.boot-screen .boot-brand-mark,
+.boot-screen .boot-emblem { border-color: #e0e6f0; color: #4268dc; background: #edf2ff; box-shadow: none; }
+.boot-screen .boot-brand i,
+.boot-screen .boot-bottom-rule { background: rgba(66,104,220,.28); }
+.boot-screen .boot-live-dot,
+.boot-screen .boot-status-dot,
+.boot-screen .boot-route-node { background: #5c7fe5; }
+.boot-screen .boot-yard::before { background: radial-gradient(ellipse, rgba(66,104,220,.12), transparent 67%); }
+.boot-screen .boot-yard-glow { background: linear-gradient(90deg, transparent, rgba(66,104,220,.28), transparent); }
+.boot-screen .boot-horizon,
+.boot-screen .boot-waterline,
+.boot-screen .boot-crane,
+.boot-screen .boot-crane-base,
+.boot-screen .boot-container,
+.boot-screen .boot-container-lines { stroke: rgba(66,91,145,.36); }
+.boot-screen .boot-container-back { fill: #e5ebf8; }
+.boot-screen .boot-container-front { fill: #d8e2f4; }
+.boot-screen .boot-container-small { fill: #edf2fb; }
+.boot-screen .boot-route { stroke: rgba(66,104,220,.55); }
+.boot-screen .boot-route-node { fill: #5578df; }
+.boot-screen .boot-yard-logo { filter: drop-shadow(0 5px 14px rgba(66,104,220,.12)); }
+.boot-screen .boot-eyebrow,
+.boot-screen .boot-status b { color: #4268dc; }
+.boot-screen .boot-title { color: #1b2b4c; }
+.boot-screen .boot-caption { color: #718099; }
+.boot-screen .boot-progress { background: #e2e8f4; }
+.boot-screen .boot-progress span { background: linear-gradient(90deg, #355fd3, #8ca5ef); }
+.boot-screen .boot-scene-label b { color: #5c77c3; }
+body:not(.english-practice-screen) .account-back-button,
+body:not(.english-practice-screen) .account-back-button:hover,
+body:not(.english-practice-screen) .account-back-button span,
+body:not(.english-practice-screen) .account-page-kicker,
+body:not(.english-practice-screen) .account-mode-toggle,
+body:not(.english-practice-screen) .app-menu-heading-mark,
+body:not(.english-practice-screen) .english-menu-icon { color: #4268dc; }
+body:not(.english-practice-screen) .account-page-card .account-login-field input:focus { border-color: #8ca5ef; background: #f9fafe; box-shadow: 0 0 0 3px rgba(66,104,220,.1); }
+body:not(.english-practice-screen) .account-page-brand i { background: #5c7fe5; box-shadow: none; }
+body:not(.english-practice-screen) .account-page-bottom .dashboard-live-dot { background: #5c7fe5; box-shadow: none; }
+body:not(.english-practice-screen) .account-page-card .account-login-mark { border-color: #e0e6f0; background: #edf2ff; box-shadow: none; }
+body:not(.english-practice-screen) .account-avatar-option:hover,
+body:not(.english-practice-screen) .account-avatar-option.is-selected { box-shadow: 0 5px 16px rgba(52,82,164,.08); }
+
+body:not(.english-practice-screen) .recent-distribution-info strong,
+body:not(.english-practice-screen) .reminder-notification-copy strong,
+body:not(.english-practice-screen) .reminder-card-copy strong,
+body:not(.english-practice-screen) .area-record-company,
+body:not(.english-practice-screen) .maray-water-summary strong,
+body:not(.english-practice-screen) .maray-water-record-destination,
+body:not(.english-practice-screen) .maray-water-record-allocation strong,
+body:not(.english-practice-screen) .approval-card-copy strong,
+body:not(.english-practice-screen) .about-section-heading h3,
+body:not(.english-practice-screen) .about-feature-card h4,
+body:not(.english-practice-screen) .about-detail strong,
+body:not(.english-practice-screen) .area-dialog-title-block h2,
+body:not(.english-practice-screen) .area-dialog-area-header strong,
+body:not(.english-practice-screen) .area-dialog-total strong,
+body:not(.english-practice-screen) .account-login-form h2 { color: #253956; }
+body:not(.english-practice-screen) .area-record-dialog-header { border-color: #e8ecf3; background: rgba(255,255,255,.96); }
+body:not(.english-practice-screen) .area-record-dialog-kicker,
+body:not(.english-practice-screen) .area-dialog-area-header span,
+body:not(.english-practice-screen) .area-dialog-area-age,
+body:not(.english-practice-screen) .about-kicker,
+body:not(.english-practice-screen) .about-version strong { color: #4268dc; }
+body:not(.english-practice-screen) .area-dialog-title-block p,
+body:not(.english-practice-screen) .area-dialog-total span,
+body:not(.english-practice-screen) .area-dialog-date,
+body:not(.english-practice-screen) .area-dialog-section-heading,
+body:not(.english-practice-screen) .area-dialog-area-card > p,
+body:not(.english-practice-screen) .area-dialog-note,
+body:not(.english-practice-screen) .maray-water-record-details { color: #718099; }
+body:not(.english-practice-screen) .area-dialog-total { border-color: #dfe7fb; background: linear-gradient(120deg, #edf2ff, #f8f9ff); }
+body:not(.english-practice-screen) .area-dialog-area-card { border-color: #e3e8f1; background: #f9fafe; }
+body:not(.english-practice-screen) .area-dialog-note { border-left-color: #9bb0ec; background: #f6f8fd; }
+body:not(.english-practice-screen) .area-dialog-secondary { border-color: #e0e6f0; color: #3e5eb2; background: #eef2ff; }
+body:not(.english-practice-screen) .area-dialog-secondary:hover { border-color: #cad6f1; color: #274b9e; background: #e3eaff; }
+body:not(.english-practice-screen) .about-feature-section { border-color: #e8ecf3; }
+body:not(.english-practice-screen) .about-feature-count { border-color: #dfe7fb; color: #355ab7; background: #edf2ff; }
+body:not(.english-practice-screen) .about-feature-icon { border-color: #dfe7fb; color: #4268dc; background: #edf2ff; }
+body:not(.english-practice-screen) .about-purpose { border-color: #e3e9f7; background: #f8f9fd; }
+body:not(.english-practice-screen) .maray-water-record-allocation,
+body:not(.english-practice-screen) .maray-water-record-note { color: #52627c; background: #f5f7fc; }
+body:not(.english-practice-screen) .maray-water-record-quantity { color: #355ab7; background: #edf2ff; }
+body:not(.english-practice-screen) .maray-water-delete-button { border-color: #f1dede; color: #ad6868; background: #fff8f8; }
+body:not(.english-practice-screen) .maray-water-delete-button:hover,
+body:not(.english-practice-screen) .reminder-delete:hover,
+body:not(.english-practice-screen) .area-dialog-area-delete:hover,
+body:not(.english-practice-screen) .area-dialog-delete-record:hover { color: #a34f54; background: #fff1f0; }
+body:not(.english-practice-screen) .reminder-delete { color: #a77575; }
+body:not(.english-practice-screen) .reminder-card.is-past .reminder-time { color: #9a7542; background: #fbf6ec; }
+body:not(.english-practice-screen) .reminder-card.is-past .reminder-card-state { color: #9a7542; }
+body:not(.english-practice-screen) .tap-bubble {
+    border-color: rgba(255,255,255,.96);
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.98), rgba(163,190,255,.72) 40%, rgba(66,104,220,.2) 72%);
+    box-shadow: inset -1px -2px 4px rgba(66,104,220,.28), 0 0 13px rgba(205,219,255,.5);
+}
+body:not(.english-practice-screen) .area-dialog-area-delete,
+body:not(.english-practice-screen) .area-dialog-delete-record { border-color: #f0dada; color: #a34f54; background: #fff6f6; }
+body:not(.english-practice-screen) .area-delete-confirmation h2 { color: #253956; }
+body:not(.english-practice-screen) .area-delete-confirmation p { color: #718099; }
+body:not(.english-practice-screen) .area-delete-confirmation-icon { border-color: #f1dede; color: #ad6868; background: #fff4f4; box-shadow: none; }
+
+/* Açıq fonlarda bütün mətnlər üçün aydın oxunuş iyerarxiyası. */
+body:not(.english-practice-screen) .container :is(h1, h2, h3, h4) {
+    color: #1b2b4c;
+    text-shadow: none;
+}
+body:not(.english-practice-screen) .container :is(p, small, label, time, output, span) { color: #718099; }
+body:not(.english-practice-screen) .container strong { color: #253956; }
+body:not(.english-practice-screen) .top-label-title { color: #1b2b4c; }
+body:not(.english-practice-screen) .dashboard-map-button span,
+body:not(.english-practice-screen) .maray-water-open span,
+body:not(.english-practice-screen) .area-add-measurement span,
+body:not(.english-practice-screen) .maray-water-add-allocation span,
+body:not(.english-practice-screen) .login-placeholder span,
+body:not(.english-practice-screen) .login-placeholder.is-signed-in #login-placeholder-label { color: #3e5eb2; }
+body:not(.english-practice-screen) .dashboard-clock,
+body:not(.english-practice-screen) .dashboard-clock span,
+body:not(.english-practice-screen) .dashboard-stat strong,
+body:not(.english-practice-screen) .dashboard-expense-copy strong,
+body:not(.english-practice-screen) .recent-distribution-quantity,
+body:not(.english-practice-screen) .recent-open-button,
+body:not(.english-practice-screen) .app-menu-kicker,
+body:not(.english-practice-screen) .app-menu-item-arrow,
+body:not(.english-practice-screen) .app-menu-heading-mark,
+body:not(.english-practice-screen) .english-menu-icon,
+body:not(.english-practice-screen) .journal-page-kicker,
+body:not(.english-practice-screen) .about-page-kicker,
+body:not(.english-practice-screen) .area-page-kicker,
+body:not(.english-practice-screen) .area-measurement-block-title,
+body:not(.english-practice-screen) .area-section-calculation output,
+body:not(.english-practice-screen) .area-calculation output,
+body:not(.english-practice-screen) .area-records-heading > output,
+body:not(.english-practice-screen) .area-record-open-label,
+body:not(.english-practice-screen) .scan-page-kicker,
+body:not(.english-practice-screen) .scan-hint-icon,
+body:not(.english-practice-screen) .reminder-page-kicker,
+body:not(.english-practice-screen) .reminder-time,
+body:not(.english-practice-screen) .reminder-offset,
+body:not(.english-practice-screen) .reminder-card-state,
+body:not(.english-practice-screen) .approval-page-kicker,
+body:not(.english-practice-screen) .approval-toolbar > div > strong,
+body:not(.english-practice-screen) .about-kicker,
+body:not(.english-practice-screen) .about-version strong,
+body:not(.english-practice-screen) .about-feature-count,
+body:not(.english-practice-screen) .about-feature-icon,
+body:not(.english-practice-screen) .area-record-dialog-kicker,
+body:not(.english-practice-screen) .area-dialog-area-header span,
+body:not(.english-practice-screen) .area-dialog-area-age,
+body:not(.english-practice-screen) .area-dialog-total strong,
+body:not(.english-practice-screen) .maray-water-record-kicker,
+body:not(.english-practice-screen) .maray-water-record-quantity,
+body:not(.english-practice-screen) .maray-water-summary output,
+body:not(.english-practice-screen) .footer-version { color: #4268dc; }
+body:not(.english-practice-screen) .app-menu button,
+body:not(.english-practice-screen) .app-menu-item-copy strong,
+body:not(.english-practice-screen) .app-menu-heading strong,
+body:not(.english-practice-screen) .app-menu-item-copy small,
+body:not(.english-practice-screen) .account-logout-button,
+body:not(.english-practice-screen) .account-avatar-picker-toggle,
+body:not(.english-practice-screen) .account-avatar-option,
+body:not(.english-practice-screen) .account-avatar-option small,
+body:not(.english-practice-screen) .account-current-avatar > span,
+body:not(.english-practice-screen) .approval-card-avatar > span,
+body:not(.english-practice-screen) .profile-avatar-fallback,
+body:not(.english-practice-screen) .about-detail strong,
+body:not(.english-practice-screen) .area-record-company,
+body:not(.english-practice-screen) .area-dialog-area-header strong,
+body:not(.english-practice-screen) .maray-water-record-destination,
+body:not(.english-practice-screen) .maray-water-record-allocation strong,
+body:not(.english-practice-screen) .reminder-card-copy strong,
+body:not(.english-practice-screen) .reminder-notification-copy strong,
+body:not(.english-practice-screen) .approval-card-copy strong { color: #253956; }
+body:not(.english-practice-screen) .account-logout-button:hover,
+body:not(.english-practice-screen) .account-logout-button:focus-visible { color: #244795; background: #edf2ff; }
+body:not(.english-practice-screen) .home-scan-launch-copy strong,
+body:not(.english-practice-screen) .home-scan-kicker,
+body:not(.english-practice-screen) .home-scan-launch-copy small,
+body:not(.english-practice-screen) .home-scan-launch-arrow,
+body:not(.english-practice-screen) .primary-button span,
+body:not(.english-practice-screen) .account-login-submit span,
+body:not(.english-practice-screen) .area-save-button span,
+body:not(.english-practice-screen) .reminder-save-button span,
+body:not(.english-practice-screen) .maray-water-save span,
+body:not(.english-practice-screen) .approval-approve-button span { color: #ffffff; }
+body:not(.english-practice-screen) .secondary-button,
+body:not(.english-practice-screen) .secondary-button span,
+body:not(.english-practice-screen) .reminder-permission-button,
+body:not(.english-practice-screen) .area-add-measurement,
+body:not(.english-practice-screen) .maray-water-add-allocation,
+body:not(.english-practice-screen) .account-mode-toggle,
+body:not(.english-practice-screen) .journal-status,
+body:not(.english-practice-screen) .journal-status-label,
+body:not(.english-practice-screen) .journal-results-heading,
+body:not(.english-practice-screen) .distribution-detail-label,
+body:not(.english-practice-screen) .area-record-measure,
+body:not(.english-practice-screen) .area-records-heading,
+body:not(.english-practice-screen) .area-records-heading strong,
+body:not(.english-practice-screen) .area-record-open-footer,
+body:not(.english-practice-screen) .area-empty,
+body:not(.english-practice-screen) .reminder-empty,
+body:not(.english-practice-screen) .approval-status,
+body:not(.english-practice-screen) .about-feature-note,
+body:not(.english-practice-screen) .maray-water-record-details,
+body:not(.english-practice-screen) .app-footer,
+body:not(.english-practice-screen) .app-footer .footer-credit { color: #718099; }
+body:not(.english-practice-screen) .journal-status-error,
+body:not(.english-practice-screen) .error-message,
+body:not(.english-practice-screen) .account-login-error { color: #b84f52 !important; }
+body:not(.english-practice-screen) .app-header p,
+body:not(.english-practice-screen) .section-heading p,
+body:not(.english-practice-screen) .intro-card p,
+body:not(.english-practice-screen) .dashboard-date,
+body:not(.english-practice-screen) .dashboard-stat span,
+body:not(.english-practice-screen) .home-list-eyebrow,
+body:not(.english-practice-screen) .recent-distribution-info span,
+body:not(.english-practice-screen) .scan-page-heading p,
+body:not(.english-practice-screen) .scan-camera-label,
+body:not(.english-practice-screen) .scan-camera-status,
+body:not(.english-practice-screen) .scan-camera-hint p,
+body:not(.english-practice-screen) .journal-heading-row p,
+body:not(.english-practice-screen) .distribution-code,
+body:not(.english-practice-screen) .distribution-details,
+body:not(.english-practice-screen) .area-page-heading p,
+body:not(.english-practice-screen) .area-field,
+body:not(.english-practice-screen) .area-field small,
+body:not(.english-practice-screen) .area-sync-note,
+body:not(.english-practice-screen) .reminder-page-heading p,
+body:not(.english-practice-screen) .reminder-field,
+body:not(.english-practice-screen) .reminder-card-copy p,
+body:not(.english-practice-screen) .reminder-time span,
+body:not(.english-practice-screen) .approval-page-heading p,
+body:not(.english-practice-screen) .approval-card-copy span,
+body:not(.english-practice-screen) .about-intro,
+body:not(.english-practice-screen) .about-label,
+body:not(.english-practice-screen) .about-purpose p,
+body:not(.english-practice-screen) .about-feature-card p,
+body:not(.english-practice-screen) .account-page-description,
+body:not(.english-practice-screen) .account-page-brand,
+body:not(.english-practice-screen) .account-login-field,
+body:not(.english-practice-screen) .account-login-footnote,
+body:not(.english-practice-screen) .account-page-bottom,
+body:not(.english-practice-screen) .area-dialog-title-block p,
+body:not(.english-practice-screen) .area-dialog-total span,
+body:not(.english-practice-screen) .area-dialog-date,
+body:not(.english-practice-screen) .area-dialog-section-heading,
+body:not(.english-practice-screen) .area-dialog-area-card > p,
+body:not(.english-practice-screen) .area-dialog-note,
+body:not(.english-practice-screen) .maray-water-summary > div > span,
+body:not(.english-practice-screen) .maray-water-record-allocation { color: #718099; }
+body:not(.english-practice-screen) .home-actions-heading h2 { color: #1b2b4c; }
+
+/* Ana səhifənin üç əsas düyməsi: fərqli, amma eyni yumşaq üslubda. */
+body:not(.english-practice-screen) #start-scan {
+    color: #ffffff;
+    background: linear-gradient(112deg, #355fd3, #5b7fee);
+    box-shadow: 0 14px 30px rgba(66,104,220,.2);
+}
+body:not(.english-practice-screen) #home-area-measurement {
+    color: #ffffff;
+    background: linear-gradient(112deg, #7050c8, #9272e4);
+    box-shadow: 0 14px 30px rgba(112,80,200,.18);
+}
+body:not(.english-practice-screen) #home-issue-goods {
+    color: #ffffff;
+    background: linear-gradient(112deg, #c9763d, #e59653);
+    box-shadow: 0 14px 30px rgba(201,118,61,.18);
+}
+body:not(.english-practice-screen) #start-scan .home-scan-launch-icon,
+body:not(.english-practice-screen) #start-scan .home-scan-launch-arrow,
+body:not(.english-practice-screen) #home-area-measurement .home-scan-launch-icon,
+body:not(.english-practice-screen) #home-area-measurement .home-scan-launch-arrow,
+body:not(.english-practice-screen) #home-issue-goods .home-scan-launch-icon,
+body:not(.english-practice-screen) #home-issue-goods .home-scan-launch-arrow { background: rgba(255,255,255,.16); }
+body:not(.english-practice-screen) #start-scan:hover,
+body:not(.english-practice-screen) #start-scan:focus-visible { background: linear-gradient(112deg, #426fe4, #6589f6); box-shadow: 0 17px 34px rgba(66,104,220,.25); }
+body:not(.english-practice-screen) #home-area-measurement:not(:disabled):hover,
+body:not(.english-practice-screen) #home-area-measurement:focus-visible { background: linear-gradient(112deg, #7c5bd8, #a084f0); box-shadow: 0 17px 34px rgba(112,80,200,.24); }
+body:not(.english-practice-screen) #home-issue-goods:not(:disabled):hover,
+body:not(.english-practice-screen) #home-issue-goods:focus-visible { background: linear-gradient(112deg, #da8244, #f0a25e); box-shadow: 0 17px 34px rgba(201,118,61,.23); }
+
+/* Mavi aksentlə yazılan mətnləri tünd rəngə keçir. */
+body:not(.english-practice-screen) :is(
+    .login-placeholder, .login-placeholder span, .account-back-button,
+    .account-back-button span, .account-page-kicker, .account-mode-toggle,
+    .account-avatar-picker-chevron, .account-avatar-picker-preview > span,
+    .account-avatar-image > span, .profile-avatar-fallback,
+    .app-menu-kicker, .app-menu-item-arrow, .app-menu-heading-mark,
+    .english-menu-icon, .dashboard-clock, .dashboard-clock span,
+    .dashboard-stat strong, .dashboard-expense-copy strong,
+    .recent-distribution-quantity, .recent-open-button,
+    .journal-page-kicker, .journal-results-heading strong,
+    .area-page-kicker, .area-measurement-block-title,
+    .area-section-calculation output, .area-calculation output,
+    .area-records-heading > output, .area-record-open-label,
+    .area-record-measure, .scan-page-kicker, .scan-hint-icon,
+    .reminder-page-kicker, .reminder-time, .reminder-offset,
+    .reminder-card-state, .approval-page-kicker,
+    .approval-toolbar > div > strong, .about-page-kicker, .about-kicker,
+    .about-version strong, .about-feature-count, .about-feature-icon,
+    .about-detail-icon, .area-record-dialog-kicker,
+    .area-dialog-area-header span, .area-dialog-area-age,
+    .area-dialog-total strong, .area-dialog-close, .area-dialog-secondary,
+    .maray-water-record-kicker, .maray-water-record-quantity,
+    .maray-water-summary output, .maray-water-open,
+    .dashboard-map-button, .footer-version, .about-screen #about-home,
+    .area-add-measurement, .maray-water-add-allocation,
+    .reminder-permission-button, .secondary-button, .count-badge,
+    .distribution-detail-label, .area-record-open-label
+) { color: #111111 !important; }
+
+
+/* Məray Su və yadda saxlanmış xatırlatmalar üçün yumşaq, yığcam fonlar. */
+body:not(.english-practice-screen) .maray-water-summary {
+    position: relative;
+    overflow: hidden;
+    padding: 15px 18px;
+    border: 0;
+    border-radius: 18px;
+    background: linear-gradient(128deg, #e3f2ef 0%, #f1f7f6 58%, #e9eef6 100%);
+    box-shadow: inset 3px 0 0 #82bdb2, 0 9px 24px rgba(53, 94, 104, .08);
+}
+body:not(.english-practice-screen) .maray-water-summary output {
+    position: relative;
+    z-index: 1;
+}
+body:not(.english-practice-screen) .reminders-list-heading {
+    margin: 8px 0 0;
+    padding: 13px 16px 10px;
+    border-radius: 17px 17px 0 0;
+    background: linear-gradient(120deg, #e8edf7 0%, #f1f3f8 100%);
+}
+body:not(.english-practice-screen) .reminder-list {
+    gap: 0;
+    padding: 0 12px 8px;
+    border-radius: 0 0 17px 17px;
+    background: linear-gradient(180deg, #f1f3f8 0%, #e9edf4 100%);
+    box-shadow: 0 9px 24px rgba(44, 61, 91, .07);
+}
+body:not(.english-practice-screen) .reminder-card {
+    padding: 14px 4px;
+    border: 0;
+    border-bottom: 1px solid rgba(73, 91, 128, .11);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+body:not(.english-practice-screen) .reminder-card:last-child { border-bottom: 0; }
+body:not(.english-practice-screen) .reminder-time {
+    border: 0;
+    border-radius: 12px;
+    background: #e2e8f3;
+}
+body:not(.english-practice-screen) .reminder-empty {
+    border: 0;
+    border-radius: 0 0 17px 17px;
+    background: transparent;
+    box-shadow: none;
+}
+/* Açılış ekranı: mərkəzləşdirilmiş zümrüd aura, yeni kompozisiya. */
+#splash-screen.opening-screen {
+    position: fixed;
+    z-index: 10000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    isolation: isolate;
+    padding: calc(env(safe-area-inset-top, 0px) + 72px) 28px calc(env(safe-area-inset-bottom, 0px) + 62px);
+    background:
+        radial-gradient(ellipse at 50% 43%, rgba(43, 142, 79, .24) 0%, rgba(18, 72, 42, .13) 26%, transparent 49%),
+        radial-gradient(ellipse at 12% 94%, rgba(27, 91, 51, .21), transparent 38%),
+        linear-gradient(142deg, #06110b 0%, #0c1e13 53%, #07130c 100%);
+    animation: splashExit .32s cubic-bezier(.6, 0, .4, 1) 4.16s forwards;
+}
+#splash-screen.opening-screen::before,
+#splash-screen.opening-screen::after { display: none; content: none; }
+.opening-backdrop { position: absolute; z-index: -1; inset: 0; overflow: hidden; pointer-events: none; }
+.opening-orb { position: absolute; border: 1px solid rgba(129, 228, 157, .07); border-radius: 50%; }
+.opening-orb-a { top: 50%; left: 50%; width: min(86vw, 760px); aspect-ratio: 1; transform: translate(-50%, -50%); box-shadow: 0 0 120px rgba(32, 135, 69, .12), inset 0 0 90px rgba(32, 135, 69, .05); animation: openingAura 5.5s ease-in-out infinite alternate; }
+.opening-orb-b { top: 50%; left: 50%; width: min(65vw, 560px); aspect-ratio: 1; transform: translate(-50%, -50%); border-color: rgba(150, 235, 174, .035); }
+.opening-streak { position: absolute; width: 42vw; height: 1px; background: linear-gradient(90deg, transparent, rgba(109, 218, 143, .18), transparent); transform: rotate(-32deg); opacity: .62; }
+.opening-streak-one { right: -9vw; top: 27%; }
+.opening-streak-two { left: -14vw; bottom: 20%; transform: rotate(148deg); opacity: .36; }
+.opening-topline,
+.opening-footer { position: absolute; z-index: 2; right: clamp(22px, 6vw, 78px); left: clamp(22px, 6vw, 78px); display: flex; align-items: center; justify-content: space-between; }
+.opening-topline { top: calc(env(safe-area-inset-top, 0px) + 25px); animation: openingFade .7s ease-out .12s both; }
+.opening-brand { color: rgba(211, 236, 218, .62); font-size: 9px; font-weight: 750; letter-spacing: 1.9px; }
+.opening-brand i { display: inline-block; width: 18px; height: 1px; margin: 0 5px 3px; background: linear-gradient(90deg, rgba(116, 224, 151, .25), rgba(116, 224, 151, .9)); }
+.opening-live { display: flex; align-items: center; gap: 8px; color: rgba(174, 210, 183, .52); font-size: 8px; font-weight: 700; letter-spacing: 1.45px; }
+.opening-live i,
+.opening-kicker i { width: 6px; height: 6px; border-radius: 50%; background: #76e49a; box-shadow: 0 0 12px rgba(118, 228, 154, .68); }
+.opening-center { position: relative; z-index: 1; display: grid; justify-items: center; align-content: center; gap: 8px; width: min(700px, 100%); text-align: center; }
+.opening-logo-stage { position: relative; display: grid; width: 296px; height: 296px; margin-bottom: 7px; place-items: center; isolation: isolate; animation: openingLogoStageIn .85s cubic-bezier(.18, .8, .24, 1) both; }
+.opening-logo-stage::before { position: absolute; z-index: -1; width: 74%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(177, 241, 190, .92) 0%, rgba(112, 201, 139, .58) 31%, rgba(57, 139, 81, .18) 57%, transparent 73%); filter: blur(5px); content: ""; animation: openingLogoGlow 3.8s ease-in-out infinite alternate; }
+.opening-orbit { position: absolute; top: 50%; left: 50%; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.opening-orbit-outer { width: 274px; height: 274px; border: 1px solid rgba(165, 235, 181, .17); border-right-color: rgba(117, 224, 151, .7); border-bottom-color: rgba(117, 224, 151, .42); animation: openingOrbitSpin 18s linear infinite; }
+.opening-orbit-inner { width: 238px; height: 238px; border: 1px dashed rgba(171, 228, 183, .12); animation: openingOrbitSpin 32s linear infinite reverse; }
+.opening-orbit-point { position: absolute; top: 14px; right: 31px; width: 7px; height: 7px; border-radius: 50%; background: #9df0b3; box-shadow: 0 0 16px rgba(120, 237, 158, .84); }
+.opening-logo { z-index: 1; display: block; width: 184px; height: 272px; margin: 0; object-fit: contain; filter: drop-shadow(0 8px 19px rgba(1, 21, 9, .24)); opacity: 0; animation: openingLogoReveal .75s cubic-bezier(.18, .82, .24, 1) .12s forwards; }
+.opening-copy { animation: openingCopyIn .8s cubic-bezier(.18, .8, .24, 1) .32s both; }
+.opening-kicker { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 0 0 13px; color: #91dfa8; font-size: 9px; font-weight: 800; letter-spacing: 2.05px; }
+.opening-kicker i { width: 5px; height: 5px; }
+.opening-copy h1 { margin: 0; color: #f0f7f1; font-size: clamp(40px, 5.1vw, 62px); font-weight: 760; letter-spacing: -2.5px; line-height: 1; }
+.opening-copy h1 span { color: #9ae6b0; }
+.opening-description { margin: 14px 0 0; color: rgba(198, 222, 204, .62); font-size: 13px; font-weight: 450; letter-spacing: .2px; }
+.opening-loader { display: flex; align-items: center; gap: 11px; margin-top: 29px; color: rgba(176, 207, 184, .54); font-size: 9px; letter-spacing: .5px; animation: openingFade .65s ease-out .8s both; }
+.opening-loader-dots { display: flex; align-items: center; gap: 4px; }
+.opening-loader-dots i { display: block; width: 4px; height: 4px; border-radius: 50%; background: #73da94; opacity: .38; animation: openingDot 1.05s ease-in-out infinite alternate; }
+.opening-loader-dots i:nth-child(2) { animation-delay: .18s; }
+.opening-loader-dots i:nth-child(3) { animation-delay: .36s; }
+.opening-footer { bottom: calc(env(safe-area-inset-bottom, 0px) + 23px); color: rgba(171, 199, 178, .34); font-size: 8px; font-weight: 750; letter-spacing: 1.6px; animation: openingFade .65s ease-out .55s both; }
+.opening-footer-line { width: min(200px, 22vw); height: 1px; margin: 0 18px; background: linear-gradient(90deg, transparent, rgba(112, 206, 143, .3), transparent); }
+@keyframes openingAura { from { opacity: .62; scale: .96; } to { opacity: 1; scale: 1.03; } }
+@keyframes openingLogoGlow { from { opacity: .58; scale: .94; } to { opacity: .92; scale: 1.04; } }
+@keyframes openingOrbitSpin { to { rotate: 360deg; } }
+@keyframes openingLogoStageIn { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes openingLogoReveal { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes openingCopyIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes openingFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes openingDot { from { opacity: .32; scale: .72; } to { opacity: 1; scale: 1.35; } }
+@media (max-width: 760px) {
+    #splash-screen.opening-screen { padding: calc(env(safe-area-inset-top, 0px) + 64px) 20px calc(env(safe-area-inset-bottom, 0px) + 58px); }
+    .opening-topline, .opening-footer { right: 21px; left: 21px; }
+    .opening-topline { top: calc(env(safe-area-inset-top, 0px) + 19px); }
+    .opening-brand { font-size: 7px; letter-spacing: 1.2px; }
+    .opening-brand i { width: 10px; margin-inline: 3px; }
+    .opening-live { gap: 6px; font-size: 6px; letter-spacing: .8px; }
+    .opening-live i { width: 5px; height: 5px; }
+    .opening-center { gap: 3px; }
+    .opening-logo-stage { width: 172px; height: 160px; margin-bottom: 8px; }
+    .opening-logo { width: 66px; height: 98px; }
+    .opening-orbit-outer { width: 158px; height: 158px; }
+    .opening-orbit-inner { width: 137px; height: 137px; }
+    .opening-orbit-point { top: 2px; right: 20px; width: 6px; height: 6px; }
+    .opening-logo-stage::before { width: 82%; }
+    .opening-kicker { margin-bottom: 11px; font-size: 8px; letter-spacing: 1.65px; }
+    .opening-copy h1 { font-size: clamp(37px, 10vw, 48px); letter-spacing: -1.8px; }
+    .opening-description { margin-top: 11px; font-size: 11px; }
+    .opening-loader { margin-top: 24px; font-size: 8px; }
+    .opening-footer { bottom: calc(env(safe-area-inset-bottom, 0px) + 15px); font-size: 6px; letter-spacing: 1px; }
+    .opening-footer-line { width: min(100px, 19vw); margin-inline: 9px; }
+    .opening-orb-a { width: min(112vw, 650px); }
+    .opening-orb-b { width: min(88vw, 480px); }
+}
+@media (max-width: 380px) {
+    .opening-brand { font-size: 6px; letter-spacing: .95px; }
+    .opening-live { font-size: 5px; }
+    .opening-logo-stage { width: 158px; height: 150px; }
+    .opening-orbit-outer { width: 146px; height: 146px; }
+    .opening-orbit-inner { width: 126px; height: 126px; }
+}
+@media (max-width: 760px) and (max-height: 680px) {
+    #splash-screen.opening-screen { padding-top: calc(env(safe-area-inset-top, 0px) + 52px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 46px); }
+    .opening-logo-stage { width: 126px; height: 116px; margin-bottom: 2px; }
+    .opening-logo { width: 46px; height: 68px; }
+    .opening-orbit-outer { width: 116px; height: 116px; }
+    .opening-orbit-inner { width: 98px; height: 98px; }
+    .opening-orbit-point { top: 0; right: 12px; }
+    .opening-kicker { margin-bottom: 7px; }
+    .opening-copy h1 { font-size: 34px; }
+    .opening-description { margin-top: 7px; }
+    .opening-loader { margin-top: 16px; }
+}
+@media (min-width: 761px) and (max-height: 700px) {
+    .opening-logo-stage { width: 256px; height: 256px; margin-bottom: 1px; }
+    .opening-logo { width: 184px; height: 272px; }
+    .opening-orbit-outer { width: 240px; height: 240px; }
+    .opening-orbit-inner { width: 208px; height: 208px; }
+    .opening-loader { margin-top: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #splash-screen.opening-screen { animation-duration: .1s; animation-delay: 4.4s; }
+    #splash-screen.opening-screen *, #splash-screen.opening-screen::before, #splash-screen.opening-screen::after { animation-duration: .1s !important; animation-delay: 0s !important; }
+}
+.opening-orbit-outer { animation: none; }
+.opening-orbit-inner { animation: openingRingBreathe 3.2s ease-in-out infinite alternate; }
+@keyframes openingRingBreathe { from { opacity: .55; } to { opacity: 1; } }
+
+/* Açılış ekranını tətbiqin açıq boz-mavi fonuna uyğun saxla; yaşıl yalnız vurğu rəngidir. */
+#splash-screen.opening-screen {
+    color: #17243d;
+    background:
+        radial-gradient(ellipse at 50% 39%, rgba(83, 168, 111, .13), transparent 34%),
+        radial-gradient(ellipse at 16% 0%, #e5e9f3 0%, #edf0f5 51%, #e8ecf2 100%);
+}
+.opening-orb { border-color: rgba(47, 105, 76, .075); }
+.opening-orb-a {
+    box-shadow: 0 0 115px rgba(65, 143, 91, .08), inset 0 0 90px rgba(65, 143, 91, .035);
+    animation: openingAura 4.6s ease-in-out infinite alternate;
+}
+.opening-orb-b { border-color: rgba(51, 108, 79, .055); }
+.opening-streak {
+    background: linear-gradient(90deg, transparent, rgba(69, 147, 95, .14), transparent);
+    animation: openingStreakDrift 4s ease-in-out infinite alternate;
+}
+.opening-streak-two { animation-delay: .5s; }
+.opening-brand { color: rgba(23, 36, 61, .53); }
+.opening-brand i { background: linear-gradient(90deg, rgba(54, 133, 81, .24), rgba(54, 133, 81, .8)); }
+.opening-live { color: rgba(40, 57, 77, .57); }
+.opening-live i,
+.opening-kicker i {
+    background: #429765;
+    box-shadow: 0 0 10px rgba(66, 151, 101, .38);
+}
+.opening-logo-stage::before {
+    background: radial-gradient(circle, rgba(151, 210, 166, .32) 0%, rgba(129, 194, 146, .19) 38%, rgba(103, 169, 121, .07) 61%, transparent 75%);
+    filter: blur(7px);
+}
+.opening-orbit-outer {
+    border-color: rgba(47, 105, 76, .13);
+    border-right-color: rgba(54, 139, 83, .68);
+    border-bottom-color: rgba(54, 139, 83, .34);
+}
+.opening-orbit-inner { border-color: rgba(47, 105, 76, .12); }
+.opening-orbit-point {
+    background: #62aa78;
+    box-shadow: 0 0 13px rgba(67, 151, 96, .44);
+    animation: openingPointPulse 1.5s ease-in-out infinite alternate;
+}
+.opening-logo { filter: drop-shadow(0 8px 18px rgba(23, 36, 61, .14)); }
+.opening-kicker { color: #43815a; }
+.opening-copy h1 { color: #17243d; }
+.opening-copy h1 span { color: #43815a; }
+.opening-description { color: #718099; }
+.opening-progress {
+    display: grid;
+    gap: 10px;
+    width: min(310px, 78vw);
+    margin-top: 29px;
+    color: #718099;
+    text-align: left;
+    animation: openingFade .65s ease-out .8s both;
+}
+.opening-progress-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    font-size: 10px;
+    font-weight: 550;
+    letter-spacing: .15px;
+}
+.opening-progress-label output {
+    min-width: 36px;
+    color: #378255;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 750;
+    text-align: right;
+}
+.opening-progress-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(65, 84, 112, .12);
+    box-shadow: inset 0 1px 2px rgba(25, 42, 68, .08);
+}
+.opening-progress-track > span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #65b67d 0%, #37875a 100%);
+    box-shadow: 0 0 12px rgba(64, 151, 94, .32);
+    transition: width .06s linear;
+}
+.opening-footer { color: rgba(53, 69, 91, .43); }
+.opening-footer-line { background: linear-gradient(90deg, transparent, rgba(69, 147, 95, .32), transparent); }
+@keyframes openingStreakDrift { from { opacity: .24; translate: -10px 0; } to { opacity: .64; translate: 10px 0; } }
+@keyframes openingPointPulse { from { opacity: .58; scale: .82; } to { opacity: 1; scale: 1.18; } }
+@media (max-width: 760px) {
+    .opening-progress { width: min(310px, 82vw); margin-top: 23px; }
+    .opening-progress-label { font-size: 9px; }
+    .opening-progress-label output { font-size: 11px; }
+}
+@media (max-width: 380px) {
+    .opening-progress { margin-top: 19px; }
+}
+
+/* Daha canlı, amma sakit açılış: loqo nəfəs alır, fon cizgilərində işıq axır. */
+.opening-logo {
+    opacity: 0;
+    animation: openingLogoReveal .72s cubic-bezier(.18, .82, .24, 1) .12s both,
+        openingLogoFloat 3.2s ease-in-out 1s infinite;
+}
+.opening-streak {
+    width: 76vw;
+    height: 1px;
+    overflow: hidden;
+    background: linear-gradient(90deg, transparent, rgba(65, 137, 91, .23) 18%, rgba(65, 137, 91, .3) 82%, transparent);
+    opacity: .88;
+}
+.opening-streak::after {
+    position: absolute;
+    top: 0;
+    left: -16%;
+    width: 16%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(54, 139, 83, .98), transparent);
+    box-shadow: 0 0 11px rgba(54, 139, 83, .5);
+    content: "";
+    animation: openingTrace 5.2s cubic-bezier(.42, 0, .58, 1) infinite;
+}
+.opening-streak-one { top: 25%; right: -22%; }
+.opening-streak-two { bottom: 22%; left: -22%; animation-delay: .9s; }
+.opening-streak-three {
+    top: 70%; left: -30%; width: 67vw;
+    transform: rotate(18deg);
+    opacity: .62;
+}
+.opening-streak-three::after { animation-delay: 1.4s; animation-duration: 6.4s; }
+.opening-streak-four {
+    top: 40%; right: -34%; width: 62vw;
+    transform: rotate(-17deg);
+    opacity: .55;
+}
+.opening-streak-four::after { animation-delay: 2.1s; animation-duration: 6s; }
+.opening-orbit,
+.opening-orbit-point { display: none !important; }
+.opening-logo {
+    transform-origin: center;
+    animation: openingLogoReveal .72s cubic-bezier(.18, .82, .24, 1) .12s both,
+        openingLogoSway 3.2s ease-in-out 1s infinite;
+}
+@keyframes openingLogoReveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes openingLogoSway { 0%, 100% { transform: rotate(0) scale(1); } 50% { transform: rotate(1deg) scale(1.015); } }
+@keyframes openingTrace { 0% { left: -18%; opacity: 0; } 18% { opacity: .9; } 76% { opacity: .78; } 100% { left: 102%; opacity: 0; } }
+@media (max-width: 760px) {
+    .opening-streak { width: 112vw; }
+    .opening-streak-one { right: -44%; }
+    .opening-streak-two { left: -44%; }
+    .opening-streak-three { left: -45%; width: 96vw; }
+    .opening-streak-four { right: -47%; width: 90vw; }
+}
+
+/* Açılış fonu tətbiqin ümumi açıq boz-mavi fonuna uyğundur. */
+#splash-screen.opening-screen {
+    background:
+        radial-gradient(ellipse at 50% 39%, rgba(83, 168, 111, .13), transparent 34%),
+        radial-gradient(ellipse at 16% 0%, #e5e9f3 0%, #edf0f5 51%, #e8ecf2 100%);
+}
+.opening-brand { color: rgba(23, 36, 61, .53); }
+.opening-live { color: rgba(40, 57, 77, .57); }
+.opening-logo-stage::before {
+    background: radial-gradient(circle, rgba(151, 210, 166, .32) 0%, rgba(129, 194, 146, .19) 38%, rgba(103, 169, 121, .07) 61%, transparent 75%);
+}
+.opening-kicker { color: #43815a; }
+.opening-copy h1 { color: #17243d; }
+.opening-copy h1 span { color: #43815a; }
+.opening-description { color: #718099; }
+.opening-progress { color: #718099; }
+.opening-progress-label output { color: #378255; }
+.opening-progress-track {
+    background: rgba(65, 84, 112, .12);
+    box-shadow: inset 0 1px 2px rgba(25, 42, 68, .08);
+}
+.opening-progress-track > span {
+    background: linear-gradient(90deg, #65b67d 0%, #37875a 100%);
+    box-shadow: 0 0 12px rgba(64, 151, 94, .32);
+}
+.opening-footer { color: rgba(53, 69, 91, .43); }
+.opening-footer-line { background: linear-gradient(90deg, transparent, rgba(69, 147, 95, .32), transparent); }
+
+/* Menyu düyməsinin arxası tətbiqin fonu ilə birləşsin, tünd kvadrat qalmasın. */
+body:not(.english-practice-screen) .menu-toggle {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+

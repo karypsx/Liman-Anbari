@@ -3082,6 +3082,22 @@ window.addEventListener("pointerdown", function (event) {
 
 const splashScreen = document.getElementById("splash-screen");
 if (splashScreen) {
+    const progressValue = document.getElementById("opening-progress-value");
+    const progressFill = document.getElementById("opening-progress-fill");
+    const progressTrack = splashScreen.querySelector(".opening-progress-track");
+    if (progressValue && progressFill && progressTrack) {
+        const progressDuration = 3900;
+        const progressStartedAt = performance.now();
+        const updateOpeningProgress = (now) => {
+            const fraction = Math.min(1, (now - progressStartedAt) / progressDuration);
+            const percentage = Math.round(fraction * 100);
+            progressValue.textContent = `${percentage}%`;
+            progressFill.style.width = `${percentage}%`;
+            progressTrack.setAttribute("aria-valuenow", String(percentage));
+            if (fraction < 1 && splashScreen.isConnected) requestAnimationFrame(updateOpeningProgress);
+        };
+        requestAnimationFrame(updateOpeningProgress);
+    }
     splashScreen.addEventListener("animationend", function (event) {
         if (event.animationName === "splashExit") splashScreen.remove();
     });
