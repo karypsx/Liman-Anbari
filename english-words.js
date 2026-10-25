@@ -5,17 +5,61 @@
     const STATS_KEY = "liman-english-stats-v1";
     const MISS_LIMIT = 5;
     const STARTER_SENTENCES = [
-        { id: "starter-01", en: "The goods arrived at the port today.", az: "Mallar bu gün limana çatdı.", level: "A1" },
-        { id: "starter-02", en: "I need to check the stock.", az: "Anbar qalığını yoxlamalıyam.", level: "A1" },
-        { id: "starter-03", en: "How many boxes are in the warehouse?", az: "Anbarda neçə qutu var?", level: "A1" },
-        { id: "starter-04", en: "Please write down the quantity.", az: "Zəhmət olmasa, miqdarı qeyd edin.", level: "A1" },
-        { id: "starter-05", en: "Put the goods in area A.", az: "Malları A sahəsinə qoyun.", level: "A1" },
-        { id: "starter-06", en: "The ship will arrive tomorrow.", az: "Gəmi sabah gələcək.", level: "A1" },
-        { id: "starter-07", en: "The delivery is ready.", az: "Təhvil hazırdır.", level: "A1" },
-        { id: "starter-08", en: "Where is the shipment?", az: "Yük haradadır?", level: "A1" },
-        { id: "starter-09", en: "We received ten bottles of water.", az: "On butulka su qəbul etdik.", level: "A2" },
-        { id: "starter-10", en: "The worker took the goods yesterday.", az: "İşçi malları dünən götürdü.", level: "A2" }
-    ];
+    { id: "starter-01", en: "The goods arrived at the port today.", az: "Mallar bu gün limana çatdı.", level: "A1" },
+    { id: "starter-02", en: "I need to check the stock.", az: "Anbar qalığını yoxlamalıyam.", level: "A1" },
+    { id: "starter-03", en: "How many boxes are in the warehouse?", az: "Anbarda neçə qutu var?", level: "A1" },
+    { id: "starter-04", en: "Please write down the quantity.", az: "Zəhmət olmasa, miqdarı qeyd edin.", level: "A1" },
+    { id: "starter-05", en: "Put the goods in area A.", az: "Malları A sahəsinə qoyun.", level: "A1" },
+    { id: "starter-06", en: "The ship will arrive tomorrow.", az: "Gəmi sabah gələcək.", level: "A1" },
+    { id: "starter-07", en: "The delivery is ready.", az: "Təhvil hazırdır.", level: "A1" },
+    { id: "starter-08", en: "Where is the shipment?", az: "Yük haradadır?", level: "A1" },
+    { id: "starter-09", en: "We received ten bottles of water.", az: "On butulka su qəbul etdik.", level: "A2" },
+    { id: "starter-10", en: "The worker took the goods yesterday.", az: "İşçi malları dünən götürdü.", level: "A2" },
+
+    { id: "starter-11", en: "We received five boxes of goods.", az: "Beş qutu mal qəbul etdik.", level: "A2" },
+    { id: "starter-12", en: "The driver arrived in the morning.", az: "Sürücü səhər gəldi.", level: "A1" },
+    { id: "starter-13", en: "The truck is outside the warehouse.", az: "Yük maşını anbarın çölündədir.", level: "A1" },
+    { id: "starter-14", en: "Please count the boxes.", az: "Zəhmət olmasa, qutuları sayın.", level: "A1" },
+    { id: "starter-15", en: "The worker checked the goods.", az: "İşçi malları yoxladı.", level: "A2" },
+    { id: "starter-16", en: "We need more space.", az: "Bizə daha çox yer lazımdır.", level: "A1" },
+    { id: "starter-17", en: "The warehouse is very busy today.", az: "Anbar bu gün çox işləkdir.", level: "A1" },
+    { id: "starter-18", en: "Where should I put these boxes?", az: "Bu qutuları hara qoymalıyam?", level: "A2" },
+    { id: "starter-19", en: "The goods are ready for delivery.", az: "Mallar təhvil üçün hazırdır.", level: "A1" },
+    { id: "starter-20", en: "We loaded the truck yesterday.", az: "Dünən yük maşınına mal yüklədik.", level: "A2" },
+
+    { id: "starter-21", en: "The ship arrived at the port.", az: "Gəmi limana çatdı.", level: "A2" },
+    { id: "starter-22", en: "The worker is checking the stock.", az: "İşçi anbar qalığını yoxlayır.", level: "A2" },
+    { id: "starter-23", en: "How many bottles did we receive?", az: "Neçə butulka qəbul etdik?", level: "A2" },
+    { id: "starter-24", en: "We need ten more boxes.", az: "Bizə daha on qutu lazımdır.", level: "A1" },
+    { id: "starter-25", en: "The driver brought the documents.", az: "Sürücü sənədləri gətirdi.", level: "A2" },
+    { id: "starter-26", en: "Please check the delivery note.", az: "Zəhmət olmasa, təhvil sənədini yoxlayın.", level: "A1" },
+    { id: "starter-27", en: "The goods are inside the warehouse.", az: "Mallar anbarın içindədir.", level: "A1" },
+    { id: "starter-28", en: "I counted twenty bags.", az: "İyirmi kisə saydım.", level: "A2" },
+    { id: "starter-29", en: "They unloaded the truck this morning.", az: "Onlar bu səhər yük maşınını boşaltdılar.", level: "A2" },
+    { id: "starter-30", en: "We will check the goods tomorrow.", az: "Malları sabah yoxlayacağıq.", level: "A2" },
+
+    { id: "starter-31", en: "Do you work at the port?", az: "Sən limanda işləyirsən?", level: "A1" },
+    { id: "starter-32", en: "Does the worker need help?", az: "İşçinin köməyə ehtiyacı var?", level: "A1" },
+    { id: "starter-33", en: "Did you receive the goods?", az: "Malları qəbul etdin?", level: "A2" },
+    { id: "starter-34", en: "Where did the driver go?", az: "Sürücü hara getdi?", level: "A2" },
+    { id: "starter-35", en: "The workers are moving the boxes.", az: "İşçilər qutuları daşıyırlar.", level: "A2" },
+    { id: "starter-36", en: "I do not know the quantity.", az: "Miqdarı bilmirəm.", level: "A2" },
+    { id: "starter-37", en: "The truck did not arrive today.", az: "Yük maşını bu gün gəlmədi.", level: "A2" },
+    { id: "starter-38", en: "How many workers are in the warehouse?", az: "Anbarda neçə işçi var?", level: "A1" },
+    { id: "starter-39", en: "The manager will check the documents.", az: "Menecer sənədləri yoxlayacaq.", level: "A2" },
+    { id: "starter-40", en: "Please bring the goods here.", az: "Zəhmət olmasa, malları bura gətirin.", level: "A1" },
+
+    { id: "starter-41", en: "We sent the documents yesterday.", az: "Sənədləri dünən göndərdik.", level: "A2" },
+    { id: "starter-42", en: "The shipment is late.", az: "Yük gecikir.", level: "A1" },
+    { id: "starter-43", en: "The goods arrived at eight o'clock.", az: "Mallar saat səkkizdə çatdı.", level: "A2" },
+    { id: "starter-44", en: "There are twelve boxes on the truck.", az: "Yük maşınında on iki qutu var.", level: "A2" },
+    { id: "starter-45", en: "I wrote down the quantity.", az: "Miqdarı qeyd etdim.", level: "A2" },
+    { id: "starter-46", en: "The worker opened the warehouse door.", az: "İşçi anbarın qapısını açdı.", level: "A2" },
+    { id: "starter-47", en: "We have enough space for the goods.", az: "Mallar üçün kifayət qədər yerimiz var.", level: "A2" },
+    { id: "starter-48", en: "When will the ship arrive?", az: "Gəmi nə vaxt çatacaq?", level: "A2" },
+    { id: "starter-49", en: "Please put the boxes near the door.", az: "Zəhmət olmasa, qutuları qapının yanına qoyun.", level: "A2" },
+    { id: "starter-50", en: "We received the shipment this morning.", az: "Yükü bu səhər qəbul etdik.", level: "A2" }
+];
 
     const $ = id => document.getElementById(id);
     const view = $("english-practice-view");
