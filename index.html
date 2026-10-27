@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=144">
+    <link rel="stylesheet" href="style.css?v=146">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -333,6 +333,21 @@
             </div>
         </section>
 
+        <section id="issue-goods-view" class="view issue-goods-view" hidden>
+            <div class="issue-goods-page-heading">
+                <button id="issue-goods-back" class="issue-goods-back" type="button" aria-label="Əvvəlki səhifəyə qayıt">← <span>Geri</span></button>
+                <div class="issue-goods-page-kicker"><span class="dashboard-live-dot"></span> ANBAR QALIĞI</div>
+                <h2>Mal ver</h2>
+                <p>Anbarda olan malı seçin, miqdarını və kimə verildiyini qeyd edin.</p>
+            </div>
+            <div class="issue-goods-toolbar">
+                <label class="issue-goods-search" for="issue-goods-search-input"><span aria-hidden="true">⌕</span><input id="issue-goods-search-input" type="search" placeholder="Malın adı, kodu və ya rəfi ilə axtar…" autocomplete="off"></label>
+                <button id="issue-goods-refresh" class="secondary-button" type="button" aria-label="Anbar siyahısını yenilə">↻ Yenilə</button>
+            </div>
+            <p id="issue-goods-status" class="issue-goods-status" role="status" aria-live="polite">Anbar siyahısı yüklənir…</p>
+            <ul id="issue-goods-list" class="issue-goods-list" aria-label="Anbardakı mallar"></ul>
+        </section>
+
         <section id="area-measurement-view" class="view area-measurement-view" hidden>
             <div class="area-page-heading">
                 <div class="area-page-kicker"><span class="dashboard-live-dot"></span> ƏRAZİ QEYDLƏRİ</div>
@@ -406,7 +421,8 @@
                         <textarea id="maray-water-note" rows="2" maxlength="300" placeholder="Əlavə məlumat"></textarea>
                     </label>
                 </div>
-                <button class="primary-button area-save-button maray-water-save" type="submit"><span aria-hidden="true">＋</span> Qaiməni yadda saxla</button>
+                <button id="maray-water-save" class="primary-button area-save-button maray-water-save" type="submit"><span aria-hidden="true">＋</span> Qaiməni yadda saxla</button>
+                <button id="maray-water-cancel-edit" class="maray-water-cancel-edit" type="button" hidden>Dəyişiklikdən imtina et</button>
                 <p id="maray-water-sync-note" class="area-sync-note" role="status" aria-live="polite">Excel bağlantısı qurulur.</p>
             </form>
             <div class="maray-water-summary">
@@ -518,7 +534,7 @@
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
                     <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, su təhvil qeydləri, xatırlatma və paylama əməliyyatlarını bir yerdə idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.65.5</strong></span>
+                    <span class="about-version">Versiya <strong>1.66.0</strong></span>
                 </div>
                 <section class="about-feature-section" aria-labelledby="about-features-title">
                     <div class="about-section-heading">
@@ -619,7 +635,7 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.65.5</span>
+            <span class="footer-version">Versiya 1.66.0</span>
         </footer>
     </main>
     <dialog id="port-map-dialog" class="port-map-dialog" aria-label="Liman ərazisinin xəritəsi">
@@ -636,12 +652,27 @@
         </div>
     </dialog>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-    <script src="app-config.js?v=7"></script>
+    <dialog id="issue-goods-dialog" class="issue-goods-dialog">
+        <form id="issue-goods-form" class="issue-goods-form">
+            <header class="issue-goods-dialog-header">
+                <div><span class="issue-goods-dialog-kicker">TƏHVİL QEYDİ</span><h2>Malı təhvil ver</h2></div>
+                <button id="issue-goods-dialog-close" class="issue-goods-dialog-close" type="button" aria-label="Pəncərəni bağla">×</button>
+            </header>
+            <div id="issue-goods-selected" class="issue-goods-selected"></div>
+            <label class="issue-goods-field"><span>Verilən miqdar</span><input id="issue-goods-quantity" type="number" min="0.01" step="any" inputmode="decimal" required></label>
+            <label class="issue-goods-field"><span>Hansı şöbəyə verildi</span><input id="issue-goods-department" type="text" maxlength="120" placeholder="Məsələn, Sosial xidmətlər şöbəsi" required></label>
+            <label class="issue-goods-field"><span>Malı götürən işçi</span><input id="issue-goods-recipient" type="text" maxlength="120" placeholder="Ad, soyad" autocomplete="name" required></label>
+            <label class="issue-goods-field"><span>Tarix</span><input id="issue-goods-date" type="date" required></label>
+            <p id="issue-goods-form-status" class="issue-goods-form-status" role="status" aria-live="polite"></p>
+            <div class="issue-goods-dialog-actions"><button id="issue-goods-cancel" class="secondary-button" type="button">Ləğv et</button><button id="issue-goods-submit" class="primary-button" type="submit">Təhvil ver <span aria-hidden="true">→</span></button></div>
+        </form>
+    </dialog>
+    <script src="app-config.js?v=8"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=70"></script>
+    <script src="script.js?v=73"></script>
     <script src="english-words.js?v=2"></script>
 </body>
 </html>

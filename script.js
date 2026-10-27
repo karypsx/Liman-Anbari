@@ -7,6 +7,11 @@ const purchasePublicCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS
 const LIMAN_ADMIN_UID = "WvDIKF4R5SNNEGBpMy6oZdcA1Ub2";
 
 let anbarData = [];
+let issueStockRecords = [];
+let selectedIssueStockItem = null;
+let issueReturnView = "home";
+let issueGoodsSaving = false;
+let issueGoodsApiReady = false;
 let distributionRecords = [];
 let monthlyPurchaseRecords = [];
 let monthlyPurchaseReady = false;
@@ -56,6 +61,7 @@ const homeView = document.getElementById("home-view");
 const scanView = document.getElementById("scan-view");
 const resultView = document.getElementById("result-view");
 const distributionView = document.getElementById("distribution-view");
+const issueGoodsView = document.getElementById("issue-goods-view");
 const areaMeasurementView = document.getElementById("area-measurement-view");
 const marayWaterView = document.getElementById("maray-water-view");
 const aboutView = document.getElementById("about-view");
@@ -109,6 +115,10 @@ const marayWaterRecordList = document.getElementById("maray-water-record-list");
 const marayWaterCount = document.getElementById("maray-water-count");
 const marayWaterTotal = document.getElementById("maray-water-total");
 const marayWaterSyncNote = document.getElementById("maray-water-sync-note");
+const marayWaterSaveButton = document.getElementById("maray-water-save");
+const marayWaterCancelEditButton = document.getElementById("maray-water-cancel-edit");
+let editingMarayWaterId = null;
+let marayWaterSaving = false;
 let activeAreaRecordId = null;
 let pendingAreaDelete = null;
 let pendingReminderDelete = null;
@@ -136,6 +146,23 @@ const dashboardQuantityTotal = document.getElementById("dashboard-quantity-total
 const dashboardExpenseLabel = document.getElementById("dashboard-expense-label");
 const dashboardMonthlyExpense = document.getElementById("dashboard-monthly-expense");
 const issueGoodsButton = document.getElementById("issue-goods");
+const issueGoodsBackButton = document.getElementById("issue-goods-back");
+const issueGoodsSearchInput = document.getElementById("issue-goods-search-input");
+const issueGoodsRefreshButton = document.getElementById("issue-goods-refresh");
+const issueGoodsStatus = document.getElementById("issue-goods-status");
+const issueGoodsList = document.getElementById("issue-goods-list");
+const issueGoodsDialog = document.getElementById("issue-goods-dialog");
+const issueGoodsForm = document.getElementById("issue-goods-form");
+const issueGoodsSelected = document.getElementById("issue-goods-selected");
+const issueGoodsQuantityInput = document.getElementById("issue-goods-quantity");
+const issueGoodsDepartmentInput = document.getElementById("issue-goods-department");
+const issueGoodsRecipientInput = document.getElementById("issue-goods-recipient");
+const issueGoodsDateInput = document.getElementById("issue-goods-date");
+const issueGoodsFormStatus = document.getElementById("issue-goods-form-status");
+const issueGoodsSubmitButton = document.getElementById("issue-goods-submit");
+const issueGoodsApiUrl = window.APP_CONFIG?.marayWaterApiUrl || "";
+const issueGoodsDialogCloseButton = document.getElementById("issue-goods-dialog-close");
+const issueGoodsCancelButton = document.getElementById("issue-goods-cancel");
 const actionToast = document.getElementById("action-toast");
 let actionToastTimer;
 const scanError = document.getElementById("scan-error");
@@ -319,6 +346,7 @@ function showView(view) {
     document.body.classList.toggle("home-screen", view === "home");
     document.body.classList.toggle("scan-screen", view === "scan");
     document.body.classList.toggle("distribution-screen", view === "distribution");
+    document.body.classList.toggle("issue-goods-screen", view === "issue-goods");
     document.body.classList.toggle("area-measurement-screen", view === "area-measurement");
     const publicAreaView = view === "area-measurement" && !currentAuthUser;
     document.body.classList.toggle("area-public-view", publicAreaView);
@@ -337,6 +365,7 @@ function showView(view) {
     scanView.hidden = view !== "scan";
     resultView.hidden = view !== "result";
     distributionView.hidden = view !== "distribution";
+    issueGoodsView.hidden = view !== "issue-goods";
     areaMeasurementView.hidden = view !== "area-measurement";
     marayWaterView.hidden = view !== "maray-water";
     remindersView.hidden = view !== "reminders";
@@ -1824,13 +1853,17 @@ function getInventoryRows(rows) {
     const nameIndex = headers.findIndex(value => value === "malın adı və təsviri" || value === "malın adı");
     const quantityIndex = headers.findIndex(value => value === "cari qalıq" || value === "say");
     const shelfIndex = headers.findIndex(value => value === "rəflər" || value === "rəf");
+    const codeIndex = headers.findIndex(value => value === "malın kodu" || value === "mal kodu" || value === "kod");
+    const unitIndex = headers.findIndex(value => value === "ölçü vahidi" || value === "ölçü vahidi (ədəd)");
 
     const data = rows.slice(headerIndex + 1)
         .filter(Array.isArray)
         .map(row => ({
             "Rəf": String(row[shelfIndex] ?? "").trim(),
             "Malın Adı": String(row[nameIndex] ?? "").trim(),
-            "Say": String(row[quantityIndex] ?? "").trim()
+            "Say": String(row[quantityIndex] ?? "").trim(),
+            "Kod": codeIndex >= 0 ? String(row[codeIndex] ?? "").trim() : "",
+            "Ölçü vahidi": unitIndex >= 0 ? String(row[unitIndex] ?? "").trim() : ""
         }))
         .filter(item => item["Malın Adı"] !== "");
 
@@ -1846,6 +1879,10 @@ if (googleSheetsCSVLink && !googleSheetsCSVLink.includes("BURAYA") && window.Pap
         complete: function (results) {
             const parsed = getInventoryRows(results.data || []);
             anbarData = parsed.data;
+            if (!issueGoodsApiUrl && issueStockRecords.length === 0) {
+                issueStockRecords = anbarData.slice();
+                if (issueGoodsView && !issueGoodsView.hidden) renderIssueGoodsList();
+            }
             if (parsed.error) {
                 dataStatus.textContent = parsed.error;
                 dataStatus.hidden = false;
@@ -1858,6 +1895,259 @@ if (googleSheetsCSVLink && !googleSheetsCSVLink.includes("BURAYA") && window.Pap
             dataStatus.hidden = false;
         }
     });
+}
+
+function parseIssueQuantity(value) {
+    const text = String(value ?? "").trim().replace(/[^\d,.-]/g, "");
+    if (!text) return 0;
+    let normalized = text;
+    const comma = normalized.lastIndexOf(",");
+    const dot = normalized.lastIndexOf(".");
+    if (comma >= 0 && dot >= 0) {
+        const decimal = comma > dot ? "," : ".";
+        const grouping = decimal === "," ? "." : ",";
+        normalized = normalized.split(grouping).join("");
+        if (decimal === ",") normalized = normalized.replace(",", ".");
+    } else if (comma >= 0) {
+        normalized = normalized.replace(",", ".");
+    }
+    const number = Number(normalized);
+    return Number.isFinite(number) ? number : 0;
+}
+
+function formatIssueQuantity(value) {
+    return Number(value || 0).toLocaleString("az-AZ", { maximumFractionDigits: 3 });
+}
+
+function normalizeIssueStockRows(payload) {
+    if (!payload?.ok || !Array.isArray(payload.records)) {
+        throw new Error(payload?.error || "Anbar siyahısı oxunmadı.");
+    }
+    if (payload.records.some(record => !record || typeof record.name !== "string")) {
+        throw new Error("Apps Script-i yeniləyib yenidən yayımlayın; köhnə server anbar siyahısını qaytarmadı.");
+    }
+    return payload.records.map(record => ({
+        "Rəf": String(record.shelf || ""),
+        "Malın Adı": String(record.name || ""),
+        "Say": String(record.quantity ?? "0"),
+        "Kod": String(record.code || ""),
+        "Ölçü vahidi": String(record.unit || "")
+    })).filter(record => record["Malın Adı"]);
+}
+
+async function requestIssueGoodsApi(mode, extra = {}) {
+    if (!issueGoodsApiUrl) throw new Error("Mal vermə serveri hələ qoşulmayıb.");
+    if (!currentAuthUser) throw new Error("Davam etmək üçün tətbiq hesabınıza daxil olun.");
+    const idToken = await currentAuthUser.getIdToken();
+    return new Promise((resolve, reject) => {
+        const callbackName = `__limanIssueCallback_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const script = document.createElement("script");
+        let settled = false;
+        const cleanup = () => {
+            clearTimeout(timeout);
+            script.remove();
+            try { delete window[callbackName]; } catch { window[callbackName] = undefined; }
+        };
+        const finish = (error, payload) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            if (error) reject(error);
+            else if (!payload?.ok) reject(new Error(payload?.error || "Mal vermə sorğusu təsdiqlənmədi."));
+            else resolve(payload);
+        };
+        const timeout = setTimeout(() => finish(new Error("Serverdən cavab gecikdi. İnterneti yoxlayıb yenidən cəhd edin.")), 20000);
+        window[callbackName] = payload => finish(null, payload);
+        script.async = true;
+        script.onerror = () => finish(new Error("Mal vermə serverinə qoşulmaq olmadı."));
+        const params = new URLSearchParams({ mode, callback: callbackName, idToken, _: String(Date.now()), ...extra });
+        script.src = `${issueGoodsApiUrl}${issueGoodsApiUrl.includes("?") ? "&" : "?"}${params.toString()}`;
+        document.head.appendChild(script);
+    });
+}
+
+function renderIssueGoodsList() {
+    if (!issueGoodsList) return;
+    const query = normalizeSearchText(issueGoodsSearchInput.value);
+    const matches = issueStockRecords
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => !query || [item["Malın Adı"], item["Kod"], item["Rəf"]].some(value => normalizeSearchText(value).includes(query)));
+    issueGoodsList.replaceChildren();
+    if (!matches.length) {
+        const empty = document.createElement("li");
+        empty.className = "issue-goods-empty";
+        empty.textContent = issueStockRecords.length ? "Axtarışa uyğun mal tapılmadı." : "Anbar siyahısı boşdur və ya hələ yüklənməyib.";
+        issueGoodsList.appendChild(empty);
+        return;
+    }
+
+    matches.forEach(({ item, index }) => {
+        const available = parseIssueQuantity(item["Say"]);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "issue-stock-card";
+        button.disabled = available <= 0;
+        button.setAttribute("aria-label", `${item["Malın Adı"]}, qalıq ${formatIssueQuantity(available)}`);
+
+        const copy = document.createElement("span");
+        copy.className = "issue-stock-copy";
+        const name = document.createElement("strong");
+        name.textContent = item["Malın Adı"] || "Adsız mal";
+        const meta = document.createElement("span");
+        meta.textContent = [item["Kod"] ? `Kod: ${item["Kod"]}` : "", item["Rəf"] ? `Rəf: ${item["Rəf"]}` : ""]
+            .filter(Boolean).join(" · ") || "Anbar qalığı";
+        copy.append(name, meta);
+
+        const balance = document.createElement("span");
+        balance.className = "issue-stock-balance";
+        const balanceValue = document.createElement("strong");
+        balanceValue.textContent = formatIssueQuantity(available);
+        const unit = document.createElement("small");
+        unit.textContent = item["Ölçü vahidi"] || "qalıq";
+        balance.append(balanceValue, unit);
+
+        const arrow = document.createElement("span");
+        arrow.className = "issue-stock-arrow";
+        arrow.setAttribute("aria-hidden", "true");
+        arrow.textContent = available > 0 ? "↗" : "—";
+        button.append(copy, balance, arrow);
+        button.addEventListener("click", () => openIssueGoodsDialog(item, index));
+
+        const row = document.createElement("li");
+        row.appendChild(button);
+        issueGoodsList.appendChild(row);
+    });
+}
+
+function openIssueGoodsDialog(item) {
+    selectedIssueStockItem = item;
+    const available = parseIssueQuantity(item["Say"]);
+    issueGoodsSelected.replaceChildren();
+    const name = document.createElement("strong");
+    name.textContent = item["Malın Adı"] || "Adsız mal";
+    const details = document.createElement("span");
+    details.textContent = [item["Kod"] ? `Kod: ${item["Kod"]}` : "", item["Rəf"] ? `Rəf: ${item["Rəf"]}` : ""]
+        .filter(Boolean).join(" · ");
+    const balance = document.createElement("b");
+    balance.textContent = `Qalıq: ${formatIssueQuantity(available)} ${item["Ölçü vahidi"] || ""}`.trim();
+    issueGoodsSelected.append(name, details, balance);
+    issueGoodsQuantityInput.value = "";
+    issueGoodsQuantityInput.max = String(available);
+    issueGoodsDateInput.value = localDateInputValue();
+    issueGoodsFormStatus.textContent = issueGoodsApiReady ? "" : "Apps Script yenilənib yayımlandıqdan sonra bu malı cədvələ yazmaq mümkün olacaq.";
+    issueGoodsSubmitButton.disabled = !issueGoodsApiReady || available <= 0;
+    issueGoodsSubmitButton.title = issueGoodsApiReady ? "" : "Apps Script yenilənib anbar siyahısı yüklənəndən sonra aktiv olacaq";
+    issueGoodsDialog.showModal();
+    requestAnimationFrame(() => issueGoodsQuantityInput.focus());
+}
+
+async function loadIssueGoodsInventory() {
+    if (!issueGoodsView || issueGoodsView.hidden) return;
+    issueGoodsRefreshButton.disabled = true;
+    issueGoodsStatus.textContent = "Anbar siyahısı yenilənir…";
+    try {
+        if (!issueGoodsApiUrl) {
+            issueGoodsApiReady = false;
+            issueStockRecords = anbarData.slice();
+            issueGoodsStatus.textContent = "Mallar anbar cədvəlindən göstərilir. Mal qalığını dəyişmək üçün server bağlantısı quraşdırılmalıdır.";
+        } else {
+            const payload = await requestIssueGoodsApi("inventory");
+            issueStockRecords = normalizeIssueStockRows(payload);
+            issueGoodsApiReady = true;
+            anbarData = issueStockRecords.slice();
+            issueGoodsStatus.textContent = `Anbar yeniləndi · ${issueStockRecords.length} mal`;
+        }
+        renderIssueGoodsList();
+    } catch (error) {
+        issueGoodsApiReady = false;
+        issueGoodsStatus.textContent = error.message || "Anbar siyahısını yükləmək olmadı.";
+        if (!issueStockRecords.length) issueStockRecords = anbarData.slice();
+        renderIssueGoodsList();
+    } finally {
+        issueGoodsRefreshButton.disabled = false;
+    }
+}
+
+function openIssueGoods() {
+    if (currentAuthUser?.uid !== LIMAN_ADMIN_UID) {
+        if (!currentAuthUser) openAccountPage("login");
+        showActionToast(currentAuthUser ? "Mal vermək yalnız administrator hesabı ilə mümkündür." : "Mal vermək üçün administrator hesabına daxil olun.");
+        return;
+    }
+    issueReturnView = distributionView.hidden ? "home" : "distribution";
+    closeMenu();
+    showView("issue-goods");
+    issueGoodsSearchInput.value = "";
+    void loadIssueGoodsInventory();
+}
+
+async function submitIssueGoods(event) {
+    event.preventDefault();
+    if (issueGoodsSaving || !selectedIssueStockItem || !issueGoodsForm.reportValidity()) return;
+    const quantity = Number(issueGoodsQuantityInput.value);
+    const available = parseIssueQuantity(selectedIssueStockItem["Say"]);
+    if (!Number.isFinite(quantity) || quantity <= 0 || quantity > available) {
+        issueGoodsFormStatus.textContent = `Miqdar 0-dan çox və ${formatIssueQuantity(available)}-dan artıq olmamalıdır.`;
+        issueGoodsQuantityInput.focus();
+        return;
+    }
+    if (!issueGoodsApiReady) {
+        issueGoodsFormStatus.textContent = "Mal vermə serveri hazır deyil; cədvələ heç nə yazılmadı.";
+        return;
+    }
+
+    const record = {
+        id: `issue-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        code: selectedIssueStockItem["Kod"],
+        name: selectedIssueStockItem["Malın Adı"],
+        shelf: selectedIssueStockItem["Rəf"],
+        unit: selectedIssueStockItem["Ölçü vahidi"],
+        quantity,
+        department: issueGoodsDepartmentInput.value.trim(),
+        recipient: issueGoodsRecipientInput.value.trim(),
+        date: issueGoodsDateInput.value || localDateInputValue()
+    };
+    issueGoodsSaving = true;
+    issueGoodsSubmitButton.disabled = true;
+    issueGoodsFormStatus.textContent = "Təhvil Google Sheets-ə yazılır…";
+    try {
+        if (!currentAuthUser) throw new Error("Hesabdan çıxmısınız. Yenidən daxil olun.");
+        const idToken = await currentAuthUser.getIdToken();
+        await fetch(issueGoodsApiUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "issue", record, idToken })
+        });
+
+        let confirmed = false;
+        let confirmationError = null;
+        for (let attempt = 0; attempt < 4 && !confirmed; attempt++) {
+            if (attempt) await new Promise(resolve => setTimeout(resolve, 450));
+            try {
+                const result = await requestIssueGoodsApi("status", { requestId: record.id });
+                confirmed = result.processed === true;
+                if (result.error) throw new Error(result.error);
+            } catch (error) {
+                confirmationError = error;
+            }
+        }
+        if (!confirmed) throw confirmationError || new Error("Server əməliyyatı təsdiqləmədi. Jurnalı yeniləyib yoxlayın.");
+
+        issueGoodsDialog.close();
+        issueGoodsForm.reset();
+        issueGoodsFormStatus.textContent = "";
+        showActionToast("Mal təhvil verildi, qalıq və paylama jurnalı yeniləndi.");
+        await loadIssueGoodsInventory();
+        void loadDistributionJournal();
+    } catch (error) {
+        console.error("Mal təhvil verilmədi:", error);
+        issueGoodsFormStatus.textContent = error.message || "Mal vermə alınmadı. İnterneti yoxlayıb yenidən cəhd edin.";
+        showActionToast(error.message || "Mal vermək olmadı.");
+    } finally {
+        issueGoodsSaving = false;
+        issueGoodsSubmitButton.disabled = !issueGoodsApiReady || !selectedIssueStockItem || parseIssueQuantity(selectedIssueStockItem["Say"]) <= 0;
+    }
 }
 
 async function stopScanner() {
@@ -2057,6 +2347,54 @@ function resetMarayWaterAllocationRows() {
     addMarayWaterAllocationRow();
 }
 
+function clearMarayWaterEditMode() {
+    editingMarayWaterId = null;
+    marayWaterForm.classList.remove("is-editing");
+    marayWaterSaveButton.innerHTML = '<span aria-hidden="true">＋</span> Qaiməni yadda saxla';
+    marayWaterCancelEditButton.hidden = true;
+}
+
+function resetMarayWaterForm() {
+    marayWaterForm.reset();
+    resetMarayWaterAllocationRows();
+    marayWaterDateInput.value = localDateInputValue();
+    clearMarayWaterEditMode();
+}
+
+function beginMarayWaterEdit(record) {
+    if (!currentAuthUser) {
+        showActionToast("Qaiməni redaktə etmək üçün təsdiqlənmiş hesabınıza daxil olun.");
+        return;
+    }
+    if (marayWaterSaving) return;
+    editingMarayWaterId = record.id;
+    marayWaterDateInput.value = record.date || localDateInputValue();
+    marayWaterAllocationRows.replaceChildren();
+    (record.allocations || []).forEach((allocation, index) => addMarayWaterAllocationRow(allocation, index > 0));
+    if (!record.allocations?.length) addMarayWaterAllocationRow();
+    marayWaterRecipientInput.value = record.recipient || "";
+    marayWaterNoteInput.value = record.note || "";
+    marayWaterSaveButton.innerHTML = '<span aria-hidden="true">✓</span> Dəyişikliyi yadda saxla';
+    marayWaterCancelEditButton.hidden = false;
+    marayWaterForm.classList.add("is-editing");
+    marayWaterSyncNote.textContent = `${formatMarayWaterDate(record.date)} tarixli qaiməni redaktə edirsiniz.`;
+    marayWaterForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    marayWaterDateInput.focus({ preventScroll: true });
+}
+
+function marayWaterRecordsMatch(first, second) {
+    if (!first || !second) return false;
+    if (String(first.date) !== String(second.date)
+        || String(first.recipient || "") !== String(second.recipient || "")
+        || String(first.note || "") !== String(second.note || "")) return false;
+    const firstAllocations = first.allocations || [];
+    const secondAllocations = second.allocations || [];
+    return firstAllocations.length === secondAllocations.length
+        && firstAllocations.every((item, index) =>
+            String(item.destination || "") === String(secondAllocations[index].destination || "")
+            && Number(item.bottles) === Number(secondAllocations[index].bottles));
+}
+
 function collectMarayWaterAllocations() {
     const rows = [...marayWaterAllocationRows.querySelectorAll(".maray-water-allocation-row")];
     const allocations = [];
@@ -2115,6 +2453,13 @@ function renderMarayWaterRecords() {
         quantity.className = "maray-water-record-quantity";
         const bottleTotal = (record.allocations || []).reduce((sum, item) => sum + (Number(item.bottles) || 0), 0);
         quantity.textContent = `${bottleTotal} butulka`;
+        const editButton = document.createElement("button");
+        editButton.className = "maray-water-edit-button";
+        editButton.type = "button";
+        editButton.dataset.editMarayWater = record.id;
+        editButton.setAttribute("aria-label", "Məray Su qaiməsini redaktə et");
+        editButton.title = "Qaiməni redaktə et";
+        editButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z"/></svg>';
         const deleteButton = document.createElement("button");
         deleteButton.className = "maray-water-delete-button";
         deleteButton.type = "button";
@@ -2122,7 +2467,7 @@ function renderMarayWaterRecords() {
         deleteButton.setAttribute("aria-label", "Məray Su qaiməsini sil");
         deleteButton.title = "Qaiməni sil";
         deleteButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>';
-        actions.append(quantity, deleteButton);
+        actions.append(quantity, editButton, deleteButton);
         top.append(heading, actions);
 
         const allocationList = document.createElement("div");
@@ -2293,6 +2638,7 @@ async function openMarayWaterPage() {
 
 marayWaterForm.addEventListener("submit", async event => {
     event.preventDefault();
+    if (marayWaterSaving) return;
     if (!marayWaterForm.reportValidity()) return;
     if (!currentAuthUser) {
         showActionToast("Qaimə yazmaq üçün təsdiqlənmiş hesabınıza daxil olun.");
@@ -2306,44 +2652,72 @@ marayWaterForm.addEventListener("submit", async event => {
     }
     const allocations = collectMarayWaterAllocations();
     if (!allocations) return;
+    const isEditing = Boolean(editingMarayWaterId);
+    const recordId = editingMarayWaterId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const record = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: recordId,
         date: marayWaterDateInput.value,
         allocations,
         recipient: marayWaterRecipientInput.value.trim(),
         note: marayWaterNoteInput.value.trim()
     };
+    marayWaterSaving = true;
+    marayWaterSaveButton.disabled = true;
+    marayWaterCancelEditButton.disabled = true;
     addPendingMarayWaterRecord(record);
-    saveMarayWaterCache([record, ...marayWaterRecords]);
-    marayWaterForm.reset();
-    resetMarayWaterAllocationRows();
-    marayWaterDateInput.value = localDateInputValue();
-    marayWaterSyncNote.textContent = "Qaimə Google Sheets-ə göndərilir…";
+    saveMarayWaterCache([record, ...marayWaterRecords.filter(item => item.id !== record.id)]);
+    if (!isEditing) resetMarayWaterForm();
+    marayWaterSyncNote.textContent = isEditing
+        ? "Qaimədəki dəyişikliklər Google Sheets-ə göndərilir…"
+        : "Qaimə Google Sheets-ə göndərilir…";
     try {
         await postMarayWaterMutation("save", record);
         let confirmed = false;
         for (let attempt = 0; attempt < 4; attempt++) {
             const cloudRecords = await fetchMarayWaterRecordsFromCloud();
-            if (cloudRecords.some(item => item.id === record.id)) {
+            const cloudRecord = cloudRecords.find(item => item.id === record.id);
+            if (cloudRecord && (!isEditing || marayWaterRecordsMatch(cloudRecord, record))) {
                 saveMarayWaterCache(cloudRecords);
                 confirmed = true;
                 break;
             }
             if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 500));
         }
-        if (!confirmed) throw new Error("Qaimə cədvəldə təsdiqlənmədi.");
+        if (!confirmed) throw new Error(isEditing
+            ? "Dəyişiklik Google Sheets-də təsdiqlənmədi. Qaimə cihazda saxlanıldı."
+            : "Qaimə cədvəldə təsdiqlənmədi.");
         removePendingMarayWaterRecord(record.id);
-        marayWaterSyncNote.textContent = "Qaimə Google Sheets-də yadda saxlanıldı.";
-        showActionToast("Məray Su qaiməsi yadda saxlanıldı.");
+        if (isEditing) {
+            resetMarayWaterForm();
+            marayWaterSyncNote.textContent = "Qaimədəki dəyişikliklər Google Sheets-də yadda saxlanıldı.";
+            showActionToast("Məray Su qaiməsi yeniləndi.");
+        } else {
+            marayWaterSyncNote.textContent = "Qaimə Google Sheets-də yadda saxlanıldı.";
+            showActionToast("Məray Su qaiməsi yadda saxlanıldı.");
+        }
     } catch (error) {
         addPendingMarayWaterRecord(record);
-        marayWaterSyncNote.textContent = "Qaimə cihazda qaldı, amma Google Sheets-ə göndərilməsi təsdiqlənmədi.";
-        showActionToast(error.message || "Qaiməni Google Sheets-ə göndərmək olmadı.");
+        marayWaterSyncNote.textContent = isEditing
+            ? "Dəyişiklik cihazda saxlanıldı, Google Sheets-lə sinxronizasiya gözləyir."
+            : "Qaimə cihazda qaldı, amma Google Sheets-ə göndərilməsi təsdiqlənmədi.";
+        showActionToast(error.message || (isEditing
+            ? "Dəyişiklikləri Google Sheets-ə göndərmək olmadı."
+            : "Qaiməni Google Sheets-ə göndərmək olmadı."));
+    } finally {
+        marayWaterSaving = false;
+        marayWaterSaveButton.disabled = false;
+        marayWaterCancelEditButton.disabled = false;
     }
 });
 
 document.querySelectorAll(".maray-water-open").forEach(button => button.addEventListener("click", () => void openMarayWaterPage()));
 marayWaterRecordList.addEventListener("click", event => {
+    const editButton = event.target.closest("[data-edit-maray-water]");
+    if (editButton) {
+        const record = marayWaterRecords.find(item => item.id === editButton.dataset.editMarayWater);
+        if (record) beginMarayWaterEdit(record);
+        return;
+    }
     const deleteButton = event.target.closest("[data-delete-maray-water]");
     if (!deleteButton || !currentAuthUser) return;
     const record = marayWaterRecords.find(item => item.id === deleteButton.dataset.deleteMarayWater);
@@ -2352,6 +2726,11 @@ marayWaterRecordList.addEventListener("click", event => {
     areaDialogKicker.textContent = "MƏRAY SU QAİMƏSİ";
     renderMarayWaterDeleteConfirmation(record);
     if (!areaRecordDialog.open) areaRecordDialog.showModal();
+});
+marayWaterCancelEditButton.addEventListener("click", () => {
+    if (marayWaterSaving) return;
+    resetMarayWaterForm();
+    marayWaterSyncNote.textContent = "Yeni Məray Su qaiməsi əlavə edə bilərsiniz.";
 });
 document.getElementById("maray-water-home").addEventListener("click", () => showView("home"));
 marayWaterAddAllocationButton.addEventListener("click", () => {
@@ -2450,11 +2829,17 @@ distributionSearchInput.addEventListener("keydown", event => {
     }
 });
 issueGoodsButton.addEventListener("click", function () {
-    showActionToast("Mal vermək funksiyası hələ aktiv deyil.");
+    openIssueGoods();
 });
 document.getElementById("home-issue-goods").addEventListener("click", function () {
-    showActionToast("Mal vermək funksiyası hələ aktiv deyil.");
+    openIssueGoods();
 });
+issueGoodsBackButton.addEventListener("click", () => showView(issueReturnView));
+issueGoodsSearchInput.addEventListener("input", renderIssueGoodsList);
+issueGoodsRefreshButton.addEventListener("click", () => void loadIssueGoodsInventory());
+issueGoodsForm.addEventListener("submit", submitIssueGoods);
+issueGoodsCancelButton.addEventListener("click", () => issueGoodsDialog.close());
+issueGoodsDialogCloseButton.addEventListener("click", () => issueGoodsDialog.close());
 
 loginPlaceholder.addEventListener("click", function () {
     if (!firebaseAuth) {
@@ -3103,6 +3488,21 @@ if (splashScreen) {
     });
 }
 
+function registerLimanOfflineWorker() {
+    if (!("serviceWorker" in navigator)) return;
+    const isSecureOrigin = location.protocol === "https:"
+        || location.hostname === "localhost"
+        || location.hostname === "127.0.0.1";
+    if (!isSecureOrigin) return;
+    const workerUrl = new URL("firebase-messaging-sw.js", document.baseURI);
+    const workerScope = new URL("./", document.baseURI).pathname;
+    navigator.serviceWorker.register(workerUrl.href, {
+        scope: workerScope,
+        updateViaCache: "none"
+    }).catch(error => console.warn("Offline tətbiq yaddaşı aktiv olmadı:", error));
+}
+
+registerLimanOfflineWorker();
 areaDateInput.value = localDateInputValue();
 loadAreaMeasurements();
 initializeFirebaseAccount();
