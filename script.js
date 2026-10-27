@@ -2031,11 +2031,17 @@ function openIssueGoodsDialog(item) {
     const name = document.createElement("strong");
     name.textContent = item["Malın Adı"] || "Adsız mal";
     const details = document.createElement("span");
-    details.textContent = [item["Kod"] ? `Kod: ${item["Kod"]}` : "", item["Rəf"] ? `Rəf: ${item["Rəf"]}` : ""]
-        .filter(Boolean).join(" · ");
+    details.textContent = item["Kod"] ? `Kod: ${item["Kod"]}` : "Kod göstərilməyib";
+    const shelfLocation = document.createElement("div");
+    shelfLocation.className = "issue-goods-shelf-location";
+    const shelfLabel = document.createElement("span");
+    shelfLabel.textContent = "RƏF / YER";
+    const shelfValue = document.createElement("strong");
+    shelfValue.textContent = item["Rəf"] || "Rəf qeyd olunmayıb";
+    shelfLocation.append(shelfLabel, shelfValue);
     const balance = document.createElement("b");
     balance.textContent = `Qalıq: ${formatIssueQuantity(available)} ${item["Ölçü vahidi"] || ""}`.trim();
-    issueGoodsSelected.append(name, details, balance);
+    issueGoodsSelected.append(name, details, shelfLocation, balance);
     issueGoodsQuantityInput.value = "";
     issueGoodsQuantityInput.max = String(available);
     issueGoodsDateInput.value = localDateInputValue();
@@ -2045,7 +2051,6 @@ function openIssueGoodsDialog(item) {
     issueGoodsDialog.showModal();
     requestAnimationFrame(() => issueGoodsQuantityInput.focus());
 }
-
 async function loadIssueGoodsInventory() {
     if (!issueGoodsView || issueGoodsView.hidden) return;
     issueGoodsRefreshButton.disabled = true;

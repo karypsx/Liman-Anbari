@@ -13,14 +13,14 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Offline PWA shell. This is the same worker used by Firebase notifications.
-const LIMAN_CACHE_NAME = "liman-app-shell-v2";
+const LIMAN_CACHE_NAME = "liman-app-shell-v4";
 const LIMAN_APP_BASE = self.registration.scope;
 const LIMAN_APP_FILES = [
     "./",
     "index.html",
-    "style.css?v=146",
+    "style.css?v=148",
     "app-config.js?v=9",
-    "script.js?v=75",
+    "script.js?v=76",
     "english-words.js?v=2",
     "manifest.json",
     "images/liman-logo-splash.png",
