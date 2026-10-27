@@ -8,7 +8,7 @@ QURAŞDIRMA
 2. Apps Script-də mövcud Code.gs faylının içini tam təmizlə. Bu paketdəki yenilənmiş Meray-Su-Code.gs faylının bütün mətnini ora köçür və Save et. Bu faylda həm əvvəlki Məray Su funksiyaları, həm də yeni Mal ver funksiyası var. Ayrı Apps Script layihəsi yaratmaq lazım deyil.
 3. Funksiya siyahısından authorizeMarayWater seç, Run bas və icazələri təsdiqlə. Bu, Paylama Jurnalı vərəqinin I sütununda gizli “Əməliyyat ID” başlığı yaradır. I sütununda başqa məlumat varsa, kod onu dəyişməyəcək və xəta ilə dayanacaq.
 4. Deploy → Manage deployments bölməsinə gir. Mövcud Web App deployment-in qələm işarəsini bas, Version hissəsindən New version seç və Deploy et. Execute as “Me”, giriş isə “Anyone” olaraq qalsın. Mövcud deployment-i yenilə ki, /exec linki dəyişməsin.
-5. GitHub-da yalnız bu dörd tətbiq faylını yenilə: index.html, script.js, style.css, firebase-messaging-sw.js. app-config.js-də linki dəyişməyə ehtiyac yoxdur; yeni funksiya mövcud Məray Su Web App linkindən istifadə edir.
+5. GitHub-da yalnız bu üç tətbiq faylını yenilə: index.html, script.js, firebase-messaging-sw.js. style.css və app-config.js dəyişməyib; link mövcud Məray Su Web App-ə gedir.
 6. Saytı yenilə, administrator hesabı ilə daxil ol. Ana səhifədə və Paylama Jurnalında “Mal ver” düyməsini aç, siyahıdan malı seç, miqdarı və alan şəxsin məlumatlarını doldurub təsdiqlə.
 
 QEYDLƏR
@@ -16,5 +16,6 @@ QEYDLƏR
 - Mal vermək yalnız tətbiqin administrator UID-si WvDIKF4R5SNNEGBpMy6oZdcA1Ub2 olan hesabla mümkündür. Digər hesabların yazma sorğusu Apps Script-də rədd edilir.
 - Web App Google hesabı adından işləyir, amma Sheets paylaşımı “Anyone” edilməməlidir. Sorğuda Firebase giriş tokeni və administrator UID-si yoxlanılır.
 - Apps Script “Anbar Qalığı” və “Paylanma Jurnalı” (və ya “Paylama Jurnalı”) vərəqlərini gözləyir. Anbar vərəqində “Malın adı və təsviri” (və ya “Malın adı”), “Cari qalıq” və “Rəflər” başlıqları olmalıdır. Paylama jurnalında tarix, malın adı, verilən miqdar, ölçü vahidi, şöbə və götürən işçi başlıqları tanınmalıdır.
+- Siyahı hər malın cədvəldəki dəqiq sətrini də götürür. Eyni mal bir neçə sətirdə olsa da seçilmiş sətir dəyişir; miqdara 1-dən böyük rəqəm yazıb bir neçə vahid verə bilərsən.
 - Qalıq xanası düsturdursa, əvvəl paylama sətrini yazır və düsturun qalığı azaltdığını yoxlayır. Düstur qalığı azaltmasa, yeni paylama sətrini geri götürüb səbəbi göstərir. Düstursuz xanada qalıq birbaşa azaldılır.
 - Əməliyyat təsdiqi alınmadan tətbiq “Mal verildi” demir. Təkrar göndərişlərə qarşı gizli Əməliyyat ID istifadə olunur.

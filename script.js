@@ -1926,13 +1926,18 @@ function normalizeIssueStockRows(payload) {
     if (payload.records.some(record => !record || typeof record.name !== "string")) {
         throw new Error("Apps Script-i yeniləyib yenidən yayımlayın; köhnə server anbar siyahısını qaytarmadı.");
     }
-    return payload.records.map(record => ({
+    const rows = payload.records.map(record => ({
+        "Cədvəl sətri": Number(record.sheetRow),
         "Rəf": String(record.shelf || ""),
         "Malın Adı": String(record.name || ""),
         "Say": String(record.quantity ?? "0"),
         "Kod": String(record.code || ""),
         "Ölçü vahidi": String(record.unit || "")
     })).filter(record => record["Malın Adı"]);
+    if (rows.some(record => !Number.isInteger(record["Cədvəl sətri"]) || record["Cədvəl sətri"] < 1)) {
+        throw new Error("Apps Script-i yeniləyib yayımlayın; anbar sətrinin nömrəsi alınmadı.");
+    }
+    return rows;
 }
 
 async function requestIssueGoodsApi(mode, extra = {}) {
@@ -2101,6 +2106,7 @@ async function submitIssueGoods(event) {
         code: selectedIssueStockItem["Kod"],
         name: selectedIssueStockItem["Malın Adı"],
         shelf: selectedIssueStockItem["Rəf"],
+        sheetRow: selectedIssueStockItem["Cədvəl sətri"],
         unit: selectedIssueStockItem["Ölçü vahidi"],
         quantity,
         department: issueGoodsDepartmentInput.value.trim(),

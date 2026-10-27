@@ -448,8 +448,9 @@ function readIssueStock_(spreadsheet) {
   if (lastRow <= layout.headerRow) return [];
   const width = Math.max(layout.sheet.getLastColumn(), layout.nameColumn, layout.quantityColumn, layout.shelfColumn);
   const rows = layout.sheet.getRange(layout.headerRow + 1, 1, lastRow - layout.headerRow, width).getDisplayValues();
-  return rows.map(function (row) {
+  return rows.map(function (row, index) {
     return {
+      sheetRow: layout.headerRow + index + 1,
       code: layout.codeColumn ? String(row[layout.codeColumn - 1] || "").trim() : "",
       name: String(row[layout.nameColumn - 1] || "").trim(),
       shelf: String(row[layout.shelfColumn - 1] || "").trim(),
@@ -502,24 +503,17 @@ function findIssueStockItem_(spreadsheet, record) {
   const layout = getIssueStockLayout_(spreadsheet);
   const lastRow = layout.sheet.getLastRow();
   if (lastRow <= layout.headerRow) throw new Error("Anbar Qalığı vərəqində mallar yoxdur.");
-  const width = Math.max(layout.sheet.getLastColumn(), layout.nameColumn, layout.quantityColumn, layout.shelfColumn);
-  const rows = layout.sheet.getRange(layout.headerRow + 1, 1, lastRow - layout.headerRow, width).getDisplayValues();
-  const matches = [];
-  rows.forEach(function (row, index) {
-    const name = normalizeIssueText_(row[layout.nameColumn - 1]);
-    const shelf = normalizeIssueText_(row[layout.shelfColumn - 1]);
-    const code = layout.codeColumn ? normalizeIssueText_(row[layout.codeColumn - 1]) : "";
-    const sameName = name === normalizeIssueText_(record.name);
-    const sameShelf = !record.shelf || shelf === normalizeIssueText_(record.shelf);
-    const sameCode = record.code && code === normalizeIssueText_(record.code);
-    if (record.code && layout.codeColumn ? sameCode && sameName && sameShelf : sameName && sameShelf) {
-      matches.push({ row: layout.headerRow + index + 1 });
-    }
-  });
-  if (matches.length !== 1) {
-    throw new Error(matches.length ? "Eyni mal üçün bir neçə sətir tapıldı. Anbar siyahısında kod və rəfi dəqiqləşdirin." : "Seçilmiş mal Anbar Qalığı vərəqində tapılmadı. Siyahını yeniləyin.");
+  const rowNumber = Number(record.sheetRow);
+  if (!Number.isInteger(rowNumber) || rowNumber <= layout.headerRow || rowNumber > lastRow) {
+    throw new Error("Anbar sətri dəyişib. Mal siyahısını yeniləyib yenidən seçin.");
   }
-  const rowNumber = matches[0].row;
+  const width = Math.max(layout.sheet.getLastColumn(), layout.nameColumn, layout.quantityColumn, layout.shelfColumn);
+  const row = layout.sheet.getRange(rowNumber, 1, 1, width).getDisplayValues()[0];
+  if (normalizeIssueText_(row[layout.nameColumn - 1]) !== normalizeIssueText_(record.name)
+      || (record.code && layout.codeColumn && normalizeIssueText_(row[layout.codeColumn - 1]) !== normalizeIssueText_(record.code))
+      || (record.shelf && normalizeIssueText_(row[layout.shelfColumn - 1]) !== normalizeIssueText_(record.shelf))) {
+    throw new Error("Anbar sətri yenilənib. Mal siyahısını yeniləyib yenidən seçin.");
+  }
   const balanceCell = layout.sheet.getRange(rowNumber, layout.quantityColumn);
   const quantity = parseIssueNumber_(balanceCell.getValue());
   if (!Number.isFinite(quantity) || quantity < 0) throw new Error("Seçilmiş malın cari qalığı ədədi deyil; cədvəli yoxlayın.");
@@ -577,6 +571,7 @@ function validateIssueRecord_(record) {
   const name = String(record.name || "").trim();
   const code = String(record.code || "").trim();
   const shelf = String(record.shelf || "").trim();
+  const sheetRow = Number(record.sheetRow);
   const department = String(record.department || "").trim();
   const recipient = String(record.recipient || "").trim();
   const quantity = Number(record.quantity);
@@ -586,11 +581,12 @@ function validateIssueRecord_(record) {
   if (!department || department.length > 120) throw new Error("Şöbənin adını düzgün yazın.");
   if (!recipient || recipient.length > 120) throw new Error("Malı götürən işçinin adını düzgün yazın.");
   if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100000000) throw new Error("Verilən miqdar düzgün deyil.");
+  if (!Number.isInteger(sheetRow) || sheetRow < 1) throw new Error("Anbar sətri tapılmadı. Mal siyahısını yeniləyin.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(parsedDate.getTime())
       || parsedDate.getFullYear() !== Number(date.slice(0, 4))
       || parsedDate.getMonth() + 1 !== Number(date.slice(5, 7))
       || parsedDate.getDate() !== Number(date.slice(8, 10))) throw new Error("Tarix düzgün deyil.");
-  return { id: id, name: name, code: code, shelf: shelf, department: department,
+  return { id: id, name: name, code: code, shelf: shelf, sheetRow: sheetRow, department: department,
     recipient: recipient, quantity: quantity, unit: String(record.unit || "").trim(), date: date };
 }
 
