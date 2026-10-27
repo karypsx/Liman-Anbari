@@ -20,7 +20,7 @@ const LIMAN_APP_FILES = [
     "index.html",
     "style.css?v=146",
     "app-config.js?v=8",
-    "script.js?v=74",
+    "script.js?v=75",
     "english-words.js?v=2",
     "manifest.json",
     "images/liman-logo-splash.png",

@@ -503,11 +503,25 @@ function findIssueStockItem_(spreadsheet, record) {
   const layout = getIssueStockLayout_(spreadsheet);
   const lastRow = layout.sheet.getLastRow();
   if (lastRow <= layout.headerRow) throw new Error("Anbar Qalığı vərəqində mallar yoxdur.");
-  const rowNumber = Number(record.sheetRow);
-  if (!Number.isInteger(rowNumber) || rowNumber <= layout.headerRow || rowNumber > lastRow) {
-    throw new Error("Anbar sətri dəyişib. Mal siyahısını yeniləyib yenidən seçin.");
-  }
   const width = Math.max(layout.sheet.getLastColumn(), layout.nameColumn, layout.quantityColumn, layout.shelfColumn);
+  let rowNumber = Number(record.sheetRow);
+  if (!Number.isInteger(rowNumber) || rowNumber <= layout.headerRow || rowNumber > lastRow) {
+    // Older installed PWAs may not send sheetRow. Resolve only when the
+    // product name plus its code/shelf identify exactly one stock row.
+    const values = layout.sheet.getRange(layout.headerRow + 1, 1, lastRow - layout.headerRow, width).getDisplayValues();
+    const matches = [];
+    values.forEach(function (candidate, index) {
+      const sameName = normalizeIssueText_(candidate[layout.nameColumn - 1]) === normalizeIssueText_(record.name);
+      const sameCode = !record.code || !layout.codeColumn
+        || normalizeIssueText_(candidate[layout.codeColumn - 1]) === normalizeIssueText_(record.code);
+      const sameShelf = !record.shelf
+        || normalizeIssueText_(candidate[layout.shelfColumn - 1]) === normalizeIssueText_(record.shelf);
+      if (sameName && sameCode && sameShelf) matches.push(layout.headerRow + index + 1);
+    });
+    if (matches.length === 0) throw new Error("Anbar sətri tapılmadı. Mal siyahısını yeniləyin.");
+    if (matches.length > 1) throw new Error("Bu mal anbar cədvəlində bir neçə eyni sətirdədir. Tətbiqi yeniləyib siyahıdan malı yenidən seçin.");
+    rowNumber = matches[0];
+  }
   const row = layout.sheet.getRange(rowNumber, 1, 1, width).getDisplayValues()[0];
   if (normalizeIssueText_(row[layout.nameColumn - 1]) !== normalizeIssueText_(record.name)
       || (record.code && layout.codeColumn && normalizeIssueText_(row[layout.codeColumn - 1]) !== normalizeIssueText_(record.code))
@@ -571,7 +585,8 @@ function validateIssueRecord_(record) {
   const name = String(record.name || "").trim();
   const code = String(record.code || "").trim();
   const shelf = String(record.shelf || "").trim();
-  const sheetRow = Number(record.sheetRow);
+  const hasSheetRow = record.sheetRow != null && String(record.sheetRow).trim() !== "";
+  const sheetRow = hasSheetRow ? Number(record.sheetRow) : 0;
   const department = String(record.department || "").trim();
   const recipient = String(record.recipient || "").trim();
   const quantity = Number(record.quantity);
@@ -581,7 +596,7 @@ function validateIssueRecord_(record) {
   if (!department || department.length > 120) throw new Error("Şöbənin adını düzgün yazın.");
   if (!recipient || recipient.length > 120) throw new Error("Malı götürən işçinin adını düzgün yazın.");
   if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100000000) throw new Error("Verilən miqdar düzgün deyil.");
-  if (!Number.isInteger(sheetRow) || sheetRow < 1) throw new Error("Anbar sətri tapılmadı. Mal siyahısını yeniləyin.");
+  if (hasSheetRow && (!Number.isInteger(sheetRow) || sheetRow < 1)) throw new Error("Anbar sətri düzgün deyil. Mal siyahısını yeniləyin.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(parsedDate.getTime())
       || parsedDate.getFullYear() !== Number(date.slice(0, 4))
       || parsedDate.getMonth() + 1 !== Number(date.slice(5, 7))
