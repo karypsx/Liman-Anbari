@@ -17,5 +17,5 @@ window.APP_CONFIG = {
     // Yeni, təsdiqlənmiş hesabı yoxlayan Apps Script Web App URL-ni burada yerləşdirin.
     areaMeasurementsApiUrl: "https://script.google.com/macros/s/AKfycbyOl_QwNUDZYWYp9vDfUjUYjOgal6qVG1NVPN8Tt_ia2_HJ_xbaUobSIZ-zcZ-9DQtc/exec",
     // Məray Su Web App-i yayımladıqdan sonra onun /exec linkini buraya əlavə edin.
-    marayWaterApiUrl: "https://script.google.com/macros/s/AKfycbyIn5bFA7RjQrS1Uchr0C7ueJRIfakOgouaa3c6s3xiz0RpROZKZnsi5WS9jPsTSyMmCw/exec"
+    marayWaterApiUrl: "https://script.google.com/macros/s/AKfycbxymK_1U56y01qiOnxoPDtS45l2KMOU9LwdJazAh3X6tIp6QVhUoKCFHM5bx0p1UpheuQ/exec"
 };

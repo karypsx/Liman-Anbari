@@ -8,7 +8,7 @@ QURAŞDIRMA
 2. Apps Script-də mövcud Code.gs faylının içini tam təmizlə. Bu paketdəki yenilənmiş Meray-Su-Code.gs faylının bütün mətnini ora köçür və Save et. Bu faylda həm əvvəlki Məray Su funksiyaları, həm də yeni Mal ver funksiyası var. Ayrı Apps Script layihəsi yaratmaq lazım deyil.
 3. Funksiya siyahısından authorizeMarayWater seç, Run bas və icazələri təsdiqlə. Bu, Paylama Jurnalı vərəqinin I sütununda gizli “Əməliyyat ID” başlığı yaradır. I sütununda başqa məlumat varsa, kod onu dəyişməyəcək və xəta ilə dayanacaq.
 4. Deploy → Manage deployments bölməsinə gir. Mövcud Web App deployment-in qələm işarəsini bas, Version hissəsindən New version seç və Deploy et. Execute as “Me”, giriş isə “Anyone” olaraq qalsın. Mövcud deployment-i yenilə ki, /exec linki dəyişməsin.
-5. GitHub-da bu tətbiq fayllarını yenilə: index.html, script.js, firebase-messaging-sw.js. style.css və app-config.js dəyişməyib; link mövcud Məray Su Web App-ə gedir.
+5. GitHub-da bu tətbiq fayllarını yenilə: index.html, script.js, firebase-messaging-sw.js və app-config.js. app-config.js-də marayWaterApiUrl yeni Web App linkinə yenilənib.
 6. Saytı yenilə, administrator hesabı ilə daxil ol. Ana səhifədə və Paylama Jurnalında “Mal ver” düyməsini aç, siyahıdan malı seç, miqdarı və alan şəxsin məlumatlarını doldurub təsdiqlə.
 
 QEYDLƏR
