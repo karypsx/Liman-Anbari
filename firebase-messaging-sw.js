@@ -13,14 +13,14 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Offline PWA shell. This is the same worker used by Firebase notifications.
-const LIMAN_CACHE_NAME = "liman-app-shell-v4";
+const LIMAN_CACHE_NAME = "liman-app-shell-v7";
 const LIMAN_APP_BASE = self.registration.scope;
 const LIMAN_APP_FILES = [
     "./",
     "index.html",
-    "style.css?v=148",
+    "style.css?v=151",
     "app-config.js?v=9",
-    "script.js?v=76",
+    "script.js?v=78",
     "english-words.js?v=2",
     "manifest.json",
     "images/liman-logo-splash.png",
@@ -38,7 +38,9 @@ const LIMAN_APP_FILES = [
     "images/menu-reminders.png",
     "images/menu-about.png",
     "images/scan-icon.png",
-    "images/mal-ver-icon.png"
+    "images/mal-ver-icon.png",
+    "images/liman-xerite-xetler.png",
+    "vendor/jszip.min.js"
 ].map(path => new URL(path, LIMAN_APP_BASE).href);
 
 // Static CDN libraries are cached for offline startup; token-bearing Google
