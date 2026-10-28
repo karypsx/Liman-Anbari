@@ -64,6 +64,7 @@ const distributionView = document.getElementById("distribution-view");
 const issueGoodsView = document.getElementById("issue-goods-view");
 const areaMeasurementView = document.getElementById("area-measurement-view");
 const marayWaterView = document.getElementById("maray-water-view");
+const areaCountView = document.getElementById("area-count-view");
 const aboutView = document.getElementById("about-view");
 const remindersView = document.getElementById("reminders-view");
 const approvalView = document.getElementById("approval-view");
@@ -117,6 +118,21 @@ const marayWaterTotal = document.getElementById("maray-water-total");
 const marayWaterSyncNote = document.getElementById("maray-water-sync-note");
 const marayWaterSaveButton = document.getElementById("maray-water-save");
 const marayWaterCancelEditButton = document.getElementById("maray-water-cancel-edit");
+const areaCountForm = document.getElementById("area-count-form");
+const areaCountDateInput = document.getElementById("area-count-date");
+const areaCountRows = document.getElementById("area-count-rows");
+const areaCountAddRowButton = document.getElementById("area-count-add-row");
+const areaCountNoteInput = document.getElementById("area-count-note");
+const areaCountActions = document.getElementById("area-count-actions");
+const areaCountSaveButton = document.getElementById("area-count-save");
+const areaCountExportButton = document.getElementById("area-count-export");
+const areaCountStatus = document.getElementById("area-count-status");
+const areaCountSearchInput = document.getElementById("area-count-search");
+const areaCountSavedList = document.getElementById("area-count-saved-list");
+const areaCountSavedCount = document.getElementById("area-count-saved-count");
+const areaCountReportsStorageKey = "liman-area-count-reports-v1";
+let areaCountReports = readAreaCountReports();
+let editingAreaCountReportId = null;
 let editingMarayWaterId = null;
 let marayWaterSaving = false;
 let activeAreaRecordId = null;
@@ -356,6 +372,7 @@ function showView(view) {
             : "Sahə qeydlərinə baxış. Ölçü əlavə etmək və silmək üçün təsdiqlənmiş hesabla daxil olun.";
     }
     document.body.classList.toggle("maray-water-screen", view === "maray-water");
+    document.body.classList.toggle("area-count-screen", view === "area-count");
     document.body.classList.toggle("reminders-screen", view === "reminders");
     document.body.classList.toggle("about-screen", view === "about");
     document.body.classList.toggle("approval-screen", view === "approvals");
@@ -368,6 +385,7 @@ function showView(view) {
     issueGoodsView.hidden = view !== "issue-goods";
     areaMeasurementView.hidden = view !== "area-measurement";
     marayWaterView.hidden = view !== "maray-water";
+    areaCountView.hidden = view !== "area-count";
     remindersView.hidden = view !== "reminders";
     approvalView.hidden = view !== "approvals";
     accountView.hidden = view !== "account";
@@ -2748,6 +2766,367 @@ marayWaterAddAllocationButton.addEventListener("click", () => {
     if (marayWaterAllocationRows.querySelectorAll(".maray-water-allocation-row").length < 20) addMarayWaterAllocationRow({}, true);
 });
 resetMarayWaterAllocationRows();
+
+function makeAreaCountField(labelText, key, placeholder, type = "text") {
+    const label = document.createElement("label");
+    label.className = "area-field";
+    const caption = document.createElement("span");
+    caption.textContent = labelText;
+    const input = document.createElement("input");
+    input.type = type;
+    input.dataset.areaCountValue = key;
+    input.placeholder = placeholder;
+    input.autocomplete = "off";
+    input.required = true;
+    if (key === "quantity") {
+        input.min = "0";
+        input.step = "1";
+        input.inputMode = "numeric";
+    } else {
+        input.maxLength = "120";
+    }
+    label.append(caption, input);
+    return label;
+}
+
+function addAreaCountRow(values = {}, focusNew = false) {
+    const entry = document.createElement("div");
+    entry.className = "area-count-entry";
+    entry.dataset.areaCountRow = "";
+
+    const heading = document.createElement("div");
+    heading.className = "area-count-entry-heading";
+    const title = document.createElement("strong");
+    title.className = "area-count-entry-title";
+    const remove = document.createElement("button");
+    remove.className = "area-count-remove-row";
+    remove.type = "button";
+    remove.dataset.removeAreaCountRow = "";
+    remove.setAttribute("aria-label", "Sayım qeydini sil");
+    remove.title = "Bu qeydi sil";
+    remove.textContent = "×";
+    heading.append(title, remove);
+
+    const fields = document.createElement("div");
+    fields.className = "area-count-row-fields";
+    const nameField = makeAreaCountField("Əşyanın adı", "name", "Məsələn, yanğın balonu");
+    const locationField = makeAreaCountField("Yer / zona", "location", "Məsələn, Post 1");
+    const quantityField = makeAreaCountField("Miqdar", "quantity", "0", "number");
+    nameField.querySelector("input").value = values.name || "";
+    locationField.querySelector("input").value = values.location || "";
+    quantityField.querySelector("input").value = values.quantity ?? "";
+    fields.append(nameField, locationField, quantityField);
+    entry.append(heading, fields);
+    areaCountRows.append(entry);
+    updateAreaCountRows();
+    if (focusNew) nameField.querySelector("input").focus();
+}
+
+function updateAreaCountRows() {
+    const entries = [...areaCountRows.querySelectorAll("[data-area-count-row]")];
+    entries.forEach((entry, index) => {
+        entry.querySelector(".area-count-entry-title").textContent = `QEYD ${index + 1}`;
+        const remove = entry.querySelector("[data-remove-area-count-row]");
+        remove.disabled = entries.length === 1;
+    });
+    const hasInput = entries.some(entry => [...entry.querySelectorAll("input")].some(input => input.value.trim() !== ""))
+        || Boolean(areaCountNoteInput.value.trim());
+    areaCountActions.hidden = !hasInput;
+    areaCountSaveButton.textContent = editingAreaCountReportId ? "Dəyişiklikləri saxla" : "Yadda saxla";
+}
+
+function readAreaCountReports() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(areaCountReportsStorageKey) || "[]");
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter(report => report && typeof report.id === "string" && Array.isArray(report.items));
+    } catch (_) {
+        return [];
+    }
+}
+
+function persistAreaCountReports() {
+    try {
+        localStorage.setItem(areaCountReportsStorageKey, JSON.stringify(areaCountReports));
+        return true;
+    } catch (error) {
+        console.error("Ərazi sayımlarını cihazda saxlamaq olmadı:", error);
+        return false;
+    }
+}
+
+function collectAreaCountForm() {
+    if (!areaCountForm.reportValidity()) return null;
+    const items = [...areaCountRows.querySelectorAll("[data-area-count-row]")].map(entry => ({
+        name: entry.querySelector('[data-area-count-value="name"]').value.trim(),
+        location: entry.querySelector('[data-area-count-value="location"]').value.trim(),
+        quantity: Number(entry.querySelector('[data-area-count-value="quantity"]').value)
+    }));
+    if (!items.length || items.some(item => !item.name || !item.location || !Number.isInteger(item.quantity) || item.quantity < 0)) {
+        showActionToast("Hər qeyddə əşyanın adını, yerini və tam miqdarını yazın.");
+        return null;
+    }
+    return { date: areaCountDateInput.value, note: areaCountNoteInput.value.trim(), items };
+}
+
+function createAreaCountId() {
+    return globalThis.crypto?.randomUUID?.() || `sayim-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function formatAreaCountDate(value) {
+    const parts = String(value || "").split("-");
+    return parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : value || "Tarix yoxdur";
+}
+
+function renderAreaCountReports() {
+    const query = areaCountSearchInput.value.trim().toLocaleLowerCase("az");
+    const reports = [...areaCountReports].sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+    areaCountSavedCount.textContent = `${reports.length} qeyd`;
+    areaCountSavedList.replaceChildren();
+
+    const filtered = query ? reports.filter(report => {
+        const searchable = [report.date, report.note, ...(report.items || []).flatMap(item => [item.name, item.location, item.quantity])]
+            .join(" ").toLocaleLowerCase("az");
+        return searchable.includes(query);
+    }) : reports;
+
+    if (!filtered.length) {
+        const empty = document.createElement("p");
+        empty.className = "area-count-saved-empty";
+        empty.textContent = reports.length ? "Axtarışa uyğun sayım tapılmadı." : "Hələ sayım yadda saxlanmayıb.";
+        areaCountSavedList.append(empty);
+        return;
+    }
+
+    filtered.forEach(report => {
+        const card = document.createElement("article");
+        card.className = "area-count-saved-card";
+        const heading = document.createElement("div");
+        heading.className = "area-count-saved-card-heading";
+        const title = document.createElement("strong");
+        title.textContent = `Sayım · ${formatAreaCountDate(report.date)}`;
+        const total = (report.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+        const meta = document.createElement("span");
+        meta.textContent = `${report.items.length} qeyd · cəmi ${total} ədəd`;
+        heading.append(title, meta);
+
+        const preview = document.createElement("p");
+        preview.className = "area-count-saved-preview";
+        const visibleItems = report.items.slice(0, 3).map(item => `${item.name} · ${item.location} · ${item.quantity}`);
+        if (report.items.length > 3) visibleItems.push(`+ ${report.items.length - 3} başqa qeyd`);
+        preview.textContent = visibleItems.join("  |  ");
+
+        const actions = document.createElement("div");
+        actions.className = "area-count-saved-actions";
+        [
+            ["open", "Aç / redaktə et"],
+            ["excel", "Excel"],
+            ["delete", "Sil"]
+        ].forEach(([action, label]) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.dataset.areaCountAction = action;
+            button.dataset.areaCountId = report.id;
+            button.textContent = label;
+            actions.append(button);
+        });
+        card.append(heading, preview, actions);
+        areaCountSavedList.append(card);
+    });
+}
+
+function resetAreaCountForm() {
+    editingAreaCountReportId = null;
+    areaCountDateInput.value = localDateInputValue();
+    areaCountNoteInput.value = "";
+    areaCountRows.replaceChildren();
+    addAreaCountRow();
+}
+
+function saveAreaCountReport() {
+    const formData = collectAreaCountForm();
+    if (!formData) return;
+    const existing = areaCountReports.find(report => report.id === editingAreaCountReportId);
+    const report = {
+        ...formData,
+        id: existing?.id || createAreaCountId(),
+        savedAt: new Date().toISOString()
+    };
+    const previous = areaCountReports;
+    areaCountReports = existing
+        ? areaCountReports.map(item => item.id === report.id ? report : item)
+        : [...areaCountReports, report];
+    if (!persistAreaCountReports()) {
+        areaCountReports = previous;
+        showActionToast("Cihaz yaddaşına yazmaq olmadı. Brauzer yaddaşını yoxlayın.");
+        return;
+    }
+    renderAreaCountReports();
+    resetAreaCountForm();
+    areaCountStatus.textContent = "Sayım bu cihazda yadda saxlanıldı. Sonra siyahıdan aça və Excel kimi endirə bilərsiniz.";
+    showActionToast("Sayım yadda saxlanıldı.");
+}
+
+function openSavedAreaCountReport(report) {
+    editingAreaCountReportId = report.id;
+    areaCountDateInput.value = report.date || localDateInputValue();
+    areaCountNoteInput.value = report.note || "";
+    areaCountRows.replaceChildren();
+    (report.items || []).forEach(item => addAreaCountRow(item));
+    if (!report.items?.length) addAreaCountRow();
+    updateAreaCountRows();
+    areaCountStatus.textContent = "Saxlanılan sayım açıldı. Dəyişiklikləri yadda saxlaya və ya Excel kimi endirə bilərsiniz.";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+areaCountSaveButton.addEventListener("click", saveAreaCountReport);
+areaCountExportButton.addEventListener("click", async () => {
+    const formData = collectAreaCountForm();
+    if (!formData) return;
+    areaCountExportButton.disabled = true;
+    areaCountStatus.textContent = "Excel hesabatı hazırlanır…";
+    try {
+        await downloadAreaCountWorkbook(formData.items, formData.date, formData.note);
+        areaCountStatus.textContent = "Excel faylı endirildi. Qeydi siyahıda saxlamaq üçün “Yadda saxla” düyməsinə basın.";
+        showActionToast("Ərazi sayımı Excel faylı kimi endirildi.");
+    } catch (error) {
+        console.error("Ərazi sayımı Excel faylı yaradıla bilmədi:", error);
+        areaCountStatus.textContent = error.message || "Excel faylını yaratmaq olmadı.";
+        showActionToast(error.message || "Excel faylını yaratmaq olmadı.");
+    } finally {
+        areaCountExportButton.disabled = false;
+    }
+});
+
+areaCountSavedList.addEventListener("click", async event => {
+    const button = event.target.closest("[data-area-count-action]");
+    if (!button) return;
+    const report = areaCountReports.find(item => item.id === button.dataset.areaCountId);
+    if (!report) return;
+    if (button.dataset.areaCountAction === "open") {
+        openSavedAreaCountReport(report);
+    } else if (button.dataset.areaCountAction === "excel") {
+        try {
+            await downloadAreaCountWorkbook(report.items, report.date, report.note || "");
+            showActionToast("Saxlanılan sayım Excel kimi endirildi.");
+        } catch (error) {
+            showActionToast(error.message || "Excel faylını yaratmaq olmadı.");
+        }
+    } else if (button.dataset.areaCountAction === "delete") {
+        if (!window.confirm(`${formatAreaCountDate(report.date)} tarixli sayım silinsin?`)) return;
+        const previous = areaCountReports;
+        areaCountReports = areaCountReports.filter(item => item.id !== report.id);
+        if (!persistAreaCountReports()) {
+            areaCountReports = previous;
+            showActionToast("Sayımı cihaz yaddaşından silmək olmadı.");
+            return;
+        }
+        if (editingAreaCountReportId === report.id) resetAreaCountForm();
+        renderAreaCountReports();
+        showActionToast("Sayım yaddaşdan silindi.");
+    }
+});
+
+areaCountSearchInput.addEventListener("input", renderAreaCountReports);
+areaCountNoteInput.addEventListener("input", updateAreaCountRows);
+areaCountForm.addEventListener("submit", event => event.preventDefault());
+
+function xmlEscape(value) {
+    return String(value ?? "")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+}
+
+function inlineExcelCell(reference, value, style = 4) {
+    return `<c r="${reference}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(value)}</t></is></c>`;
+}
+
+function numberExcelCell(reference, value, style = 5) {
+    return `<c r="${reference}" s="${style}" t="n"><v>${Number(value)}</v></c>`;
+}
+
+function buildAreaCountWorksheet(records, date, note) {
+    const lastRow = records.length + 4;
+    const dateText = String(date || "").split("-").reverse().join(".");
+    const rows = [
+        `<row r="1" ht="30" customHeight="1">${inlineExcelCell("A1", "ƏRAZİ SAYIM HESABATI", 1)}</row>`,
+        `<row r="2" ht="23" customHeight="1">${inlineExcelCell("A2", "Sayım tarixi", 3)}${inlineExcelCell("B2", dateText, 4)}${inlineExcelCell("C2", "Qeyd sayı", 3)}${numberExcelCell("D2", records.length, 5)}</row>`,
+        `<row r="3" ht="24" customHeight="1">${inlineExcelCell("A3", note ? `Ümumi qeyd: ${note}` : "Ümumi qeyd: —", 4)}</row>`,
+        `<row r="4" ht="28" customHeight="1">${inlineExcelCell("A4", "№", 2)}${inlineExcelCell("B4", "Əşyanın adı", 2)}${inlineExcelCell("C4", "Yer / zona", 2)}${inlineExcelCell("D4", "Miqdar", 2)}</row>`
+    ];
+    records.forEach((record, index) => {
+        const row = index + 5;
+        rows.push(`<row r="${row}" ht="24" customHeight="1">${numberExcelCell(`A${row}`, index + 1, 6)}${inlineExcelCell(`B${row}`, record.name, 4)}${inlineExcelCell(`C${row}`, record.location, 4)}${numberExcelCell(`D${row}`, record.quantity, 6)}</row>`);
+    });
+
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:D${lastRow}"/>` +
+        `<sheetViews><sheetView showGridLines="0" workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A5" sqref="A5"/></sheetView></sheetViews>` +
+        `<sheetFormatPr defaultRowHeight="21"/><cols><col min="1" max="1" width="8" customWidth="1"/><col min="2" max="2" width="36" customWidth="1"/><col min="3" max="3" width="30" customWidth="1"/><col min="4" max="4" width="14" customWidth="1"/></cols>` +
+        `<sheetData>${rows.join("")}</sheetData><autoFilter ref="A4:D${lastRow}"/><mergeCells count="2"><mergeCell ref="A1:D1"/><mergeCell ref="A3:D3"/></mergeCells>` +
+        `<pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+}
+
+async function downloadAreaCountWorkbook(records, date, note) {
+    if (typeof window.JSZip !== "function") throw new Error("Excel faylını yaratmaq üçün lazım olan hissə yüklənmədi.");
+    const zip = new window.JSZip();
+    zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`);
+    zip.folder("_rels").file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+    zip.folder("xl").file("workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Ərazi sayımı" sheetId="1" r:id="rId1"/></sheets></workbook>`);
+    zip.folder("xl").folder("_rels").file("workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+    zip.folder("xl").file("styles.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Aptos"/></font><font><b/><sz val="16"/><color rgb="FF24364A"/><name val="Aptos Display"/></font><font><b/><sz val="11"/><color rgb="FF24364A"/><name val="Aptos"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEAF0F5"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFD7E0E8"/></left><right style="thin"><color rgb="FFD7E0E8"/></right><top style="thin"><color rgb="FFD7E0E8"/></top><bottom style="thin"><color rgb="FFD7E0E8"/></bottom><diagonal/></border><border><left/><right/><top/><bottom style="medium"><color rgb="FFB9C7D4"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="7"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="2" applyFont="1" applyBorder="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+    zip.folder("xl").folder("worksheets").file("sheet1.xml", buildAreaCountWorksheet(records, date, note));
+    const blob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 },
+        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `erazi-sayimi-${date || localDateInputValue()}.xlsx`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function openAreaCountPage() {
+    scanHandled = false;
+    void stopScanner();
+    if (!areaCountDateInput.value) areaCountDateInput.value = localDateInputValue();
+    if (!areaCountRows.children.length) addAreaCountRow();
+    updateAreaCountRows();
+    showView("area-count");
+}
+
+areaCountRows.addEventListener("input", updateAreaCountRows);
+areaCountRows.addEventListener("click", event => {
+    const removeButton = event.target.closest("[data-remove-area-count-row]");
+    if (!removeButton) return;
+    const entry = removeButton.closest("[data-area-count-row]");
+    if (areaCountRows.children.length > 1) entry.remove();
+    else entry.querySelectorAll("input").forEach(input => { input.value = ""; });
+    updateAreaCountRows();
+});
+areaCountAddRowButton.addEventListener("click", () => {
+    if (areaCountRows.children.length >= 30) {
+        showActionToast("Bir hesabatda ən çox 30 qeyd əlavə etmək olar.");
+        return;
+    }
+    addAreaCountRow({}, true);
+});
+areaCountDateInput.value = localDateInputValue();
+addAreaCountRow();
+renderAreaCountReports();
+document.querySelectorAll(".area-count-open").forEach(button => button.addEventListener("click", openAreaCountPage));
+document.getElementById("area-count-home").addEventListener("click", () => showView("home"));
 
 document.getElementById("start-scan").addEventListener("click", startScan);
 function openPortMap() {

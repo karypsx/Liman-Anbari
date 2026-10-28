@@ -6,13 +6,14 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=148">
+    <link rel="stylesheet" href="style.css?v=151">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="vendor/jszip.min.js"></script>
 </head>
 <body>
     <div id="splash-screen" class="splash-screen boot-screen opening-screen" role="status" aria-label="Liman Anbarı işə düşür">
@@ -79,6 +80,10 @@
             <button id="maray-water-open-mobile" class="dashboard-map-button dashboard-map-button-mobile maray-water-open" type="button" aria-label="Məray Su qaimələrini aç">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.3 6 11a6 6 0 1 1-12 0c0-4.7 6-11 6-11Z"></path><path d="M9 15a3 3 0 0 0 3 3"></path></svg>
                 <span>Məray Su</span>
+            </button>
+            <button id="area-count-open-mobile" class="dashboard-map-button dashboard-map-button-mobile area-count-open" type="button" aria-label="Ərazi sayımını aç">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16H7z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+                <span>Sayım</span>
             </button>
             <nav id="app-menu" class="app-menu" aria-label="Əsas menyu" hidden>
                 <div class="app-menu-heading">
@@ -149,6 +154,10 @@
                             <button id="port-map-open" class="dashboard-map-button" type="button" aria-label="Liman xəritəsini aç" aria-haspopup="dialog" aria-controls="port-map-dialog">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
                                 <span>Xəritə</span>
+                            </button>
+                            <button id="area-count-open" class="dashboard-map-button area-count-open" type="button" aria-label="Ərazi sayımını aç">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16H7z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+                                <span>Ərazi sayımı</span>
                             </button>
                             <button id="maray-water-open" class="dashboard-map-button maray-water-open" type="button" aria-label="Məray Su qaimələrini aç">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.3 6 11a6 6 0 1 1-12 0c0-4.7 6-11 6-11Z"></path><path d="M9 15a3 3 0 0 0 3 3"></path></svg>
@@ -435,6 +444,46 @@
             <button id="maray-water-home" class="secondary-button maray-water-home" type="button"><span aria-hidden="true">⌂</span> Ana səhifəyə qayıt</button>
         </section>
 
+        <section id="area-count-view" class="view area-count-view" hidden>
+            <div class="area-page-heading">
+                <div class="area-page-kicker"><span class="dashboard-live-dot"></span> ƏRAZİ QEYDLƏRİ</div>
+                <h2>Ərazi sayımı</h2>
+                <p>Saydığınız əşyaları, yerləri və miqdarları yazın. Hazır hesabatı Excel faylı kimi endirin.</p>
+            </div>
+            <form id="area-count-form" class="area-form area-count-form">
+                <div class="area-form-grid">
+                    <label class="area-field area-field-full">
+                        <span>Sayım tarixi</span>
+                        <input id="area-count-date" type="date" required>
+                    </label>
+                    <div class="area-field area-field-full area-count-list-field">
+                        <span>Sayım qeydləri</span>
+                        <div class="area-count-row-head" aria-hidden="true"><span>Əşyanın adı</span><span>Yer / zona</span><span>Miqdar</span></div>
+                        <div id="area-count-rows" class="area-count-rows"></div>
+                        <button id="area-count-add-row" class="area-count-add-row" type="button"><span aria-hidden="true">＋</span> Başqa qeyd əlavə et</button>
+                    </div>
+                    <label class="area-field area-field-full">
+                        <span>Ümumi qeyd <small>istəyə bağlı</small></span>
+                        <textarea id="area-count-note" rows="2" maxlength="400" placeholder="Əlavə məlumat"></textarea>
+                    </label>
+                </div>
+                <div id="area-count-actions" class="area-count-actions" hidden>
+                    <button id="area-count-save" class="secondary-button area-count-save" type="button"><span aria-hidden="true">✓</span> Yadda saxla</button>
+                    <button id="area-count-export" class="primary-button area-count-export" type="button"><span aria-hidden="true">↓</span> Excel yüklə</button>
+                </div>
+                <p id="area-count-status" class="area-count-status" role="status" aria-live="polite">Sayım qeydləri bu cihazda saxlanır; istənilən vaxt Excel kimi endirə bilərsiniz.</p>
+            </form>
+            <section class="area-count-saved" aria-labelledby="area-count-saved-title">
+                <div class="area-count-saved-heading">
+                    <div><span class="area-count-saved-kicker">BU CİHAZDA</span><h3 id="area-count-saved-title">Yadda saxlanılan sayımlar</h3></div>
+                    <span id="area-count-saved-count" class="area-count-saved-count">0 qeyd</span>
+                </div>
+                <label class="area-field area-count-search-field"><span>Sayım axtar</span><input id="area-count-search" type="search" placeholder="Əşya, yer və ya tarix yazın" autocomplete="off"></label>
+                <div id="area-count-saved-list" class="area-count-saved-list" aria-live="polite"></div>
+            </section>
+            <button id="area-count-home" class="secondary-button area-count-home" type="button"><span aria-hidden="true">⌂</span> Ana səhifəyə qayıt</button>
+        </section>
+
         <section id="reminders-view" class="view reminders-view" hidden>
             <div class="reminder-page-heading">
                 <div class="reminder-page-kicker"><span class="dashboard-live-dot"></span> GÜNDƏLİK QEYDLƏR</div>
@@ -534,7 +583,7 @@
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
                     <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, su təhvil qeydləri, xatırlatma və paylama əməliyyatlarını bir yerdə idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.66.5</strong></span>
+                    <span class="about-version">Versiya <strong>1.68.0</strong></span>
                 </div>
                 <section class="about-feature-section" aria-labelledby="about-features-title">
                     <div class="about-section-heading">
@@ -635,7 +684,7 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.66.5</span>
+            <span class="footer-version">Versiya 1.68.0</span>
         </footer>
     </main>
     <dialog id="port-map-dialog" class="port-map-dialog" aria-label="Liman ərazisinin xəritəsi">
@@ -672,7 +721,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=76"></script>
+    <script src="script.js?v=78"></script>
     <script src="english-words.js?v=2"></script>
 </body>
 </html>
