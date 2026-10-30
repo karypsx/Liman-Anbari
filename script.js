@@ -65,6 +65,8 @@ const issueGoodsView = document.getElementById("issue-goods-view");
 const areaMeasurementView = document.getElementById("area-measurement-view");
 const marayWaterView = document.getElementById("maray-water-view");
 const areaCountView = document.getElementById("area-count-view");
+const monthlyReportView = document.getElementById("monthly-report-view");
+const distributionMonthlyReportView = document.getElementById("distribution-monthly-report-view");
 const aboutView = document.getElementById("about-view");
 const remindersView = document.getElementById("reminders-view");
 const approvalView = document.getElementById("approval-view");
@@ -161,6 +163,28 @@ const dashboardRecordCount = document.getElementById("dashboard-record-count");
 const dashboardQuantityTotal = document.getElementById("dashboard-quantity-total");
 const dashboardExpenseLabel = document.getElementById("dashboard-expense-label");
 const dashboardMonthlyExpense = document.getElementById("dashboard-monthly-expense");
+const monthlyReportOpenButton = document.getElementById("monthly-report-open");
+const monthlyReportMonthSelect = document.getElementById("monthly-report-month");
+const monthlyReportRefreshButton = document.getElementById("monthly-report-refresh");
+const monthlyReportDownloadButton = document.getElementById("monthly-report-download");
+const monthlyReportStatus = document.getElementById("monthly-report-status");
+const monthlyReportRecordCount = document.getElementById("monthly-report-record-count");
+const monthlyReportGoodsCount = document.getElementById("monthly-report-goods-count");
+const monthlyReportTotal = document.getElementById("monthly-report-total");
+const monthlyReportList = document.getElementById("monthly-report-list");
+let monthlyReportReturnView = "home";
+let monthlyPurchaseLoading = false;
+const distributionMonthlyReportOpenButton = document.getElementById("distribution-month-report-open");
+const issueGoodsMonthlyReportOpenButton = document.getElementById("issue-goods-month-report-open");
+const distributionMonthlyReportMonthSelect = document.getElementById("distribution-month-report-month");
+const distributionMonthlyReportRefreshButton = document.getElementById("distribution-month-report-refresh");
+const distributionMonthlyReportDownloadButton = document.getElementById("distribution-month-report-download");
+const distributionMonthlyReportStatus = document.getElementById("distribution-month-report-status");
+const distributionMonthlyReportRecordCount = document.getElementById("distribution-month-report-record-count");
+const distributionMonthlyReportGoodsCount = document.getElementById("distribution-month-report-goods-count");
+const distributionMonthlyReportDepartmentCount = document.getElementById("distribution-month-report-department-count");
+const distributionMonthlyReportList = document.getElementById("distribution-month-report-list");
+let distributionMonthlyReportLoading = false;
 const issueGoodsButton = document.getElementById("issue-goods");
 const issueGoodsBackButton = document.getElementById("issue-goods-back");
 const issueGoodsSearchInput = document.getElementById("issue-goods-search-input");
@@ -373,6 +397,7 @@ function showView(view) {
     }
     document.body.classList.toggle("maray-water-screen", view === "maray-water");
     document.body.classList.toggle("area-count-screen", view === "area-count");
+    document.body.classList.toggle("monthly-report-screen", view === "monthly-report" || view === "distribution-monthly-report");
     document.body.classList.toggle("reminders-screen", view === "reminders");
     document.body.classList.toggle("about-screen", view === "about");
     document.body.classList.toggle("approval-screen", view === "approvals");
@@ -386,6 +411,8 @@ function showView(view) {
     areaMeasurementView.hidden = view !== "area-measurement";
     marayWaterView.hidden = view !== "maray-water";
     areaCountView.hidden = view !== "area-count";
+    monthlyReportView.hidden = view !== "monthly-report";
+    distributionMonthlyReportView.hidden = view !== "distribution-monthly-report";
     remindersView.hidden = view !== "reminders";
     approvalView.hidden = view !== "approvals";
     accountView.hidden = view !== "account";
@@ -1994,7 +2021,12 @@ function renderIssueGoodsList() {
     const query = normalizeSearchText(issueGoodsSearchInput.value);
     const matches = issueStockRecords
         .map((item, index) => ({ item, index }))
-        .filter(({ item }) => !query || [item["Malın Adı"], item["Kod"], item["Rəf"]].some(value => normalizeSearchText(value).includes(query)));
+        .filter(({ item }) => !query || [item["Malın Adı"], item["Kod"], item["Rəf"]].some(value => normalizeSearchText(value).includes(query)))
+        .sort((a, b) => {
+            const aHasStock = parseIssueQuantity(a.item["Say"]) > 0;
+            const bHasStock = parseIssueQuantity(b.item["Say"]) > 0;
+            return Number(bHasStock) - Number(aHasStock) || a.index - b.index;
+        });
     issueGoodsList.replaceChildren();
     if (!matches.length) {
         const empty = document.createElement("li");
@@ -3508,12 +3540,14 @@ function renderDistributionRows(rows) {
         appendJournalMessage("Paylama jurnalında hələ qeyd yoxdur.");
         renderRecentMessage("Hələ paylama qeydi yoxdur.");
         renderDailySummary();
+        if (!distributionMonthlyReportView.hidden) renderDistributionMonthlyReport();
         return;
     }
 
     renderRecentDistribution();
     renderDailySummary();
     renderFilteredDistribution();
+    if (!distributionMonthlyReportView.hidden) renderDistributionMonthlyReport();
 }
 
 function parseJournalDate(value) {
@@ -3599,14 +3633,32 @@ function findPurchaseTable(rows) {
     const dateIndex = headers.findIndex(value => value.includes("tarix") || value === "date");
     let amountIndex = headers.findIndex(value => value.includes("toplam mebleg"));
     if (amountIndex < 0) amountIndex = headers.findIndex(value => value.includes("umumi mebleg") || value.includes("mebleg") || value.includes("amount") || value.includes("xerc"));
+    const nameIndex = headers.findIndex(value => value.includes("malin adi") || value.includes("mehsulun adi")
+        || value.includes("mehsul adi") || value === "mehsul" || value === "product" || value === "item");
+    const codeIndex = headers.findIndex(value => value.includes("malin kodu") || value.includes("mal kodu") || value === "kod" || value === "code");
+    const quantityIndex = headers.findIndex(value => value.includes("miqdar") || value === "say" || value.includes("quantity") || value === "qty");
+    const unitIndex = headers.findIndex(value => value.includes("olcu vahidi") || value === "vahid" || value === "unit");
+    const unitPriceIndex = headers.findIndex(value => (value.includes("vahid qiymet") || value.includes("alis qiymet") || value.includes("bir vahid qiymet"))
+        && !value.includes("toplam") && !value.includes("umumi"));
 
     const records = rows.slice(headerIndex + 1)
         .filter(Array.isArray)
-        .map(row => ({
-            date: parseJournalDate(row[dateIndex]),
-            amount: parseExpenseNumber(row[amountIndex])
-        }))
-        .filter(record => record.date && record.amount !== null);
+        .map(row => {
+            const name = nameIndex >= 0 ? String(row[nameIndex] ?? "").trim() : "";
+            const code = codeIndex >= 0 ? String(row[codeIndex] ?? "").trim() : "";
+            const amount = parseExpenseNumber(row[amountIndex]);
+            const quantity = quantityIndex >= 0 ? parseExpenseNumber(row[quantityIndex]) : null;
+            return {
+                date: parseJournalDate(row[dateIndex]),
+                amount: amount ?? 0,
+                name,
+                code,
+                quantity,
+                unit: unitIndex >= 0 ? String(row[unitIndex] ?? "").trim() : "",
+                unitPrice: unitPriceIndex >= 0 ? parseExpenseNumber(row[unitPriceIndex]) : null
+            };
+        })
+        .filter(record => record.date && (record.name || record.code || record.quantity !== null || record.amount !== 0));
 
     return { records, error: "" };
 }
@@ -3635,7 +3687,14 @@ function renderMonthlyExpense() {
 }
 
 async function loadMonthlyExpenses() {
-    if (!purchasePublicCsvUrl || !window.Papa) return;
+    if (monthlyPurchaseLoading) return;
+    if (!purchasePublicCsvUrl || !window.Papa) {
+        monthlyReportStatus.textContent = "Mal Girişi məlumatını yükləmək olmadı. İnterneti yoxlayıb Yenilə basın.";
+        return;
+    }
+    monthlyPurchaseLoading = true;
+    monthlyReportRefreshButton.disabled = true;
+    if (!monthlyPurchaseReady) monthlyReportStatus.textContent = "Mal Girişi məlumatı yüklənir…";
     try {
         const response = await fetch(purchasePublicCsvUrl, { cache: "no-store" });
         if (!response.ok) throw new Error("Mal Girişi cədvəlindən məlumat alınmadı.");
@@ -3647,12 +3706,412 @@ async function loadMonthlyExpenses() {
         monthlyPurchaseRecords = result.records;
         monthlyPurchaseReady = true;
         renderMonthlyExpense();
+        if (!monthlyReportView.hidden) renderMonthlyPurchaseReport();
     } catch (error) {
         monthlyPurchaseReady = false;
         renderMonthlyExpense();
+        monthlyReportStatus.textContent = "Mal Girişi məlumatını yükləmək olmadı. İnterneti yoxlayıb Yenilə basın.";
+        monthlyReportDownloadButton.disabled = true;
         console.error("Aylıq mal girişi məbləği yüklənmədi:", error);
+    } finally {
+        monthlyPurchaseLoading = false;
+        monthlyReportRefreshButton.disabled = false;
     }
 }
+
+const monthlyReportMonthNames = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avqust", "sentyabr", "oktyabr", "noyabr", "dekabr"];
+
+function monthlyReportKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthlyReportLabel(key) {
+    const [year, month] = key.split("-").map(Number);
+    const name = monthlyReportMonthNames[month - 1] || "";
+    return `${name.charAt(0).toLocaleUpperCase("az-AZ")}${name.slice(1)} ${year}`;
+}
+
+function getMonthlyReportPeriods() {
+    const dates = monthlyPurchaseRecords.map(record => record.date).filter(date => date instanceof Date && !Number.isNaN(date.getTime()));
+    if (!dates.length) return [];
+    const first = new Date(Math.min(...dates.map(date => new Date(date.getFullYear(), date.getMonth(), 1).getTime())));
+    const latestRecord = new Date(Math.max(...dates.map(date => new Date(date.getFullYear(), date.getMonth(), 1).getTime())));
+    const today = new Date();
+    // Keep the next year available so upcoming months (for example, Jan 2027)
+    // can be selected before any purchases have been recorded for them.
+    const nextYear = new Date(today.getFullYear(), today.getMonth() + 12, 1);
+    const last = new Date(Math.max(latestRecord.getTime(), nextYear.getTime()));
+    const periods = [];
+    const cursor = new Date(first.getFullYear(), first.getMonth(), 1);
+    let guard = 0;
+    while (cursor <= last && guard++ < 240) {
+        periods.push(monthlyReportKey(cursor));
+        cursor.setMonth(cursor.getMonth() + 1);
+    }
+    return periods;
+}
+
+function getSelectedMonthPurchases() {
+    const key = monthlyReportMonthSelect.value;
+    if (!/^\d{4}-\d{2}$/.test(key)) return [];
+    const [year, month] = key.split("-").map(Number);
+    return monthlyPurchaseRecords.filter(record => record.date
+        && record.date.getFullYear() === year && record.date.getMonth() === month - 1);
+}
+
+function formatMonthlyReportDate(date) {
+    return date ? `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}` : "—";
+}
+
+function formatMonthlyReportMoney(value) {
+    return `${new Intl.NumberFormat("en-US", { useGrouping: false, maximumFractionDigits: 3 }).format(Number(value) || 0)} ₼`;
+}
+
+function renderMonthlyPurchaseReport() {
+    const previousKey = monthlyReportMonthSelect.value;
+    const periods = monthlyPurchaseReady ? getMonthlyReportPeriods() : [];
+    monthlyReportMonthSelect.replaceChildren();
+
+    if (!monthlyPurchaseReady) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Məlumat gözlənilir";
+        monthlyReportMonthSelect.append(option);
+        monthlyReportRecordCount.textContent = "0";
+        monthlyReportGoodsCount.textContent = "0";
+        monthlyReportTotal.textContent = "0 ₼";
+        monthlyReportList.replaceChildren();
+        monthlyReportDownloadButton.disabled = true;
+        if (!monthlyPurchaseLoading) monthlyReportStatus.textContent = "Mal Girişi məlumatını yükləmək olmadı. İnterneti yoxlayıb Yenilə basın.";
+        return;
+    }
+
+    if (!periods.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Alış qeydi yoxdur";
+        monthlyReportMonthSelect.append(option);
+        monthlyReportRecordCount.textContent = "0";
+        monthlyReportGoodsCount.textContent = "0";
+        monthlyReportTotal.textContent = "0 ₼";
+        monthlyReportList.replaceChildren();
+        const empty = document.createElement("li");
+        empty.className = "monthly-report-empty";
+        empty.textContent = "Mal Girişi vərəqində tarixli alış qeydi yoxdur.";
+        monthlyReportList.append(empty);
+        monthlyReportDownloadButton.disabled = true;
+        monthlyReportStatus.textContent = "Mal Girişi yeniləndi.";
+        return;
+    }
+
+    periods.forEach(key => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = monthlyReportLabel(key);
+        monthlyReportMonthSelect.append(option);
+    });
+    const currentKey = monthlyReportKey(new Date());
+    monthlyReportMonthSelect.value = periods.includes(previousKey) ? previousKey
+        : periods.includes(currentKey) ? currentKey : periods[periods.length - 1];
+    monthlyReportDownloadButton.disabled = false;
+    monthlyReportStatus.textContent = "Hesabat Mal Girişi vərəqindəki tarixli qeydlərə əsaslanır.";
+    renderSelectedMonthlyPurchaseRows();
+}
+
+function renderSelectedMonthlyPurchaseRows() {
+    const records = getSelectedMonthPurchases();
+    const total = records.reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
+    const goods = new Set(records.map(record => record.code || record.name).filter(Boolean));
+    monthlyReportRecordCount.textContent = String(records.length);
+    monthlyReportGoodsCount.textContent = String(goods.size);
+    monthlyReportTotal.textContent = formatMonthlyReportMoney(total);
+    monthlyReportList.replaceChildren();
+
+    if (!records.length) {
+        const empty = document.createElement("li");
+        empty.className = "monthly-report-empty";
+        empty.textContent = `${monthlyReportLabel(monthlyReportMonthSelect.value)} ayında alış qeydi yoxdur.`;
+        monthlyReportList.append(empty);
+        return;
+    }
+
+    records.slice().sort((a, b) => a.date - b.date).forEach(record => {
+        const item = document.createElement("li");
+        item.className = "monthly-report-item";
+        const copy = document.createElement("div");
+        copy.className = "monthly-report-item-copy";
+        const name = document.createElement("strong");
+        name.textContent = record.name || "Mal adı göstərilməyib";
+        const details = document.createElement("span");
+        const quantity = record.quantity === null ? "Miqdar göstərilməyib" : `${formatIssueQuantity(record.quantity)}${record.unit ? ` ${record.unit}` : ""}`;
+        details.textContent = [record.code ? `Kod: ${record.code}` : "", quantity, formatMonthlyReportDate(record.date)].filter(Boolean).join(" · ");
+        copy.append(name, details);
+        const amount = document.createElement("strong");
+        amount.className = "monthly-report-item-amount";
+        amount.textContent = formatMonthlyReportMoney(record.amount);
+        item.append(copy, amount);
+        monthlyReportList.append(item);
+    });
+}
+
+function buildMonthlyPurchaseWorksheet(records, monthKey) {
+    const monthLabel = monthlyReportLabel(monthKey);
+    const total = records.reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
+    const lastRow = Math.max(4, records.length + 4);
+    const rows = [
+        `<row r="1" ht="32" customHeight="1">${inlineExcelCell("A1", `AYLIQ MAL GİRİŞİ HESABATI · ${monthLabel.toLocaleUpperCase("az-AZ")}`, 1)}</row>`,
+        `<row r="2" ht="25" customHeight="1">${inlineExcelCell("A2", "Hesabat ayı", 2)}${inlineExcelCell("B2", monthLabel, 3)}${inlineExcelCell("C2", "Alış qeydləri", 2)}${numberExcelCell("D2", records.length, 3)}${inlineExcelCell("E2", "Ümumi xərc", 2)}${numberExcelCell("F2", total, 7)}${inlineExcelCell("G2", "AZN", 3)}</row>`,
+        `<row r="3" ht="8" customHeight="1"></row>`,
+        `<row r="4" ht="30" customHeight="1">${inlineExcelCell("A4", "№", 4)}${inlineExcelCell("B4", "Tarix", 4)}${inlineExcelCell("C4", "Malın kodu", 4)}${inlineExcelCell("D4", "Malın adı", 4)}${inlineExcelCell("E4", "Miqdar", 4)}${inlineExcelCell("F4", "Ölçü vahidi", 4)}${inlineExcelCell("G4", "Məbləğ (₼)", 4)}</row>`
+    ];
+    records.forEach((record, index) => {
+        const row = index + 5;
+        rows.push(`<row r="${row}" ht="25" customHeight="1">${numberExcelCell(`A${row}`, index + 1, 5)}${inlineExcelCell(`B${row}`, formatMonthlyReportDate(record.date), 5)}${inlineExcelCell(`C${row}`, record.code || "—", 5)}${inlineExcelCell(`D${row}`, record.name || "Mal adı göstərilməyib", 5)}${record.quantity === null ? inlineExcelCell(`E${row}`, "—", 5) : numberExcelCell(`E${row}`, record.quantity, 6)}${inlineExcelCell(`F${row}`, record.unit || "—", 5)}${numberExcelCell(`G${row}`, record.amount, 7)}</row>`);
+    });
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:G${lastRow}"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A5" sqref="A5"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="22"/><cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="2" width="15" customWidth="1"/><col min="3" max="3" width="17" customWidth="1"/><col min="4" max="4" width="42" customWidth="1"/><col min="5" max="5" width="13" customWidth="1"/><col min="6" max="6" width="16" customWidth="1"/><col min="7" max="7" width="18" customWidth="1"/></cols><sheetData>${rows.join("")}</sheetData><autoFilter ref="A4:G${lastRow}"/><mergeCells count="1"><mergeCell ref="A1:G1"/></mergeCells><pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+}
+
+async function downloadMonthlyPurchaseWorkbook(records, monthKey) {
+    if (typeof window.JSZip !== "function") throw new Error("Excel faylını yaratmaq üçün lazım olan hissə yüklənmədi.");
+    const zip = new window.JSZip();
+    zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`);
+    zip.folder("_rels").file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+    zip.folder("xl").file("workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Aylıq hesabat" sheetId="1" r:id="rId1"/></sheets></workbook>`);
+    zip.folder("xl").folder("_rels").file("workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+    zip.folder("xl").file("styles.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.000"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Aptos"/></font><font><b/><sz val="16"/><color rgb="FF263B52"/><name val="Aptos Display"/></font><font><b/><sz val="10"/><color rgb="FF40566E"/><name val="Aptos"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF496986"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF0F4F8"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFDCE4EB"/></left><right style="thin"><color rgb="FFDCE4EB"/></right><top style="thin"><color rgb="FFDCE4EB"/></top><bottom style="thin"><color rgb="FFDCE4EB"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="8"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" applyFont="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="3" borderId="1" applyFill="1" applyBorder="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" applyNumberFormat="1" applyBorder="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+    zip.folder("xl").folder("worksheets").file("sheet1.xml", buildMonthlyPurchaseWorksheet(records, monthKey));
+    const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 }, mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ayliq-hesabat-${monthKey}.xlsx`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function openMonthlyReportPage(returnView = "home") {
+    monthlyReportReturnView = returnView;
+    closeMenu();
+    showView("monthly-report");
+    if (monthlyPurchaseReady) renderMonthlyPurchaseReport();
+    else {
+        monthlyReportStatus.textContent = monthlyPurchaseLoading ? "Mal Girişi məlumatı yüklənir…" : "Mal Girişi məlumatı yüklənir…";
+        void loadMonthlyExpenses();
+    }
+}
+
+monthlyReportOpenButton.addEventListener("click", () => openMonthlyReportPage("home"));
+issueGoodsMonthlyReportOpenButton.addEventListener("click", () => openMonthlyReportPage("issue-goods"));
+monthlyReportMonthSelect.addEventListener("change", renderSelectedMonthlyPurchaseRows);
+monthlyReportRefreshButton.addEventListener("click", () => { void loadMonthlyExpenses(); });
+document.getElementById("monthly-report-home").addEventListener("click", () => showView(monthlyReportReturnView));
+monthlyReportDownloadButton.addEventListener("click", async () => {
+    const monthKey = monthlyReportMonthSelect.value;
+    if (!monthKey) return;
+    monthlyReportDownloadButton.disabled = true;
+    monthlyReportStatus.textContent = `${monthlyReportLabel(monthKey)} hesabatı hazırlanır…`;
+    try {
+        await downloadMonthlyPurchaseWorkbook(getSelectedMonthPurchases(), monthKey);
+        monthlyReportStatus.textContent = `${monthlyReportLabel(monthKey)} hesabatı Excel kimi endirildi.`;
+        showActionToast("Aylıq hesabat Excel kimi endirildi.");
+    } catch (error) {
+        monthlyReportStatus.textContent = error.message || "Excel hesabatını yaratmaq olmadı.";
+        showActionToast(error.message || "Excel hesabatını yaratmaq olmadı.");
+    } finally {
+        monthlyReportDownloadButton.disabled = !monthlyPurchaseReady;
+    }
+});
+
+function getMonthlyDistributionPeriods() {
+    const dateIndex = distributionColumnIndexes.date;
+    const dates = distributionRecords
+        .map(row => parseJournalDate(row[dateIndex]))
+        .filter(date => date instanceof Date && !Number.isNaN(date.getTime()));
+    const today = new Date();
+    const first = dates.length
+        ? new Date(Math.min(...dates.map(date => new Date(date.getFullYear(), date.getMonth(), 1).getTime())))
+        : new Date(today.getFullYear(), 0, 1);
+    const latest = dates.length
+        ? new Date(Math.max(...dates.map(date => new Date(date.getFullYear(), date.getMonth(), 1).getTime())))
+        : new Date(today.getFullYear(), today.getMonth(), 1);
+    const future = new Date(today.getFullYear(), today.getMonth() + 12, 1);
+    const last = new Date(Math.max(latest.getTime(), future.getTime()));
+    const periods = [];
+    const cursor = new Date(first.getFullYear(), first.getMonth(), 1);
+    let guard = 0;
+    while (cursor <= last && guard++ < 240) {
+        periods.push(monthlyReportKey(cursor));
+        cursor.setMonth(cursor.getMonth() + 1);
+    }
+    return periods;
+}
+
+function getSelectedMonthDistributionRecords() {
+    const key = distributionMonthlyReportMonthSelect.value;
+    if (!/^\d{4}-\d{2}$/.test(key)) return [];
+    const [year, month] = key.split("-").map(Number);
+    const dateIndex = distributionColumnIndexes.date;
+    return distributionRecords.map(row => ({
+        row,
+        date: parseJournalDate(row[dateIndex])
+    })).filter(record => record.date
+        && record.date.getFullYear() === year && record.date.getMonth() === month - 1);
+}
+
+function renderDistributionMonthlyReport() {
+    const previousKey = distributionMonthlyReportMonthSelect.value;
+    const periods = getMonthlyDistributionPeriods();
+    distributionMonthlyReportMonthSelect.replaceChildren();
+    periods.forEach(key => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = monthlyReportLabel(key);
+        distributionMonthlyReportMonthSelect.append(option);
+    });
+    const currentKey = monthlyReportKey(new Date());
+    distributionMonthlyReportMonthSelect.value = periods.includes(previousKey) ? previousKey
+        : periods.includes(currentKey) ? currentKey : periods[periods.length - 1] || "";
+    distributionMonthlyReportDownloadButton.disabled = !periods.length;
+    distributionMonthlyReportStatus.textContent = distributionRecords.length
+        ? "Hesabat Paylama Jurnalındakı tarixli qeydlərə əsaslanır."
+        : "Paylama jurnalında hələ qeyd yoxdur.";
+    renderSelectedDistributionMonthlyRows();
+}
+
+function renderSelectedDistributionMonthlyRows() {
+    const records = getSelectedMonthDistributionRecords();
+    const goods = new Set(records.map(({ row }) => normalizeSearchText(
+        row[distributionColumnIndexes.code] || row[distributionColumnIndexes.name]
+    )).filter(Boolean));
+    const departments = new Set(records.map(({ row }) => normalizeSearchText(row[distributionColumnIndexes.department])).filter(Boolean));
+    distributionMonthlyReportRecordCount.textContent = String(records.length);
+    distributionMonthlyReportGoodsCount.textContent = String(goods.size);
+    distributionMonthlyReportDepartmentCount.textContent = String(departments.size);
+    distributionMonthlyReportList.replaceChildren();
+
+    if (!records.length) {
+        const empty = document.createElement("li");
+        empty.className = "monthly-report-empty";
+        empty.textContent = distributionMonthlyReportMonthSelect.value
+            ? `${monthlyReportLabel(distributionMonthlyReportMonthSelect.value)} ayında paylama qeydi yoxdur.`
+            : "Paylama jurnalı qeydləri yüklənir…";
+        distributionMonthlyReportList.append(empty);
+        return;
+    }
+
+    records.sort((a, b) => a.date - b.date).forEach(({ row, date }) => {
+        const item = document.createElement("li");
+        item.className = "monthly-report-item";
+        const copy = document.createElement("div");
+        copy.className = "monthly-report-item-copy";
+        const name = document.createElement("strong");
+        name.textContent = row[distributionColumnIndexes.name] || "Adsız mal";
+        const details = document.createElement("span");
+        details.textContent = [
+            row[distributionColumnIndexes.code] ? `Kod: ${row[distributionColumnIndexes.code]}` : "",
+            row[distributionColumnIndexes.department] ? `Şöbə: ${row[distributionColumnIndexes.department]}` : "",
+            row[distributionColumnIndexes.recipient] ? `Götürən: ${row[distributionColumnIndexes.recipient]}` : "",
+            formatMonthlyReportDate(date)
+        ].filter(Boolean).join(" · ");
+        copy.append(name, details);
+        const quantity = document.createElement("strong");
+        quantity.className = "monthly-report-item-amount";
+        quantity.textContent = `${row[distributionColumnIndexes.quantity] || "0"}${row[distributionColumnIndexes.unit] ? ` ${row[distributionColumnIndexes.unit]}` : ""}`;
+        item.append(copy, quantity);
+        distributionMonthlyReportList.append(item);
+    });
+}
+
+function buildMonthlyDistributionWorksheet(records, monthKey) {
+    const monthLabel = monthlyReportLabel(monthKey);
+    const departments = new Set(records.map(({ row }) => normalizeSearchText(row[distributionColumnIndexes.department])).filter(Boolean));
+    const lastRow = Math.max(4, records.length + 4);
+    const rows = [
+        `<row r="1" ht="34" customHeight="1">${inlineExcelCell("A1", `AYLIQ PAYLAMA HESABATI · ${monthLabel.toLocaleUpperCase("az-AZ")}`, 1)}</row>`,
+        `<row r="2" ht="27" customHeight="1">${inlineExcelCell("A2", "Hesabat ayı", 2)}${inlineExcelCell("B2", monthLabel, 3)}${inlineExcelCell("D2", "Paylama qeydləri", 2)}${numberExcelCell("E2", records.length, 6)}${inlineExcelCell("G2", "Şöbələr", 2)}${numberExcelCell("H2", departments.size, 6)}</row>`,
+        `<row r="3" ht="8" customHeight="1"></row>`,
+        `<row r="4" ht="32" customHeight="1">${inlineExcelCell("A4", "№", 4)}${inlineExcelCell("B4", "Tarix", 4)}${inlineExcelCell("C4", "Malın kodu", 4)}${inlineExcelCell("D4", "Malın adı", 4)}${inlineExcelCell("E4", "Verilən miqdar", 4)}${inlineExcelCell("F4", "Ölçü vahidi", 4)}${inlineExcelCell("G4", "Hansı şöbəyə verildi", 4)}${inlineExcelCell("H4", "Malı götürən işçi", 4)}</row>`
+    ];
+    records.forEach(({ row: values, date }, index) => {
+        const rowNumber = index + 5;
+        const rawQuantity = values[distributionColumnIndexes.quantity];
+        const quantity = String(rawQuantity ?? "").trim()
+            ? numberExcelCell(`E${rowNumber}`, parseIssueQuantity(rawQuantity), 6)
+            : inlineExcelCell(`E${rowNumber}`, "—", 5);
+        rows.push(`<row r="${rowNumber}" ht="26" customHeight="1">${numberExcelCell(`A${rowNumber}`, index + 1, 6)}${inlineExcelCell(`B${rowNumber}`, formatMonthlyReportDate(date), 5)}${inlineExcelCell(`C${rowNumber}`, values[distributionColumnIndexes.code] || "—", 5)}${inlineExcelCell(`D${rowNumber}`, values[distributionColumnIndexes.name] || "Adsız mal", 5)}${quantity}${inlineExcelCell(`F${rowNumber}`, values[distributionColumnIndexes.unit] || "—", 5)}${inlineExcelCell(`G${rowNumber}`, values[distributionColumnIndexes.department] || "—", 5)}${inlineExcelCell(`H${rowNumber}`, values[distributionColumnIndexes.recipient] || "—", 5)}</row>`);
+    });
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:H${lastRow}"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A5" sqref="A5"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="22"/><cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="2" width="15" customWidth="1"/><col min="3" max="3" width="17" customWidth="1"/><col min="4" max="4" width="40" customWidth="1"/><col min="5" max="5" width="16" customWidth="1"/><col min="6" max="6" width="16" customWidth="1"/><col min="7" max="7" width="30" customWidth="1"/><col min="8" max="8" width="30" customWidth="1"/></cols><sheetData>${rows.join("")}</sheetData><autoFilter ref="A4:H${lastRow}"/><mergeCells count="1"><mergeCell ref="A1:H1"/></mergeCells><pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+}
+
+async function downloadMonthlyDistributionWorkbook(records, monthKey) {
+    if (typeof window.JSZip !== "function") throw new Error("Excel faylını yaratmaq üçün lazım olan hissə yüklənmədi.");
+    const zip = new window.JSZip();
+    zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`);
+    zip.folder("_rels").file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+    zip.folder("xl").file("workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Paylama hesabatı" sheetId="1" r:id="rId1"/></sheets></workbook>`);
+    zip.folder("xl").folder("_rels").file("workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+    zip.folder("xl").file("styles.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Aptos"/></font><font><b/><sz val="16"/><color rgb="FF263B52"/><name val="Aptos Display"/></font><font><b/><sz val="10"/><color rgb="FF40566E"/><name val="Aptos"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF496986"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF0F4F8"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFDCE4EB"/></left><right style="thin"><color rgb="FFDCE4EB"/></right><top style="thin"><color rgb="FFDCE4EB"/></top><bottom style="thin"><color rgb="FFDCE4EB"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="7"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" applyFont="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="3" borderId="1" applyFill="1" applyBorder="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+    zip.folder("xl").folder("worksheets").file("sheet1.xml", buildMonthlyDistributionWorksheet(records, monthKey));
+    const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 }, mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `paylama-hesabati-${monthKey}.xlsx`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function refreshDistributionMonthlyReport() {
+    if (distributionMonthlyReportLoading) return;
+    distributionMonthlyReportLoading = true;
+    distributionMonthlyReportRefreshButton.disabled = true;
+    distributionMonthlyReportStatus.textContent = "Paylama jurnalı yenilənir…";
+    try {
+        await loadDistributionJournal();
+        renderDistributionMonthlyReport();
+        if (distributionStatus.classList.contains("journal-status-error")) {
+            distributionMonthlyReportStatus.textContent = "Jurnalı yeniləmək olmadı. İnterneti yoxlayıb yenidən cəhd edin.";
+        } else {
+            distributionMonthlyReportStatus.textContent = "Paylama jurnalı yeniləndi.";
+        }
+    } finally {
+        distributionMonthlyReportLoading = false;
+        distributionMonthlyReportRefreshButton.disabled = false;
+    }
+}
+
+function openDistributionMonthlyReport() {
+    closeMenu();
+    showView("distribution-monthly-report");
+    distributionMonthlyReportStatus.textContent = "Paylama jurnalı yüklənir…";
+    void refreshDistributionMonthlyReport();
+}
+
+distributionMonthlyReportOpenButton.addEventListener("click", openDistributionMonthlyReport);
+distributionMonthlyReportMonthSelect.addEventListener("change", renderSelectedDistributionMonthlyRows);
+distributionMonthlyReportRefreshButton.addEventListener("click", () => { void refreshDistributionMonthlyReport(); });
+document.getElementById("distribution-month-report-journal").addEventListener("click", () => showView("distribution"));
+distributionMonthlyReportDownloadButton.addEventListener("click", async () => {
+    const monthKey = distributionMonthlyReportMonthSelect.value;
+    if (!monthKey) return;
+    distributionMonthlyReportDownloadButton.disabled = true;
+    distributionMonthlyReportStatus.textContent = `${monthlyReportLabel(monthKey)} hesabatı hazırlanır…`;
+    try {
+        const records = getSelectedMonthDistributionRecords().sort((a, b) => a.date - b.date);
+        await downloadMonthlyDistributionWorkbook(records, monthKey);
+        distributionMonthlyReportStatus.textContent = `${monthlyReportLabel(monthKey)} paylama hesabatı Excel kimi endirildi.`;
+        showActionToast("Aylıq paylama hesabatı Excel kimi endirildi.");
+    } catch (error) {
+        distributionMonthlyReportStatus.textContent = error.message || "Excel hesabatını yaratmaq olmadı.";
+        showActionToast(error.message || "Excel hesabatını yaratmaq olmadı.");
+    } finally {
+        distributionMonthlyReportDownloadButton.disabled = !distributionMonthlyReportMonthSelect.value;
+    }
+});
 
 function renderLongestStoredAreas() {
     if (!dashboardOldestList) return;

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=151">
+    <link rel="stylesheet" href="style.css?v=153">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -179,6 +179,7 @@
                                 <span id="dashboard-expense-label">Bu ay xərclənən vəsait</span>
                                 <strong id="dashboard-monthly-expense">—</strong>
                             </div>
+                            <button id="monthly-report-open" class="dashboard-monthly-report-button" type="button"><span>Aylıq hesabat</span><span aria-hidden="true">↗</span></button>
                         </div>
                     </section>
                 </div>
@@ -326,6 +327,7 @@
                 <div class="journal-actions">
                     <button id="refresh-distribution" class="primary-button" type="button"><span aria-hidden="true">↻</span> Yenilə</button>
                     <button id="issue-goods" class="secondary-button issue-goods-button" type="button"><span aria-hidden="true">＋</span> Mal ver</button>
+                    <button id="distribution-month-report-open" class="secondary-button distribution-month-report-open" type="button"><span aria-hidden="true">▤</span> Aylıq hesabat</button>
                 </div>
             </div>
             <form id="distribution-search-form" class="distribution-search" role="search">
@@ -353,6 +355,7 @@
                 <label class="issue-goods-search" for="issue-goods-search-input"><span aria-hidden="true">⌕</span><input id="issue-goods-search-input" type="search" placeholder="Malın adı, kodu və ya rəfi ilə axtar…" autocomplete="off"></label>
                 <button id="issue-goods-refresh" class="secondary-button" type="button" aria-label="Anbar siyahısını yenilə">↻ Yenilə</button>
             </div>
+            <div class="issue-goods-report-actions"><button id="issue-goods-month-report-open" class="secondary-button" type="button"><span aria-hidden="true">▤</span> Mal Girişi · Aylıq hesabat <span aria-hidden="true">↗</span></button></div>
             <p id="issue-goods-status" class="issue-goods-status" role="status" aria-live="polite">Anbar siyahısı yüklənir…</p>
             <ul id="issue-goods-list" class="issue-goods-list" aria-label="Anbardakı mallar"></ul>
         </section>
@@ -583,7 +586,7 @@
                     <p class="about-kicker">TƏTBİQ HAQQINDA</p>
                     <h2>Liman Anbarı</h2>
                     <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, su təhvil qeydləri, xatırlatma və paylama əməliyyatlarını bir yerdə idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.68.0</strong></span>
+                    <span class="about-version">Versiya <strong>1.71.0</strong></span>
                 </div>
                 <section class="about-feature-section" aria-labelledby="about-features-title">
                     <div class="about-section-heading">
@@ -639,6 +642,50 @@
             <button id="about-home" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
         </section>
 
+        <section id="monthly-report-view" class="view monthly-report-view" hidden>
+            <div class="monthly-report-heading">
+                <div class="monthly-report-kicker"><span class="dashboard-live-dot"></span> MAL GİRİŞİ</div>
+                <h2>Aylıq hesabat</h2>
+                <p>Seçilmiş ayda alınan malları və xərclənən vəsaiti nəzərdən keçirin.</p>
+            </div>
+            <div class="monthly-report-toolbar">
+                <label class="area-field monthly-report-month-field" for="monthly-report-month"><span>Hesabat ayı</span><select id="monthly-report-month"></select></label>
+                <button id="monthly-report-refresh" class="secondary-button monthly-report-refresh" type="button"><span aria-hidden="true">↻</span> Yenilə</button>
+                <button id="monthly-report-download" class="primary-button monthly-report-download" type="button" disabled><span aria-hidden="true">↓</span> Excel yüklə</button>
+            </div>
+            <p id="monthly-report-status" class="monthly-report-status" role="status" aria-live="polite">Mal Girişi məlumatı yüklənir…</p>
+            <div class="monthly-report-summary">
+                <div><span>ALINMA QEYDLƏRİ</span><strong id="monthly-report-record-count">0</strong></div>
+                <div><span>ALINAN MALLAR</span><strong id="monthly-report-goods-count">0</strong></div>
+                <div><span>ÜMUMİ XƏRC</span><strong id="monthly-report-total">0 ₼</strong></div>
+            </div>
+            <div class="monthly-report-list-heading"><span>SEÇİLMİŞ AYIN ALIŞLARI</span></div>
+            <ul id="monthly-report-list" class="monthly-report-list" aria-live="polite"></ul>
+            <button id="monthly-report-home" class="secondary-button monthly-report-home" type="button"><span aria-hidden="true">←</span> Əvvəlki səhifəyə qayıt</button>
+        </section>
+
+        <section id="distribution-monthly-report-view" class="view monthly-report-view" hidden>
+            <div class="monthly-report-heading">
+                <div class="monthly-report-kicker"><span class="dashboard-live-dot"></span> PAYLAMA JURNALI</div>
+                <h2>Aylıq paylama hesabatı</h2>
+                <p>Seçilmiş ayda verilən malları, şöbələri və alan işçiləri nəzərdən keçirin.</p>
+            </div>
+            <div class="monthly-report-toolbar">
+                <label class="area-field monthly-report-month-field" for="distribution-month-report-month"><span>Hesabat ayı</span><select id="distribution-month-report-month"></select></label>
+                <button id="distribution-month-report-refresh" class="secondary-button monthly-report-refresh" type="button"><span aria-hidden="true">↻</span> Yenilə</button>
+                <button id="distribution-month-report-download" class="primary-button monthly-report-download" type="button" disabled><span aria-hidden="true">↓</span> Excel yüklə</button>
+            </div>
+            <p id="distribution-month-report-status" class="monthly-report-status" role="status" aria-live="polite">Paylama jurnalı yüklənir…</p>
+            <div class="monthly-report-summary">
+                <div><span>PAYLAMA QEYDLƏRİ</span><strong id="distribution-month-report-record-count">0</strong></div>
+                <div><span>FƏRQLİ MALLAR</span><strong id="distribution-month-report-goods-count">0</strong></div>
+                <div><span>ŞÖBƏLƏR</span><strong id="distribution-month-report-department-count">0</strong></div>
+            </div>
+            <div class="monthly-report-list-heading"><span>SEÇİLMİŞ AYIN VERİLİŞLƏRİ</span></div>
+            <ul id="distribution-month-report-list" class="monthly-report-list" aria-live="polite"></ul>
+            <button id="distribution-month-report-journal" class="secondary-button monthly-report-home" type="button"><span aria-hidden="true">←</span> Paylama jurnalına qayıt</button>
+        </section>
+
         <section id="scan-view" class="view scan-view" hidden>
             <div class="scan-page-heading">
                 <div class="scan-page-kicker"><span class="dashboard-live-dot"></span> QR İLƏ AXTARIŞ</div>
@@ -684,7 +731,7 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.68.0</span>
+            <span class="footer-version">Versiya 1.71.0</span>
         </footer>
     </main>
     <dialog id="port-map-dialog" class="port-map-dialog" aria-label="Liman ərazisinin xəritəsi">
@@ -721,7 +768,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=78"></script>
+    <script src="script.js?v=81"></script>
     <script src="english-words.js?v=2"></script>
 </body>
 </html>
