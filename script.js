@@ -65,6 +65,7 @@ const issueGoodsView = document.getElementById("issue-goods-view");
 const areaMeasurementView = document.getElementById("area-measurement-view");
 const marayWaterView = document.getElementById("maray-water-view");
 const areaCountView = document.getElementById("area-count-view");
+const warehousePlanView = document.getElementById("warehouse-plan-view");
 const monthlyReportView = document.getElementById("monthly-report-view");
 const distributionMonthlyReportView = document.getElementById("distribution-monthly-report-view");
 const aboutView = document.getElementById("about-view");
@@ -72,6 +73,892 @@ const remindersView = document.getElementById("reminders-view");
 const approvalView = document.getElementById("approval-view");
 const accountView = document.getElementById("account-view");
 const englishPracticeView = document.getElementById("english-practice-view");
+const warehousePlanTitle = document.getElementById("warehouse-plan-title");
+const warehousePlanDimensions = document.getElementById("warehouse-plan-dimensions");
+const warehousePlanPickerToggle = document.getElementById("warehouse-plan-picker-toggle");
+const warehousePlanPickerLabel = document.getElementById("warehouse-plan-picker-label");
+const warehousePlanPickerOptions = document.getElementById("warehouse-plan-picker-options");
+const warehousePlanStage = document.getElementById("warehouse-plan-stage");
+const warehousePlanPalletsElement = document.getElementById("warehouse-plan-pallets");
+const warehousePlanStatus = document.getElementById("warehouse-plan-status");
+const warehousePlanAddButton = document.getElementById("warehouse-plan-add");
+const warehousePlanDeleteModeButton = document.getElementById("warehouse-plan-delete-mode");
+const warehousePlanInfoButton = document.getElementById("warehouse-plan-info-button");
+const warehousePlanColorOptions = document.getElementById("warehouse-plan-color-options");
+const warehousePlanPlacementHint = document.getElementById("warehouse-plan-placement-hint");
+const warehousePlanHomeButton = document.getElementById("warehouse-plan-home");
+const warehousePlanStructure = document.getElementById("warehouse-plan-structure");
+const warehousePlanInfoDialog = document.getElementById("warehouse-plan-info-dialog");
+const warehousePlanInfoTitle = document.getElementById("warehouse-plan-info-title");
+const warehousePlanInfoClose = document.getElementById("warehouse-plan-info-close");
+const warehousePlanInfoCancel = document.getElementById("warehouse-plan-info-cancel");
+const warehousePlanInfoSave = document.getElementById("warehouse-plan-info-save");
+const warehousePlanInfoSummary = document.getElementById("warehouse-plan-info-summary");
+const warehousePlanInfoEditor = document.getElementById("warehouse-plan-info-editor");
+const warehousePlanCompanyEditor = document.getElementById("warehouse-plan-company-editor");
+const warehousePlanCompanyAdd = document.getElementById("warehouse-plan-company-add");
+const warehousePlanInfoEditorStatus = document.getElementById("warehouse-plan-info-editor-status");
+const warehousePlanTotalArea = document.getElementById("warehouse-plan-total-area");
+const warehousePlanUsedArea = document.getElementById("warehouse-plan-used-area");
+const warehousePlanFreeArea = document.getElementById("warehouse-plan-free-area");
+const warehousePlanInfoPalletCount = document.getElementById("warehouse-plan-info-pallet-count");
+const warehouseDefinitions = [
+    { number: 1, width: 42, height: 30 }, { number: 2, width: 42, height: 30 },
+    { number: 3, width: 42, height: 30 }, { number: 4, width: 42, height: 30 },
+    { number: 5, width: 42, height: 30 }, { number: 6, width: 42, height: 30 },
+    { number: 7, width: 42, height: 30 }, { number: 8, width: 42, height: 30 },
+    { number: 9, width: 36, height: 30 }, { number: 10, width: 42, height: 30 },
+    { number: 11, width: 12, height: 24 }, { number: 12, width: 36, height: 24 },
+    { number: 13, width: 42, height: 30 }
+];
+const warehousePlanPalette = [
+    { id: "sky", label: "Açıq göy", color: "#72c9e8" },
+    { id: "navy", label: "Tünd göy", color: "#315f9d" },
+    { id: "yellow", label: "Sarı", color: "#edc94f" },
+    { id: "orange", label: "Narıncı", color: "#bb8a4f" },
+    { id: "black", label: "Qara", color: "#34383f" },
+    { id: "mint", label: "Nanə yaşılı", color: "#60b984" }
+];
+let selectedWarehouseNumber = 1;
+let warehousePlanPallets = [];
+let warehousePlanSelectedId = "";
+let warehousePlanAdding = false;
+let warehousePlanDeleting = false;
+let warehousePlanCurrentColor = "";
+let warehousePlanSuppressClick = false;
+let warehousePlanInfoEditing = false;
+let warehousePlanInfo = { companies: [] };
+let warehousePlanInfoDraft = null;
+let warehousePlanSubscription = null;
+let warehousePlanLoadVersion = 0;
+let warehousePlanDrag = null;
+const warehousePlanClamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+function warehouseDefinition(number = selectedWarehouseNumber) {
+    return warehouseDefinitions.find(item => item.number === number) || warehouseDefinitions[0];
+}
+
+function warehousePlanDocumentRef(number = selectedWarehouseNumber) {
+    return firebaseDb.collection("warehousePlans").doc(String(number).padStart(2, "0"));
+}
+
+function warehousePlanColor(colorId) {
+    return warehousePlanPalette.find(color => color.id === colorId) || warehousePlanPalette[3];
+}
+
+function normalizeWarehousePallets(value, number = selectedWarehouseNumber) {
+    if (!Array.isArray(value)) return null;
+    const warehouse = warehouseDefinition(number);
+    const maxX = 100 - (1 / warehouse.width) * 100;
+    const maxY = 100 - (1 / warehouse.height) * 100;
+    return value.filter(item => item && typeof item.id === "string").map(item => ({
+        id: item.id.slice(0, 80),
+        color: warehousePlanColor(item.color).id,
+        x: warehousePlanClamp(Number(item.x) || 0, 0, maxX),
+        y: warehousePlanClamp(Number(item.y) || 0, 0, maxY)
+    }));
+}
+
+function newWarehousePlanRecordId(prefix = "record") {
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeWarehousePlanInfo(data = {}, legacyPallets = []) {
+    const normalizeCompany = (company, index) => ({
+        id: String(company?.id || `company-${index + 1}`).slice(0, 100),
+        name: String(company?.name || "").trim().slice(0, 100),
+        stackingDate: /^\d{4}-\d{2}-\d{2}$/.test(String(company?.stackingDate || company?.leaseStart || "")) ? String(company.stackingDate || company.leaseStart) : "",
+        leaseEnd: /^\d{4}-\d{2}-\d{2}$/.test(String(company?.leaseEnd || "")) ? String(company.leaseEnd) : "",
+        goods: (Array.isArray(company?.goods) ? company.goods : []).slice(0, 100).map((good, goodIndex) => ({
+            id: String(good?.id || `good-${index + 1}-${goodIndex + 1}`).slice(0, 100),
+            name: String(good?.name || "").trim().slice(0, 100),
+            areaSqm: Number.isFinite(Number(good?.areaSqm)) && Number(good.areaSqm) > 0 ? Math.round(Number(good.areaSqm) * 100) / 100 : 0
+        })).filter(good => good.name || good.areaSqm > 0)
+    });
+    if (Array.isArray(data.companies)) {
+        return { companies: data.companies.slice(0, 3).map(normalizeCompany).filter(company => company.name || company.goods.length) };
+    }
+
+    // Köhnə anbar məlumatlarını bir şirkət və mal qeydləri kimi saxlayaraq yeniləyir.
+    const groupedGoods = new Map();
+    (Array.isArray(legacyPallets) ? legacyPallets : []).forEach((pallet, index) => {
+        const name = String(pallet?.name || "").trim();
+        const areaSqm = Number(pallet?.areaSqm) || 0;
+        if (!name && areaSqm <= 0) return;
+        const key = name || `Köhnə qeyd ${index + 1}`;
+        const good = groupedGoods.get(key) || { id: `legacy-${index + 1}`, name: key, areaSqm: 0 };
+        good.areaSqm = Math.round((good.areaSqm + areaSqm) * 100) / 100;
+        groupedGoods.set(key, good);
+    });
+    const oldArea = Number(data.usedAreaSqm) || 0;
+    if (!groupedGoods.size && oldArea > 0) groupedGoods.set("Mallar", { id: "legacy-area", name: "Mallar", areaSqm: Math.round(oldArea * 100) / 100 });
+    const oldCompany = String(data.tenantCompany || "").trim();
+    if (!oldCompany && !groupedGoods.size && !data.leaseStart && !data.stackingDate && !data.leaseEnd) return { companies: [] };
+    return {
+        companies: [normalizeCompany({
+            id: "company-1",
+            name: oldCompany,
+            stackingDate: data.stackingDate || data.leaseStart || "",
+            leaseEnd: data.leaseEnd || "",
+            goods: Array.from(groupedGoods.values())
+        }, 0)]
+    };
+}
+
+function warehousePlanCompaniesArea(companies) {
+    return (Array.isArray(companies) ? companies : []).reduce((sum, company) =>
+        sum + (Array.isArray(company.goods) ? company.goods.reduce((goodsSum, good) => goodsSum + (Number(good.areaSqm) || 0), 0) : 0), 0);
+}
+
+function closeWarehousePicker() {
+    warehousePlanPickerOptions.hidden = true;
+    warehousePlanPickerToggle.setAttribute("aria-expanded", "false");
+}
+
+function buildWarehouseStructureMarkup(warehouse) {
+    const scale = 25;
+    const marginX = 50;
+    const top = 100;
+    const floorWidth = warehouse.width * scale;
+    const floorHeight = warehouse.height * scale;
+    const right = marginX + floorWidth;
+    const bottom = top + floorHeight;
+    const viewWidth = floorWidth + marginX * 2;
+    const viewHeight = floorHeight + 230;
+    const doorWidth = 6 * scale;
+    const doorLeft = marginX + (floorWidth - doorWidth) / 2;
+    const doorRight = doorLeft + doorWidth;
+    const dimensionX = right + 25;
+    const dimensionY = bottom + 90;
+    const rows = warehouse.height === 30 ? [0, 12, 18, 30] : [0, 6, 18, 24];
+    const columns = Array.from({ length: Math.floor(warehouse.width / 6) + 1 }, (_, index) => index * 6);
+    const rowPositions = rows.map(meters => top + meters * scale);
+    const columnShapes = rows.flatMap((meters, rowIndex) => columns.map(column => {
+        const centerX = marginX + column * scale;
+        const centerY = top + meters * scale;
+        const width = column === 0 || column === warehouse.width ? 14 : 30;
+        const height = rowIndex === 0 || rowIndex === rows.length - 1 ? 12 : 20;
+        return `<rect x="${centerX - width / 2}" y="${centerY - height / 2}" width="${width}" height="${height}"></rect>`;
+    })).join("");
+    const rightDimensions = rows.slice(0, -1).map((meters, index) => {
+        const y1 = rowPositions[index];
+        const y2 = rowPositions[index + 1];
+        const centerY = (y1 + y2) / 2;
+        const distance = rows[index + 1] - meters;
+        return {
+            path: `<path d="M${dimensionX} ${y1}V${y2} M${right + 5} ${y1}H${dimensionX + 5} M${right + 5} ${y2}H${dimensionX + 5}"></path>`,
+            label: `<text x="${viewWidth - 8}" y="${centerY}" font-size="16" transform="rotate(90 ${viewWidth - 8} ${centerY})">${distance} m</text>`
+        };
+    });
+    const bottomSegments = columns.slice(0, -1).map((column, index) => {
+        const x1 = marginX + column * scale;
+        const x2 = marginX + columns[index + 1] * scale;
+        const centerX = (x1 + x2) / 2;
+        return {
+            path: `<path d="M${x1} ${dimensionY}H${x2} M${x1} ${bottom}V${dimensionY} M${x2} ${bottom}V${dimensionY}"></path>`,
+            label: `<text x="${centerX}" y="${dimensionY + 22}" font-size="15">6 m</text>`
+        };
+    });
+    const middleDoorRow = rowPositions.slice(1, -1);
+    const gridId = `warehouse-grid-${warehouse.number}`;
+
+    return `<defs>
+            <pattern id="${gridId}-minor" width="${scale}" height="${scale}" patternUnits="userSpaceOnUse"><path d="M${scale} 0H0V${scale}" fill="none" stroke="#d7d7d7" stroke-width="1"></path></pattern>
+            <pattern id="${gridId}-major" width="${6 * scale}" height="${6 * scale}" patternUnits="userSpaceOnUse"><rect width="${6 * scale}" height="${6 * scale}" fill="url(#${gridId}-minor)"></rect><path d="M${6 * scale} 0H0V${6 * scale}" fill="none" stroke="#aeb4b0" stroke-width="2"></path></pattern>
+        </defs>
+        <rect x="${marginX}" y="${top}" width="${floorWidth}" height="${floorHeight}" fill="url(#${gridId}-major)"></rect>
+        <path d="M${marginX} ${top}H${right} M${marginX} ${top}V${bottom} M${right} ${top}V${bottom} M${marginX} ${bottom}H${doorLeft} M${doorRight} ${bottom}H${right}" fill="none" stroke="#1d211f" stroke-width="4"></path>
+        <path d="${middleDoorRow.map(y => `M${marginX} ${y}H${right}`).join(" ")}" fill="none" stroke="#adb4af" stroke-width="1.5" stroke-dasharray="5 5"></path>
+        <g fill="#666" stroke="#171717" stroke-width="2">${columnShapes}</g>
+        <g fill="none" stroke="#222" stroke-width="2" stroke-dasharray="8 5">
+            <path d="M${marginX} 61H${right} M${marginX} 61V${top - 9} M${right} 61V${top - 9}"></path>
+            <path d="M24 ${top}V${bottom} M24 ${top}H44 M24 ${bottom}H44"></path>
+            ${rightDimensions.map(item => item.path).join("")}
+            ${bottomSegments.map(item => item.path).join("")}
+            <path d="M${doorLeft} ${bottom + 70}H${doorRight} M${doorLeft} ${bottom + 62}V${bottom + 78} M${doorRight} ${bottom + 62}V${bottom + 78}"></path>
+        </g>
+        <g fill="#171717" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle">
+            <text x="${marginX + floorWidth / 2}" y="48" font-size="25">${warehouse.width} m</text>
+            <text x="13" y="${top + floorHeight / 2}" font-size="23" transform="rotate(-90 13 ${top + floorHeight / 2})">${warehouse.height} m</text>
+            ${rightDimensions.map(item => item.label).join("")}
+            ${bottomSegments.map(item => item.label).join("")}
+        </g>
+        <rect x="${doorLeft}" y="${bottom}" width="${doorWidth}" height="68" fill="#d7d7d7" stroke="#161616" stroke-width="3"></rect>
+        <text x="${doorLeft + doorWidth / 2}" y="${bottom + 41}" fill="#151515" font-family="Arial,sans-serif" font-size="19" font-weight="700" text-anchor="middle">Giriş</text>`;
+}
+
+function formatWarehouseArea(value) {
+    return `${Number(value || 0).toLocaleString("az-AZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`;
+}
+
+function renderWarehousePlanInfoMetrics() {
+    const warehouse = warehouseDefinition();
+    const totalArea = warehouse.width * warehouse.height;
+    const info = warehousePlanInfoEditing && warehousePlanInfoDraft ? warehousePlanInfoDraft : warehousePlanInfo;
+    const usedArea = warehousePlanCompaniesArea(info.companies);
+    const freeArea = Math.max(0, totalArea - usedArea);
+    warehousePlanTotalArea.textContent = formatWarehouseArea(totalArea);
+    warehousePlanUsedArea.textContent = formatWarehouseArea(usedArea);
+    warehousePlanFreeArea.textContent = formatWarehouseArea(freeArea);
+    warehousePlanInfoPalletCount.textContent = String(warehousePlanPallets.length);
+}
+
+function renderWarehousePlanInfo() {
+    const warehouse = warehouseDefinition();
+    const info = warehousePlanInfoEditing && warehousePlanInfoDraft ? warehousePlanInfoDraft : warehousePlanInfo;
+    renderWarehousePlanInfoMetrics();
+    warehousePlanInfoTitle.textContent = `Anbar ${String(warehouse.number).padStart(2, "0")} · məlumat`;
+
+    warehousePlanInfoSummary.hidden = warehousePlanInfoEditing;
+    warehousePlanInfoEditor.hidden = !warehousePlanInfoEditing;
+    warehousePlanInfoCancel.textContent = warehousePlanInfoEditing ? "Ləğv et" : "Bağla";
+    warehousePlanInfoSave.textContent = warehousePlanInfoEditing ? "Yadda saxla" : "Redaktə et";
+    warehousePlanCompanyAdd.disabled = info.companies.length >= 3;
+    warehousePlanInfoEditorStatus.textContent = "";
+    if (warehousePlanInfoEditing) renderWarehousePlanCompanyEditor();
+
+    warehousePlanInfoSummary.replaceChildren();
+    if (!info.companies.length) {
+        const empty = document.createElement("p");
+        empty.className = "warehouse-plan-company-empty";
+        empty.textContent = "Şirkət və mal məlumatı əlavə edilməyib. Daxil etmək üçün “Redaktə et” düyməsinə basın.";
+        warehousePlanInfoSummary.append(empty);
+        return;
+    }
+    info.companies.forEach((company, index) => {
+        const card = document.createElement("section");
+        card.className = "warehouse-plan-company-summary";
+        const heading = document.createElement("div");
+        heading.className = "warehouse-plan-company-summary-heading";
+        const name = document.createElement("strong");
+        name.textContent = company.name || `Şirkət ${index + 1}`;
+        const companyArea = document.createElement("span");
+        companyArea.textContent = formatWarehouseArea(company.goods.reduce((sum, good) => sum + (Number(good.areaSqm) || 0), 0));
+        heading.append(name, companyArea);
+        card.append(heading);
+
+        const dates = document.createElement("p");
+        const dateParts = [];
+        if (company.stackingDate) dateParts.push(`Yığılma: ${formatWarehousePlanDate(company.stackingDate)}`);
+        if (company.leaseEnd) dateParts.push(`İcarə bitir: ${formatWarehousePlanDate(company.leaseEnd)}`);
+        dates.textContent = dateParts.join(" · ") || "Tarix qeyd edilməyib";
+        dates.className = "warehouse-plan-company-dates";
+        card.append(dates);
+
+        const goodsList = document.createElement("div");
+        goodsList.className = "warehouse-plan-company-goods";
+        if (!company.goods.length) {
+            const noGoods = document.createElement("span");
+            noGoods.className = "warehouse-plan-company-no-goods";
+            noGoods.textContent = "Mal qeydi yoxdur";
+            goodsList.append(noGoods);
+        }
+        company.goods.forEach(good => {
+            const row = document.createElement("div");
+            row.className = "warehouse-plan-company-good";
+            const goodName = document.createElement("span");
+            goodName.textContent = good.name;
+            const goodArea = document.createElement("strong");
+            goodArea.textContent = formatWarehouseArea(good.areaSqm);
+            row.append(goodName, goodArea);
+            goodsList.append(row);
+        });
+        card.append(goodsList);
+        warehousePlanInfoSummary.append(card);
+    });
+}
+
+function formatWarehousePlanDate(value) {
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("az-AZ", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+}
+
+function appendWarehousePlanEditorField(container, labelText, type, value, companyId, fieldName, options = {}) {
+    const label = document.createElement("label");
+    label.className = "warehouse-plan-editor-field";
+    const caption = document.createElement("span");
+    caption.textContent = labelText;
+    const input = document.createElement("input");
+    input.type = type;
+    input.value = value || "";
+    input.maxLength = options.maxLength || 100;
+    input.autocomplete = "off";
+    input.dataset.companyId = companyId;
+    input.dataset.companyField = fieldName;
+    if (options.placeholder) input.placeholder = options.placeholder;
+    if (type === "number") {
+        input.min = "0.01";
+        input.step = "0.01";
+        input.inputMode = "decimal";
+    }
+    label.append(caption, input);
+    container.append(label);
+}
+
+function renderWarehousePlanCompanyEditor() {
+    warehousePlanCompanyEditor.replaceChildren();
+    (warehousePlanInfoDraft?.companies || []).forEach((company, index) => {
+        const card = document.createElement("section");
+        card.className = "warehouse-plan-company-edit-card";
+        const heading = document.createElement("div");
+        heading.className = "warehouse-plan-company-edit-heading";
+        const title = document.createElement("strong");
+        title.textContent = `ŞİRKƏT ${index + 1}`;
+        const removeCompany = document.createElement("button");
+        removeCompany.type = "button";
+        removeCompany.className = "warehouse-plan-remove-row";
+        removeCompany.dataset.removeCompany = company.id;
+        removeCompany.textContent = "Şirkəti sil";
+        heading.append(title, removeCompany);
+        card.append(heading);
+
+        const fields = document.createElement("div");
+        fields.className = "warehouse-plan-company-edit-fields";
+        appendWarehousePlanEditorField(fields, "Şirkətin adı", "text", company.name, company.id, "name", { placeholder: "Şirkətin adı" });
+        appendWarehousePlanEditorField(fields, "Yığılma tarixi", "date", company.stackingDate, company.id, "stackingDate");
+        appendWarehousePlanEditorField(fields, "İcarənin bitmə tarixi", "date", company.leaseEnd, company.id, "leaseEnd");
+        card.append(fields);
+
+        const goodsHeading = document.createElement("div");
+        goodsHeading.className = "warehouse-plan-company-goods-heading";
+        const goodsTitle = document.createElement("strong");
+        goodsTitle.textContent = "Malları və tutduğu sahəni yazın";
+        goodsHeading.append(goodsTitle);
+        card.append(goodsHeading);
+        const goodsEditor = document.createElement("div");
+        goodsEditor.className = "warehouse-plan-goods-editor";
+        company.goods.forEach(good => {
+            const row = document.createElement("div");
+            row.className = "warehouse-plan-good-edit-row";
+            const nameInput = document.createElement("input");
+            nameInput.type = "text";
+            nameInput.maxLength = 100;
+            nameInput.autocomplete = "off";
+            nameInput.placeholder = "Malın adı";
+            nameInput.value = good.name;
+            nameInput.dataset.companyId = company.id;
+            nameInput.dataset.goodId = good.id;
+            nameInput.dataset.goodField = "name";
+            const areaInput = document.createElement("input");
+            areaInput.type = "number";
+            areaInput.min = "0.01";
+            areaInput.step = "0.01";
+            areaInput.inputMode = "decimal";
+            areaInput.placeholder = "m²";
+            areaInput.value = good.areaSqm || "";
+            areaInput.dataset.companyId = company.id;
+            areaInput.dataset.goodId = good.id;
+            areaInput.dataset.goodField = "areaSqm";
+            const removeGood = document.createElement("button");
+            removeGood.type = "button";
+            removeGood.className = "warehouse-plan-remove-row warehouse-plan-remove-good";
+            removeGood.dataset.removeGood = good.id;
+            removeGood.dataset.companyId = company.id;
+            removeGood.setAttribute("aria-label", "Mal qeydini sil");
+            removeGood.textContent = "×";
+            row.append(nameInput, areaInput, removeGood);
+            goodsEditor.append(row);
+        });
+        const addGood = document.createElement("button");
+        addGood.type = "button";
+        addGood.className = "warehouse-plan-good-add";
+        addGood.dataset.addGood = company.id;
+        addGood.textContent = "＋ Mal əlavə et";
+        goodsEditor.append(addGood);
+        card.append(goodsEditor);
+        warehousePlanCompanyEditor.append(card);
+    });
+}
+
+function renderWarehousePlanColorOptions() {
+    warehousePlanColorOptions.replaceChildren();
+    warehousePlanPalette.forEach(color => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "warehouse-plan-color-option";
+        button.dataset.paletteId = color.id;
+        button.classList.toggle("is-active", color.id === warehousePlanCurrentColor);
+        button.setAttribute("aria-pressed", String(color.id === warehousePlanCurrentColor));
+        const swatch = document.createElement("span");
+        swatch.className = "warehouse-plan-color-swatch";
+        swatch.style.backgroundColor = color.color;
+        swatch.setAttribute("aria-hidden", "true");
+        const label = document.createElement("span");
+        label.textContent = color.label;
+        button.append(swatch, label);
+        warehousePlanColorOptions.append(button);
+    });
+}
+
+function openWarehousePlanInfo() {
+    if (!currentAuthUser || !firebaseDb) {
+        warehousePlanStatus.textContent = "Ortaq anbar məlumatlarını görmək üçün təsdiqlənmiş hesabla daxil olun.";
+        warehousePlanStatus.dataset.state = "error";
+        return;
+    }
+    warehousePlanInfoEditing = false;
+    warehousePlanInfoDraft = null;
+    renderWarehousePlanInfo();
+    if (!warehousePlanInfoDialog.open) warehousePlanInfoDialog.showModal();
+}
+
+function createWarehousePlanCompany() {
+    return { id: newWarehousePlanRecordId("company"), name: "", stackingDate: "", leaseEnd: "", goods: [] };
+}
+
+function createWarehousePlanGood() {
+    return { id: newWarehousePlanRecordId("good"), name: "", areaSqm: 0 };
+}
+
+function renderWarehousePlan() {
+    const warehouse = warehouseDefinition();
+    const scale = 25;
+    const viewWidth = warehouse.width * scale + 100;
+    const viewHeight = warehouse.height * scale + 230;
+    const width = Math.min(1160, viewWidth * 1.08);
+    const verticalScale = 0.8;
+    warehousePlanTitle.textContent = `Anbar ${String(warehouse.number).padStart(2, "0")}`;
+    warehousePlanPickerLabel.textContent = `Anbar ${String(warehouse.number).padStart(2, "0")}`;
+    warehousePlanDimensions.textContent = `${warehouse.width} m × ${warehouse.height} m · ${(warehouse.width * warehouse.height).toLocaleString("az-AZ")} m²`;
+    warehousePlanStage.style.width = `${width}px`;
+    warehousePlanStage.style.aspectRatio = `${viewWidth} / ${viewHeight * verticalScale}`;
+    warehousePlanStage.classList.add("has-structure");
+    warehousePlanStructure.style.display = "block";
+    warehousePlanStructure.setAttribute("viewBox", `0 0 ${viewWidth} ${viewHeight}`);
+    warehousePlanStructure.setAttribute("preserveAspectRatio", "none");
+    warehousePlanStructure.setAttribute("aria-label", `Anbar ${String(warehouse.number).padStart(2, "0")}: ${warehouse.width} metr en, ${warehouse.height} metr uzunluq, 6 metrlik sütun toru və giriş`);
+    warehousePlanStructure.innerHTML = buildWarehouseStructureMarkup(warehouse);
+    const horizontalMargin = (50 / viewWidth) * 100;
+    const topMargin = (100 / viewHeight) * 100;
+    const bottomMargin = (130 / viewHeight) * 100;
+    warehousePlanPalletsElement.style.inset = `${topMargin}% ${horizontalMargin}% ${bottomMargin}% ${horizontalMargin}%`;
+    warehousePlanPlacementHint.style.top = `calc(${topMargin}% + 8px)`;
+    warehousePlanStage.style.setProperty("--grid-step-x", `${(6 / warehouse.width) * 100}%`);
+    warehousePlanStage.style.setProperty("--grid-step-y", `${(6 / warehouse.height) * 100}%`);
+    warehousePlanStage.style.setProperty("--pallet-width", `${(1 / warehouse.width) * 100}%`);
+    warehousePlanStage.style.setProperty("--pallet-height", `${(1 / warehouse.height) * 100}%`);
+    warehousePlanPalletsElement.replaceChildren();
+
+    warehousePlanPallets.forEach((pallet, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "warehouse-plan-pallet";
+        button.dataset.palletId = pallet.id;
+        button.style.left = `${pallet.x}%`;
+        button.style.top = `${pallet.y}%`;
+        const paletteColor = warehousePlanColor(pallet.color);
+        button.dataset.paletteId = paletteColor.id;
+        button.style.setProperty("--pallet-color", paletteColor.color);
+        button.classList.toggle("is-selected", pallet.id === warehousePlanSelectedId);
+        button.setAttribute("aria-label", `Palet ${String(index + 1).padStart(2, "0")}, ${paletteColor.label}`);
+        button.title = `Palet ${String(index + 1).padStart(2, "0")} · ${paletteColor.label}`;
+        const slats = document.createElement("span");
+        slats.className = "warehouse-plan-pallet-slats";
+        slats.setAttribute("aria-hidden", "true");
+        const label = document.createElement("span");
+        label.className = "warehouse-plan-pallet-label";
+        label.textContent = `P${String(index + 1).padStart(2, "0")}`;
+        button.append(slats, label);
+        warehousePlanPalletsElement.append(button);
+    });
+
+    warehousePlanAddButton.classList.toggle("is-placing", warehousePlanAdding);
+    warehousePlanAddButton.innerHTML = warehousePlanAdding
+        ? '<span aria-hidden="true">✓</span> Yadda saxla'
+        : '<span aria-hidden="true">＋</span> Palet əlavə et';
+    warehousePlanAddButton.disabled = !currentAuthUser || warehousePlanDeleting;
+    warehousePlanDeleteModeButton.classList.toggle("is-deleting", warehousePlanDeleting);
+    warehousePlanDeleteModeButton.innerHTML = warehousePlanDeleting
+        ? '<span aria-hidden="true">✓</span> Yadda saxla'
+        : '<span aria-hidden="true">−</span> Palet sil';
+    warehousePlanDeleteModeButton.disabled = !currentAuthUser || warehousePlanAdding;
+    warehousePlanInfoButton.disabled = !currentAuthUser || warehousePlanAdding || warehousePlanDeleting;
+    warehousePlanPickerToggle.disabled = warehousePlanAdding || warehousePlanDeleting;
+    warehousePlanHomeButton.disabled = warehousePlanAdding || warehousePlanDeleting;
+    warehousePlanColorOptions.hidden = !warehousePlanAdding;
+    warehousePlanPlacementHint.hidden = !warehousePlanAdding;
+    warehousePlanPlacementHint.textContent = warehousePlanCurrentColor
+        ? `“${warehousePlanColor(warehousePlanCurrentColor).label}” rəngli paleti yerləşdirmək üçün boş yerə toxunun`
+        : "Əvvəl rəngli palet seçin";
+    warehousePlanStage.classList.toggle("is-placing", warehousePlanAdding);
+    warehousePlanStage.classList.toggle("is-deleting", warehousePlanDeleting);
+    renderWarehousePlanInfo();
+    renderWarehousePlanColorOptions();
+    warehousePlanPickerOptions.querySelectorAll("[data-warehouse-number]").forEach(button => {
+        const active = Number(button.dataset.warehouseNumber) === selectedWarehouseNumber;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", String(active));
+    });
+}
+
+function stopWarehousePlanSubscription() {
+    if (warehousePlanSubscription) warehousePlanSubscription();
+    warehousePlanSubscription = null;
+}
+
+function saveWarehousePlan() {
+    if (!firebaseDb || !currentAuthUser) {
+        warehousePlanStatus.textContent = "Ortaq planı saxlamaq üçün təsdiqlənmiş hesabla daxil olun.";
+        warehousePlanStatus.dataset.state = "error";
+        return Promise.resolve(false);
+    }
+    const warehouseNumber = selectedWarehouseNumber;
+    const warehouse = warehouseDefinition(warehouseNumber);
+    const data = {
+        warehouseNumber,
+        totalAreaSqm: warehouse.width * warehouse.height,
+        companies: warehousePlanInfo.companies.map(company => ({
+            id: company.id,
+            name: company.name,
+            stackingDate: company.stackingDate,
+            leaseEnd: company.leaseEnd,
+            goods: company.goods.map(good => ({ id: good.id, name: good.name, areaSqm: good.areaSqm }))
+        })),
+        pallets: warehousePlanPallets.map(pallet => ({
+            id: pallet.id,
+            color: pallet.color,
+            x: pallet.x,
+            y: pallet.y
+        })),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: currentAuthUser.uid
+    };
+    warehousePlanStatus.textContent = "Ortaq plan yadda saxlanılır…";
+    warehousePlanStatus.dataset.state = "saving";
+    return warehousePlanDocumentRef(warehouseNumber).set(data).then(() => {
+        if (selectedWarehouseNumber === warehouseNumber) {
+            warehousePlanStatus.textContent = "Dəyişikliklər ortaq planda saxlanıldı.";
+            warehousePlanStatus.dataset.state = "saved";
+        }
+        return true;
+    }).catch(error => {
+        console.error("Ortaq anbar planı saxlanmadı:", error);
+        if (selectedWarehouseNumber === warehouseNumber) {
+            warehousePlanStatus.textContent = "Ortaq plan saxlanmadı. Firestore qaydalarını və interneti yoxlayın.";
+            warehousePlanStatus.dataset.state = "error";
+        }
+        return false;
+    });
+}
+
+function loadWarehousePlan(number) {
+    stopWarehousePlanSubscription();
+    const loadVersion = ++warehousePlanLoadVersion;
+    selectedWarehouseNumber = number;
+    warehousePlanSelectedId = "";
+    warehousePlanAdding = false;
+    warehousePlanDeleting = false;
+    warehousePlanCurrentColor = "";
+    warehousePlanInfoEditing = false;
+    warehousePlanInfoDraft = null;
+    warehousePlanPallets = [];
+    warehousePlanInfo = { companies: [] };
+    renderWarehousePlan();
+    if (!firebaseDb || !currentAuthUser) {
+        warehousePlanStatus.textContent = "Ortaq anbar planını görmək üçün təsdiqlənmiş hesabla daxil olun.";
+        warehousePlanStatus.dataset.state = "error";
+        return;
+    }
+    warehousePlanStatus.textContent = "Ortaq anbar planı yüklənir…";
+    warehousePlanStatus.dataset.state = "loading";
+    warehousePlanSubscription = warehousePlanDocumentRef(number).onSnapshot({ includeMetadataChanges: true }, snapshot => {
+        if (loadVersion !== warehousePlanLoadVersion || selectedWarehouseNumber !== number) return;
+        if (warehousePlanAdding || warehousePlanDeleting || warehousePlanInfoEditing) return;
+        const data = snapshot.exists ? snapshot.data() : {};
+        const storedPallets = Array.isArray(data.pallets) ? data.pallets : [];
+        warehousePlanPallets = normalizeWarehousePallets(storedPallets, number) || [];
+        warehousePlanInfo = normalizeWarehousePlanInfo(data, storedPallets);
+        renderWarehousePlan();
+        if (snapshot.metadata.hasPendingWrites) {
+            warehousePlanStatus.textContent = "Dəyişikliklər bu cihazda saxlanıb, internet gələndə ortaq plana göndəriləcək.";
+            warehousePlanStatus.dataset.state = "saving";
+        } else if (!snapshot.exists) {
+            warehousePlanStatus.textContent = "Bu anbarın ortaq planı boşdur. Paletləri əlavə etməyə başlaya bilərsiniz.";
+            warehousePlanStatus.dataset.state = "saved";
+        } else {
+            warehousePlanStatus.textContent = "Ortaq plan yeniləndi. Dəyişikliklər digər cihazlarda da görünəcək.";
+            warehousePlanStatus.dataset.state = "saved";
+        }
+    }, error => {
+        if (loadVersion !== warehousePlanLoadVersion) return;
+        console.error("Ortaq anbar planı yüklənmədi:", error);
+        warehousePlanStatus.textContent = "Ortaq plan yüklənmədi. Firestore qaydalarını və interneti yoxlayın.";
+        warehousePlanStatus.dataset.state = "error";
+    });
+}
+
+function openWarehousePlan() {
+    scanHandled = false;
+    void stopScanner();
+    loadWarehousePlan(1);
+    showView("warehouse-plan");
+}
+
+warehouseDefinitions.forEach(warehouse => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "warehouse-plan-option";
+    button.dataset.warehouseNumber = String(warehouse.number);
+    button.textContent = String(warehouse.number).padStart(2, "0");
+    button.setAttribute("aria-label", `Anbar ${String(warehouse.number).padStart(2, "0")}`);
+    warehousePlanPickerOptions.append(button);
+});
+
+document.getElementById("home-warehouse-plan").addEventListener("click", openWarehousePlan);
+warehousePlanPickerToggle.addEventListener("click", () => {
+    const opening = warehousePlanPickerOptions.hidden;
+    warehousePlanPickerOptions.hidden = !opening;
+    warehousePlanPickerToggle.setAttribute("aria-expanded", String(opening));
+});
+warehousePlanPickerOptions.addEventListener("click", event => {
+    const button = event.target.closest("[data-warehouse-number]");
+    if (!button) return;
+    if (warehousePlanAdding || warehousePlanDeleting) {
+        warehousePlanStatus.textContent = "Anbarı dəyişməzdən əvvəl həmin rejimin “Yadda saxla” düyməsinə basın.";
+        warehousePlanStatus.dataset.state = "error";
+        closeWarehousePicker();
+        return;
+    }
+    loadWarehousePlan(Number(button.dataset.warehouseNumber));
+    closeWarehousePicker();
+});
+document.addEventListener("click", event => {
+    if (!event.target.closest(".warehouse-plan-picker-wrap")) closeWarehousePicker();
+});
+warehousePlanAddButton.addEventListener("click", () => {
+    if (!currentAuthUser || warehousePlanDeleting) return;
+    if (warehousePlanAdding) {
+        warehousePlanAdding = false;
+        warehousePlanCurrentColor = "";
+        renderWarehousePlan();
+        void saveWarehousePlan();
+        return;
+    }
+    warehousePlanAdding = true;
+    warehousePlanCurrentColor = "";
+    renderWarehousePlan();
+    warehousePlanStatus.textContent = "Rəng seçin, paletləri planda yerləşdirin; bitirəndə “Yadda saxla” düyməsinə basın.";
+    warehousePlanStatus.dataset.state = "placing";
+});
+warehousePlanColorOptions.addEventListener("click", event => {
+    const button = event.target.closest("[data-palette-id]");
+    if (!button || !warehousePlanAdding) return;
+    warehousePlanCurrentColor = warehousePlanColor(button.dataset.paletteId).id;
+    renderWarehousePlanColorOptions();
+    warehousePlanPlacementHint.textContent = `“${warehousePlanColor(warehousePlanCurrentColor).label}” rəngli paleti yerləşdirmək üçün boş yerə toxunun`;
+    warehousePlanStatus.textContent = `${warehousePlanColor(warehousePlanCurrentColor).label} seçildi. Paletləri yerləşdirmək üçün planda boş yerlərə toxunun.`;
+    warehousePlanStatus.dataset.state = "placing";
+});
+warehousePlanInfoButton.addEventListener("click", openWarehousePlanInfo);
+function closeWarehousePlanInfoDialog() {
+    warehousePlanInfoEditing = false;
+    warehousePlanInfoDraft = null;
+    warehousePlanInfoDialog.close();
+}
+warehousePlanInfoClose.addEventListener("click", closeWarehousePlanInfoDialog);
+warehousePlanInfoCancel.addEventListener("click", () => {
+    if (!warehousePlanInfoEditing) {
+        closeWarehousePlanInfoDialog();
+        return;
+    }
+    warehousePlanInfoEditing = false;
+    warehousePlanInfoDraft = null;
+    renderWarehousePlanInfo();
+});
+warehousePlanInfoDialog.addEventListener("click", event => {
+    if (event.target === warehousePlanInfoDialog) closeWarehousePlanInfoDialog();
+});
+warehousePlanInfoDialog.addEventListener("cancel", () => {
+    warehousePlanInfoEditing = false;
+    warehousePlanInfoDraft = null;
+});
+warehousePlanInfoSave.addEventListener("click", () => {
+    if (!warehousePlanInfoEditing) {
+        warehousePlanInfoDraft = JSON.parse(JSON.stringify(warehousePlanInfo));
+        warehousePlanInfoEditing = true;
+        renderWarehousePlanInfo();
+        return;
+    }
+    const draft = warehousePlanInfoDraft || { companies: [] };
+    if (draft.companies.length > 3) {
+        warehousePlanInfoEditorStatus.textContent = "Bir anbarda ən çox 3 şirkət əlavə etmək olar.";
+        return;
+    }
+    for (const company of draft.companies) {
+        if (!String(company.name || "").trim()) {
+            warehousePlanInfoEditorStatus.textContent = "Hər şirkətin adını yazın və ya boş şirkət sətrini silin.";
+            return;
+        }
+        for (const good of company.goods) {
+            if (!String(good.name || "").trim() || !(Number(good.areaSqm) > 0)) {
+                warehousePlanInfoEditorStatus.textContent = "Hər mal üçün ad və 0-dan böyük m² yazın, yaxud boş mal sətrini silin.";
+                return;
+            }
+        }
+    }
+    const warehouse = warehouseDefinition();
+    const usedArea = warehousePlanCompaniesArea(draft.companies);
+    if (usedArea > warehouse.width * warehouse.height) {
+        warehousePlanInfoEditorStatus.textContent = "Mallara yazılan m² anbarın ümumi sahəsindən çoxdur.";
+        return;
+    }
+    warehousePlanInfo = normalizeWarehousePlanInfo({ companies: draft.companies });
+    warehousePlanInfoDraft = null;
+    warehousePlanInfoEditing = false;
+    renderWarehousePlanInfo();
+    warehousePlanInfoDialog.close();
+    void saveWarehousePlan();
+});
+warehousePlanCompanyAdd.addEventListener("click", () => {
+    if (!warehousePlanInfoEditing || !warehousePlanInfoDraft || warehousePlanInfoDraft.companies.length >= 3) return;
+    warehousePlanInfoDraft.companies.push(createWarehousePlanCompany());
+    renderWarehousePlanInfo();
+});
+warehousePlanCompanyEditor.addEventListener("input", event => {
+    if (!warehousePlanInfoDraft) return;
+    const input = event.target;
+    const company = warehousePlanInfoDraft.companies.find(item => item.id === input.dataset.companyId);
+    if (!company) return;
+    if (input.dataset.companyField) {
+        company[input.dataset.companyField] = input.value;
+    } else if (input.dataset.goodId && input.dataset.goodField) {
+        const good = company.goods.find(item => item.id === input.dataset.goodId);
+        if (!good) return;
+        good[input.dataset.goodField] = input.dataset.goodField === "areaSqm"
+            ? (input.value === "" ? 0 : Number(input.value))
+            : input.value;
+    }
+    renderWarehousePlanInfoMetrics();
+});
+warehousePlanCompanyEditor.addEventListener("click", event => {
+    if (!warehousePlanInfoDraft) return;
+    const removeCompany = event.target.closest("[data-remove-company]");
+    if (removeCompany) {
+        warehousePlanInfoDraft.companies = warehousePlanInfoDraft.companies.filter(company => company.id !== removeCompany.dataset.removeCompany);
+        renderWarehousePlanInfo();
+        return;
+    }
+    const addGood = event.target.closest("[data-add-good]");
+    if (addGood) {
+        const company = warehousePlanInfoDraft.companies.find(item => item.id === addGood.dataset.addGood);
+        if (company && company.goods.length < 100) company.goods.push(createWarehousePlanGood());
+        renderWarehousePlanInfo();
+        return;
+    }
+    const removeGood = event.target.closest("[data-remove-good]");
+    if (removeGood) {
+        const company = warehousePlanInfoDraft.companies.find(item => item.id === removeGood.dataset.companyId);
+        if (company) company.goods = company.goods.filter(good => good.id !== removeGood.dataset.removeGood);
+        renderWarehousePlanInfo();
+    }
+});
+warehousePlanStage.addEventListener("click", event => {
+    if (warehousePlanSuppressClick) {
+        warehousePlanSuppressClick = false;
+        return;
+    }
+    const palletButton = event.target.closest("[data-pallet-id]");
+    if (palletButton) {
+        if (warehousePlanDeleting) {
+            warehousePlanPallets = warehousePlanPallets.filter(item => item.id !== palletButton.dataset.palletId);
+            if (warehousePlanSelectedId === palletButton.dataset.palletId) warehousePlanSelectedId = "";
+            renderWarehousePlan();
+            renderWarehousePlanInfo();
+            warehousePlanStatus.textContent = "Palet silinmək üçün seçildi. Digərlərini də silə, sonra “Yadda saxla” düyməsinə basa bilərsiniz.";
+            warehousePlanStatus.dataset.state = "deleting";
+            return;
+        }
+        if (warehousePlanAdding) {
+            warehousePlanStatus.textContent = "Yeni palet üçün planda boş yerə toxunun.";
+            warehousePlanStatus.dataset.state = "placing";
+            return;
+        }
+        if (!warehousePlanAdding) {
+            warehousePlanSelectedId = palletButton.dataset.palletId;
+            renderWarehousePlan();
+        }
+        return;
+    }
+    if (!warehousePlanAdding) return;
+    if (!warehousePlanCurrentColor) {
+        warehousePlanStatus.textContent = "Əvvəl rəngli palet seçin.";
+        warehousePlanStatus.dataset.state = "error";
+        return;
+    }
+    const rect = warehousePlanPalletsElement.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return;
+    const warehouse = warehouseDefinition();
+    const palletWidth = (1 / warehouse.width) * 100;
+    const palletHeight = (1 / warehouse.height) * 100;
+    const x = warehousePlanClamp(((event.clientX - rect.left) / rect.width) * 100 - palletWidth / 2, 0, 100 - palletWidth);
+    const y = warehousePlanClamp(((event.clientY - rect.top) / rect.height) * 100 - palletHeight / 2, 0, 100 - palletHeight);
+    const id = `anbar${String(selectedWarehouseNumber).padStart(2, "0")}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    warehousePlanPallets.push({ id, color: warehousePlanCurrentColor, x, y });
+    warehousePlanSelectedId = id;
+    renderWarehousePlan();
+    warehousePlanStatus.textContent = "Palet əlavə edildi. Başqa rəng seçin və ya daha çox palet yerləşdirin; hazır olanda “Yadda saxla” basın.";
+    warehousePlanStatus.dataset.state = "placing";
+});
+warehousePlanStage.addEventListener("pointerdown", event => {
+    const button = event.target.closest("[data-pallet-id]");
+    if (!button || event.button !== 0 || warehousePlanAdding || warehousePlanDeleting) return;
+    const pallet = warehousePlanPallets.find(item => item.id === button.dataset.palletId);
+    if (!pallet) return;
+    warehousePlanSelectedId = pallet.id;
+    warehousePlanPalletsElement.querySelectorAll("[data-pallet-id]").forEach(item => item.classList.toggle("is-selected", item === button));
+    warehousePlanDrag = { pointerId: event.pointerId, element: button, pallet, startX: event.clientX, startY: event.clientY, x: pallet.x, y: pallet.y, moved: false };
+    try { button.setPointerCapture(event.pointerId); } catch (_) {}
+    event.preventDefault();
+});
+warehousePlanStage.addEventListener("pointermove", event => {
+    const drag = warehousePlanDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const rect = warehousePlanPalletsElement.getBoundingClientRect();
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+    drag.moved = true;
+    const warehouse = warehouseDefinition();
+    drag.pallet.x = warehousePlanClamp(drag.x + (dx / rect.width) * 100, 0, 100 - (1 / warehouse.width) * 100);
+    drag.pallet.y = warehousePlanClamp(drag.y + (dy / rect.height) * 100, 0, 100 - (1 / warehouse.height) * 100);
+    drag.element.style.left = `${drag.pallet.x}%`;
+    drag.element.style.top = `${drag.pallet.y}%`;
+    drag.element.classList.add("is-dragging");
+});
+function finishWarehousePlanDrag(event) {
+    const drag = warehousePlanDrag;
+    if (!drag || (event && drag.pointerId !== event.pointerId)) return;
+    warehousePlanDrag = null;
+    drag.element.classList.remove("is-dragging");
+    if (drag.moved) {
+        warehousePlanSuppressClick = true;
+        window.setTimeout(() => { warehousePlanSuppressClick = false; }, 0);
+        void saveWarehousePlan();
+    }
+}
+warehousePlanStage.addEventListener("pointerup", finishWarehousePlanDrag);
+warehousePlanStage.addEventListener("pointercancel", finishWarehousePlanDrag);
+warehousePlanDeleteModeButton.addEventListener("click", () => {
+    if (!currentAuthUser || warehousePlanAdding) return;
+    if (warehousePlanDeleting) {
+        warehousePlanDeleting = false;
+        warehousePlanSelectedId = "";
+        renderWarehousePlan();
+        void saveWarehousePlan();
+        return;
+    }
+    warehousePlanSelectedId = "";
+    warehousePlanDeleting = true;
+    renderWarehousePlan();
+    warehousePlanStatus.textContent = "Silmək istədiyiniz paletlərə toxunun. Bitirib saxlamaq üçün həmin düyməyə yenidən basın.";
+    warehousePlanStatus.dataset.state = "deleting";
+});
+warehousePlanHomeButton.addEventListener("click", () => {
+    if (warehousePlanAdding || warehousePlanDeleting) return;
+    stopWarehousePlanSubscription();
+    showView("home");
+});
+
 const accountBackButton = document.getElementById("account-back");
 const accountAvatarField = document.getElementById("account-avatar-field");
 const accountAvatarOptions = document.getElementById("account-avatar-options");
@@ -151,9 +1038,6 @@ const distributionSearchClear = document.getElementById("distribution-search-cle
 const journalMatchCount = document.getElementById("journal-match-count");
 const recentDistributionList = document.getElementById("recent-distribution-list");
 const dashboardDate = document.getElementById("dashboard-date");
-const dashboardClockHour = document.getElementById("dashboard-clock-hour");
-const dashboardClockMinute = document.getElementById("dashboard-clock-minute");
-const dashboardClockSecond = document.getElementById("dashboard-clock-second");
 const dashboardOldestList = document.getElementById("dashboard-oldest-list");
 const portMapDialog = document.getElementById("port-map-dialog");
 const portMapOpenButton = document.getElementById("port-map-open");
@@ -397,6 +1281,7 @@ function showView(view) {
     }
     document.body.classList.toggle("maray-water-screen", view === "maray-water");
     document.body.classList.toggle("area-count-screen", view === "area-count");
+    document.body.classList.toggle("warehouse-plan-screen", view === "warehouse-plan");
     document.body.classList.toggle("monthly-report-screen", view === "monthly-report" || view === "distribution-monthly-report");
     document.body.classList.toggle("reminders-screen", view === "reminders");
     document.body.classList.toggle("about-screen", view === "about");
@@ -411,6 +1296,7 @@ function showView(view) {
     areaMeasurementView.hidden = view !== "area-measurement";
     marayWaterView.hidden = view !== "maray-water";
     areaCountView.hidden = view !== "area-count";
+    warehousePlanView.hidden = view !== "warehouse-plan";
     monthlyReportView.hidden = view !== "monthly-report";
     distributionMonthlyReportView.hidden = view !== "distribution-monthly-report";
     remindersView.hidden = view !== "reminders";
@@ -435,12 +1321,22 @@ function initializeFirebaseAccount() {
         const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(config);
         firebaseAuth = firebase.auth();
         firebaseDb = firebase.firestore();
+        try {
+            firebaseDb.enablePersistence({ synchronizeTabs: true }).catch(error => {
+                if (error.code !== "failed-precondition" && error.code !== "unimplemented") {
+                    console.warn("Anbar planı üçün offline keş aktivləşmədi:", error);
+                }
+            });
+        } catch (error) {
+            console.warn("Anbar planı üçün offline keş aktivləşmədi:", error);
+        }
         try { firebaseMessaging = firebase.messaging(app); } catch (_) { firebaseMessaging = null; }
         if (firebaseMessaging) firebaseMessaging.onMessage(handleForegroundPush);
         firebaseAuth.onAuthStateChanged(async user => {
             const stateVersion = ++authStateVersion;
             if (accountRegistrationInProgress) return;
 
+            stopWarehousePlanSubscription();
             currentAuthUser = null;
             pushTokenRegistered = false;
             pushTokenSyncing = false;
@@ -4163,7 +5059,7 @@ function renderLongestStoredAreas() {
     });
 }
 
-function updateDashboardClock() {
+function updateDashboardDate() {
     const now = new Date();
     const dayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
     if (dashboardDayKey && dashboardDayKey !== dayKey) {
@@ -4173,13 +5069,6 @@ function updateDashboardClock() {
         void loadDistributionJournal();
     }
     dashboardDayKey = dayKey;
-    const clockParts = new Intl.DateTimeFormat("az-AZ", {
-        hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
-    }).formatToParts(now);
-    const clockValues = Object.fromEntries(clockParts.map(({ type, value }) => [type, value]));
-    dashboardClockHour.textContent = clockValues.hour;
-    dashboardClockMinute.textContent = clockValues.minute;
-    dashboardClockSecond.textContent = `:${clockValues.second}`;
     const day = String(now.getDate()).padStart(2, "0");
     const month = String(now.getMonth() + 1).padStart(2, "0");
     dashboardDate.textContent = `${day}.${month}.${now.getFullYear()}`;
@@ -4358,14 +5247,14 @@ initializeFirebaseAccount();
 initializeReminders();
 setInterval(refreshAreaAgeLabels, 60 * 1000);
 loadDistributionJournal();
-updateDashboardClock();
+updateDashboardDate();
 renderMonthlyExpense();
 void loadMonthlyExpenses();
-setInterval(updateDashboardClock, 1000);
+setInterval(updateDashboardDate, 60 * 1000);
 setInterval(renderMonthlyExpense, 60 * 1000);
 document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
-        updateDashboardClock();
+        updateDashboardDate();
         if (!areaMeasurementView.hidden) {
             enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
         }

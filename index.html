@@ -6,7 +6,8 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=153">
+    <link rel="stylesheet" href="style.css?v=165">
+    <link rel="stylesheet" href="snow-effect.css?v=4">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -129,6 +130,11 @@
                     <span class="app-menu-item-copy"><strong>Tətbiq haqqında</strong><small>Məlumat və versiya</small></span>
                     <span class="app-menu-item-arrow" aria-hidden="true">›</span>
                 </button>
+                <button id="snow-effect-toggle" class="snow-effect-toggle" type="button" aria-pressed="true">
+                    <span class="app-menu-icon snow-toggle-icon" aria-hidden="true">❄</span>
+                    <span class="app-menu-item-copy"><strong>Qar effekti</strong><small data-snow-effect-label>Aktivdir · söndür</small></span>
+                    <span class="snow-toggle-state" aria-hidden="true">ON</span>
+                </button>
             </nav>
         </div>
         <header class="app-header">
@@ -144,13 +150,7 @@
                 <div class="dashboard-topline">
                     <div class="dashboard-date-wrap">
                         <div class="dashboard-kicker-row">
-                            <div id="dashboard-clock" class="dashboard-clock" role="timer" aria-label="Canlı saat">
-                                <span id="dashboard-clock-hour" class="dashboard-clock-hour">--</span>
-                                <span class="dashboard-clock-separator" aria-hidden="true">:</span>
-                                <span id="dashboard-clock-minute" class="dashboard-clock-minute">--</span>
-                                <span id="dashboard-clock-second" class="dashboard-clock-second">:--</span>
-                                <time id="dashboard-date" class="dashboard-date"></time>
-                            </div>
+                            <time id="dashboard-date" class="dashboard-date"></time>
                             <button id="port-map-open" class="dashboard-map-button" type="button" aria-label="Liman xəritəsini aç" aria-haspopup="dialog" aria-controls="port-map-dialog">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
                                 <span>Xəritə</span>
@@ -215,6 +215,17 @@
                         <span class="home-scan-kicker">ANBARDAN TƏHVİL</span>
                         <strong>Stok siyahısı</strong>
                         <small>Buradan mal təhvil verə bilərsiniz</small>
+                    </span>
+                    <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
+                </button>
+                <button id="home-warehouse-plan" class="home-scan-launch home-warehouse-launch" type="button">
+                    <span class="home-scan-launch-icon home-warehouse-launch-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false"><path d="M3 20V8l9-5 9 5v12"></path><path d="M7 20v-7h10v7M9 16h2m2 0h2M5 9h14"></path></svg>
+                    </span>
+                    <span class="home-scan-launch-copy">
+                        <span class="home-scan-kicker">PALET YERLƏŞİMİ</span>
+                        <strong>Anbar planı</strong>
+                        <small>13 anbarın planını aç və malları yerləşdir</small>
                     </span>
                     <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
                 </button>
@@ -487,6 +498,77 @@
             <button id="area-count-home" class="secondary-button area-count-home" type="button"><span aria-hidden="true">⌂</span> Ana səhifəyə qayıt</button>
         </section>
 
+        <section id="warehouse-plan-view" class="view warehouse-plan-view" hidden>
+            <header class="warehouse-plan-page-heading">
+                <div>
+                    <div class="warehouse-plan-kicker"><span class="dashboard-live-dot"></span> PALET YERLƏŞİMİ</div>
+                    <h2 id="warehouse-plan-title">Anbar 01</h2>
+                    <p id="warehouse-plan-dimensions">42 m × 30 m · 1 260 m²</p>
+                </div>
+                <div class="warehouse-plan-header-actions">
+                    <div class="warehouse-plan-add-wrap">
+                        <button id="warehouse-plan-add" class="warehouse-plan-add" type="button"><span aria-hidden="true">＋</span> Palet əlavə et</button>
+                        <div id="warehouse-plan-color-options" class="warehouse-plan-color-options" hidden aria-label="Palet rəngi seçin"></div>
+                    </div>
+                    <button id="warehouse-plan-delete-mode" class="warehouse-plan-delete-mode" type="button"><span aria-hidden="true">−</span> Palet sil</button>
+                    <button id="warehouse-plan-info-button" class="warehouse-plan-info-button" type="button"><span aria-hidden="true">ⓘ</span> Anbar məlumatı</button>
+                    <div class="warehouse-plan-picker-wrap">
+                        <button id="warehouse-plan-picker-toggle" class="warehouse-plan-picker-toggle" type="button" aria-expanded="false" aria-controls="warehouse-plan-picker-options">
+                            <span id="warehouse-plan-picker-label">Anbar 01</span><span class="warehouse-plan-picker-chevron" aria-hidden="true">⌄</span>
+                        </button>
+                        <div id="warehouse-plan-picker-options" class="warehouse-plan-picker-options" hidden></div>
+                    </div>
+                </div>
+            </header>
+            <p id="warehouse-plan-status" class="warehouse-plan-status" role="status" aria-live="polite">Plan bu cihazda saxlanılır.</p>
+            <div class="warehouse-plan-scroll">
+                <div id="warehouse-plan-stage" class="warehouse-plan-stage" aria-label="Anbar daxilində paletlərin yerləşmə planı">
+                    <svg id="warehouse-plan-structure" class="warehouse-plan-structure" viewBox="0 0 1000 980" role="img" aria-label="Anbar 09: 36 metr en, 30 metr uzunluq, sütunlar arası 6 metr, 12 metr və 6 metr məsafələr, aşağı mərkəzdə 6 metrlik giriş" focusable="false">
+                        <defs>
+                            <pattern id="warehouse-plan-minor-grid" width="25" height="25" patternUnits="userSpaceOnUse">
+                                <path d="M25 0H0V25" fill="none" stroke="#d7d7d7" stroke-width="1"></path>
+                            </pattern>
+                            <pattern id="warehouse-plan-major-grid" width="150" height="150" patternUnits="userSpaceOnUse">
+                                <rect width="150" height="150" fill="url(#warehouse-plan-minor-grid)"></rect>
+                                <path d="M150 0H0V150" fill="none" stroke="#aeb4b0" stroke-width="2"></path>
+                            </pattern>
+                        </defs>
+                        <rect x="50" y="100" width="900" height="750" fill="url(#warehouse-plan-major-grid)"></rect>
+                        <path d="M50 100H950 M50 100V850 M950 100V850 M50 850H500 M650 850H950" fill="none" stroke="#1d211f" stroke-width="4"></path>
+                        <g class="warehouse-plan-columns" fill="#666" stroke="#171717" stroke-width="2">
+                            <rect x="43" y="94" width="14" height="12"></rect><rect x="185" y="94" width="30" height="12"></rect><rect x="335" y="94" width="30" height="12"></rect><rect x="485" y="94" width="30" height="12"></rect><rect x="635" y="94" width="30" height="12"></rect><rect x="785" y="94" width="30" height="12"></rect><rect x="943" y="94" width="14" height="12"></rect>
+                            <rect x="43" y="390" width="14" height="20"></rect><rect x="185" y="390" width="30" height="20"></rect><rect x="335" y="390" width="30" height="20"></rect><rect x="485" y="390" width="30" height="20"></rect><rect x="635" y="390" width="30" height="20"></rect><rect x="785" y="390" width="30" height="20"></rect><rect x="943" y="390" width="14" height="20"></rect>
+                            <rect x="43" y="540" width="14" height="20"></rect><rect x="185" y="540" width="30" height="20"></rect><rect x="335" y="540" width="30" height="20"></rect><rect x="485" y="540" width="30" height="20"></rect><rect x="635" y="540" width="30" height="20"></rect><rect x="785" y="540" width="30" height="20"></rect><rect x="943" y="540" width="14" height="20"></rect>
+                            <rect x="43" y="844" width="14" height="12"></rect><rect x="185" y="844" width="30" height="12"></rect><rect x="335" y="844" width="30" height="12"></rect><rect x="485" y="844" width="30" height="12"></rect><rect x="635" y="844" width="30" height="12"></rect><rect x="785" y="844" width="30" height="12"></rect><rect x="943" y="844" width="14" height="12"></rect>
+                        </g>
+                        <path d="M50 400H950 M50 550H950" fill="none" stroke="#adb4af" stroke-width="1.5" stroke-dasharray="5 5"></path>
+                        <g class="warehouse-plan-measurements" fill="none" stroke="#222" stroke-width="2" stroke-dasharray="8 5">
+                            <path d="M50 61H950 M50 61V91 M950 61V91"></path>
+                            <path d="M24 100V850 M24 100H44 M24 850H44"></path>
+                            <path d="M976 100V400 M960 100H982 M960 400H982 M976 400V550 M960 550H982 M976 550V850 M960 850H982"></path>
+                            <path d="M50 940H200 M200 940H350 M350 940H500 M500 940H650 M650 940H800 M800 940H950"></path>
+                            <path d="M50 850V940 M200 850V940 M350 850V940 M500 850V940 M650 850V940 M800 850V940 M950 850V940"></path>
+                            <path d="M500 920H650 M500 912V928 M650 912V928"></path>
+                        </g>
+                        <g class="warehouse-plan-measurement-labels" fill="#171717" font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">
+                            <text x="500" y="48" font-size="25">36 m</text>
+                            <text x="13" y="475" font-size="23" transform="rotate(-90 13 475)">30 m</text>
+                            <text x="990" y="254" font-size="16" transform="rotate(90 990 254)">12 m</text>
+                            <text x="990" y="485" font-size="16" transform="rotate(90 990 485)">6 m</text>
+                            <text x="990" y="704" font-size="16" transform="rotate(90 990 704)">12 m</text>
+                            <text x="125" y="969" font-size="15">6 m</text><text x="275" y="969" font-size="15">6 m</text><text x="425" y="969" font-size="15">6 m</text><text x="575" y="969" font-size="15">6 m</text><text x="725" y="969" font-size="15">6 m</text><text x="875" y="969" font-size="15">6 m</text>
+                        </g>
+                        <rect class="warehouse-plan-door" x="500" y="850" width="150" height="68" fill="#d7d7d7" stroke="#161616" stroke-width="3"></rect>
+                        <text class="warehouse-plan-door-label" x="575" y="891" fill="#151515" font-family="Arial, sans-serif" font-size="19" font-weight="700" text-anchor="middle">Giriş</text>
+                    </svg>
+                    <div id="warehouse-plan-pallets" class="warehouse-plan-pallets"></div>
+                    <div id="warehouse-plan-placement-hint" class="warehouse-plan-placement-hint" hidden>Paleti qoymaq istədiyiniz yerə toxunun</div>
+                </div>
+            </div>
+            <p class="warehouse-plan-help">“Palet əlavə et” düyməsindən rəng seçin və paletləri planda yerləşdirin. İstədiyiniz qədər əlavə etdikdən sonra “Yadda saxla” düyməsinə basın. Şirkət, tarix və malların tutduğu sahəni “Anbar məlumatı” bölməsində redaktə edin.</p>
+            <button id="warehouse-plan-home" class="secondary-button warehouse-plan-home" type="button"><span aria-hidden="true">⌂</span> Ana səhifəyə qayıt</button>
+        </section>
+
         <section id="reminders-view" class="view reminders-view" hidden>
             <div class="reminder-page-heading">
                 <div class="reminder-page-kicker"><span class="dashboard-live-dot"></span> GÜNDƏLİK QEYDLƏR</div>
@@ -733,6 +815,28 @@
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
             <span class="footer-version">Versiya 1.71.0</span>
         </footer>
+        <dialog id="warehouse-plan-info-dialog" class="warehouse-plan-dialog" aria-labelledby="warehouse-plan-info-title">
+            <div class="warehouse-plan-dialog-heading">
+                <div><small>ANBAR MƏLUMATLARI</small><h2 id="warehouse-plan-info-title">Anbar 01</h2></div>
+                <button id="warehouse-plan-info-close" class="warehouse-plan-dialog-close" type="button" aria-label="Bağla">×</button>
+            </div>
+            <div class="warehouse-plan-info-metrics">
+                <div><small>ÜMUMİ SAHƏ</small><strong id="warehouse-plan-total-area">0 m²</strong></div>
+                <div><small>MALLARIN TUTDUĞU</small><strong id="warehouse-plan-used-area">0 m²</strong></div>
+                <div><small>BOŞ SAHƏ</small><strong id="warehouse-plan-free-area">0 m²</strong></div>
+                <div><small>PALET SAYI</small><strong id="warehouse-plan-info-pallet-count">0</strong></div>
+            </div>
+            <div id="warehouse-plan-info-summary" class="warehouse-plan-info-summary"></div>
+            <section id="warehouse-plan-info-editor" class="warehouse-plan-info-editor" hidden>
+                <div id="warehouse-plan-company-editor" class="warehouse-plan-company-editor"></div>
+                <button id="warehouse-plan-company-add" class="warehouse-plan-company-add" type="button">＋ Şirkət əlavə et</button>
+                <p id="warehouse-plan-info-editor-status" class="warehouse-plan-info-editor-status" role="status" aria-live="polite"></p>
+            </section>
+            <div class="warehouse-plan-dialog-actions">
+                <button id="warehouse-plan-info-cancel" type="button">Bağla</button>
+                <button id="warehouse-plan-info-save" type="button">Redaktə et</button>
+            </div>
+        </dialog>
     </main>
     <dialog id="port-map-dialog" class="port-map-dialog" aria-label="Liman ərazisinin xəritəsi">
         <button id="port-map-close" class="port-map-close" type="button" aria-label="Xəritəni bağla">×</button>
@@ -768,8 +872,9 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=81"></script>
+    <script src="script.js?v=94"></script>
     <script src="english-words.js?v=2"></script>
+    <script src="snow-effect.js?v=4"></script>
 </body>
 </html>
 

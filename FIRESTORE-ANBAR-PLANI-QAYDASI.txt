@@ -1,0 +1,33 @@
+ANBAR PLANI ÜÇÜN FIRESTORE İCAZƏSİ
+
+Tətbiq ortaq anbar planlarını `warehousePlans/01` ... `warehousePlans/13`
+sənədlərində saxlayır. Dəyişikliklərin başqa kompüterlərdə görünməsi üçün
+aşağıdakı bloku Firebase Console → Firestore Database → Rules səhifəsindəki
+mövcud `match /databases/{database}/documents { ... }` blokunun daxilinə əlavə edin.
+Mövcud qaydaları silməyin. Sonra Publish düyməsinə basın.
+
+    match /warehousePlans/{warehouseId} {
+      function isApprovedWarehouseUser() {
+        return request.auth != null
+          && (request.auth.uid == "WvDIKF4R5SNNEGBpMy6oZdcA1Ub2"
+            || (exists(/databases/$(database)/documents/users/$(request.auth.uid))
+              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == "approved"));
+      }
+
+      function validWarehouseId() {
+        return warehouseId.matches("^(0[1-9]|1[0-3])$");
+      }
+
+      allow get: if isApprovedWarehouseUser() && validWarehouseId();
+      allow create, update: if isApprovedWarehouseUser()
+        && validWarehouseId()
+        && request.resource.data.keys().hasOnly([
+          "warehouseNumber", "totalAreaSqm", "companies", "pallets", "updatedAt", "updatedBy"
+        ])
+        && request.resource.data.companies is list
+        && request.resource.data.companies.size() <= 3
+        && request.resource.data.pallets is list
+        && request.resource.data.pallets.size() <= 2000;
+      allow list, delete: if false;
+    }
+
