@@ -6,8 +6,7 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=165">
-    <link rel="stylesheet" href="snow-effect.css?v=4">
+    <link rel="stylesheet" href="style.css?v=167">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -129,11 +128,6 @@
                     <span class="app-menu-icon" aria-hidden="true"><img src="images/menu-about.png" alt="" onerror="this.hidden=true"></span>
                     <span class="app-menu-item-copy"><strong>Tətbiq haqqında</strong><small>Məlumat və versiya</small></span>
                     <span class="app-menu-item-arrow" aria-hidden="true">›</span>
-                </button>
-                <button id="snow-effect-toggle" class="snow-effect-toggle" type="button" aria-pressed="true">
-                    <span class="app-menu-icon snow-toggle-icon" aria-hidden="true">❄</span>
-                    <span class="app-menu-item-copy"><strong>Qar effekti</strong><small data-snow-effect-label>Aktivdir · söndür</small></span>
-                    <span class="snow-toggle-state" aria-hidden="true">ON</span>
                 </button>
             </nav>
         </div>
@@ -510,7 +504,10 @@
                         <button id="warehouse-plan-add" class="warehouse-plan-add" type="button"><span aria-hidden="true">＋</span> Palet əlavə et</button>
                         <div id="warehouse-plan-color-options" class="warehouse-plan-color-options" hidden aria-label="Palet rəngi seçin"></div>
                     </div>
-                    <button id="warehouse-plan-delete-mode" class="warehouse-plan-delete-mode" type="button"><span aria-hidden="true">−</span> Palet sil</button>
+                    <button id="warehouse-plan-text-add" class="warehouse-plan-text-add" type="button"><span aria-hidden="true">T</span> Mətn əlavə et</button>
+                    <button id="warehouse-plan-text-smaller" class="warehouse-plan-text-size" type="button" aria-label="Seçilmiş yazını kiçilt" title="Seçilmiş yazını kiçilt">A−</button>
+                    <button id="warehouse-plan-text-larger" class="warehouse-plan-text-size" type="button" aria-label="Seçilmiş yazını böyüt" title="Seçilmiş yazını böyüt">A+</button>
+                    <button id="warehouse-plan-delete-mode" class="warehouse-plan-delete-mode" type="button"><span aria-hidden="true">−</span> Palet / yazı sil</button>
                     <button id="warehouse-plan-info-button" class="warehouse-plan-info-button" type="button"><span aria-hidden="true">ⓘ</span> Anbar məlumatı</button>
                     <div class="warehouse-plan-picker-wrap">
                         <button id="warehouse-plan-picker-toggle" class="warehouse-plan-picker-toggle" type="button" aria-expanded="false" aria-controls="warehouse-plan-picker-options">
@@ -562,10 +559,11 @@
                         <text class="warehouse-plan-door-label" x="575" y="891" fill="#151515" font-family="Arial, sans-serif" font-size="19" font-weight="700" text-anchor="middle">Giriş</text>
                     </svg>
                     <div id="warehouse-plan-pallets" class="warehouse-plan-pallets"></div>
+                    <div id="warehouse-plan-labels" class="warehouse-plan-labels" aria-label="Anbar planındakı yazılar"></div>
                     <div id="warehouse-plan-placement-hint" class="warehouse-plan-placement-hint" hidden>Paleti qoymaq istədiyiniz yerə toxunun</div>
                 </div>
             </div>
-            <p class="warehouse-plan-help">“Palet əlavə et” düyməsindən rəng seçin və paletləri planda yerləşdirin. İstədiyiniz qədər əlavə etdikdən sonra “Yadda saxla” düyməsinə basın. Şirkət, tarix və malların tutduğu sahəni “Anbar məlumatı” bölməsində redaktə edin.</p>
+            <p class="warehouse-plan-help">Paletləri əlavə edib planda yerləşdirin və “Yadda saxla” basın. “Mətn əlavə et” ilə yazını daxil edin, sonra çertyojda yerini seçin; yazını sürüşdürün və seçib A− / A+ ilə ölçüsünü dəyişin. Dəyişikliklər ortaq Firestore planında saxlanılır. Şirkət, tarix və malların tutduğu sahəni “Anbar məlumatı” bölməsində redaktə edin.</p>
             <button id="warehouse-plan-home" class="secondary-button warehouse-plan-home" type="button"><span aria-hidden="true">⌂</span> Ana səhifəyə qayıt</button>
         </section>
 
@@ -837,6 +835,17 @@
                 <button id="warehouse-plan-info-save" type="button">Redaktə et</button>
             </div>
         </dialog>
+        <dialog id="warehouse-plan-text-dialog" class="warehouse-plan-dialog warehouse-plan-text-dialog" aria-labelledby="warehouse-plan-text-title">
+            <form id="warehouse-plan-text-form" class="warehouse-plan-text-form">
+                <div class="warehouse-plan-dialog-heading">
+                    <div><small>ANBAR PLANI</small><h2 id="warehouse-plan-text-title">Mətn əlavə et</h2></div>
+                    <button id="warehouse-plan-text-close" class="warehouse-plan-dialog-close" type="button" aria-label="Bağla">×</button>
+                </div>
+                <label class="warehouse-plan-text-field"><span>Çertyojda görünəcək yazı</span><input id="warehouse-plan-text-input" type="text" maxlength="100" autocomplete="off" placeholder="Məsələn, Taxıl terminalına" required></label>
+                <p class="warehouse-plan-text-note">Yerləşdirəndən sonra yazını planda sürüşdürüb yerini dəyişə bilərsiniz.</p>
+                <div class="warehouse-plan-dialog-actions"><button id="warehouse-plan-text-cancel" type="button">Ləğv et</button><button type="submit">Yerləşdir</button></div>
+            </form>
+        </dialog>
     </main>
     <dialog id="port-map-dialog" class="port-map-dialog" aria-label="Liman ərazisinin xəritəsi">
         <button id="port-map-close" class="port-map-close" type="button" aria-label="Xəritəni bağla">×</button>
@@ -872,9 +881,8 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=94"></script>
+    <script src="script.js?v=96"></script>
     <script src="english-words.js?v=2"></script>
-    <script src="snow-effect.js?v=4"></script>
 </body>
 </html>
 

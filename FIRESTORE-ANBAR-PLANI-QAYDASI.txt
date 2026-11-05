@@ -22,12 +22,14 @@ Mövcud qaydaları silməyin. Sonra Publish düyməsinə basın.
       allow create, update: if isApprovedWarehouseUser()
         && validWarehouseId()
         && request.resource.data.keys().hasOnly([
-          "warehouseNumber", "totalAreaSqm", "companies", "pallets", "updatedAt", "updatedBy"
+          "warehouseNumber", "totalAreaSqm", "companies", "pallets", "labels", "updatedAt", "updatedBy"
         ])
         && request.resource.data.companies is list
         && request.resource.data.companies.size() <= 3
         && request.resource.data.pallets is list
-        && request.resource.data.pallets.size() <= 2000;
+        && request.resource.data.pallets.size() <= 2000
+        && request.resource.data.labels is list
+        && request.resource.data.labels.size() <= 500;
       allow list, delete: if false;
     }
 

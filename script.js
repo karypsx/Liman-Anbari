@@ -80,8 +80,12 @@ const warehousePlanPickerLabel = document.getElementById("warehouse-plan-picker-
 const warehousePlanPickerOptions = document.getElementById("warehouse-plan-picker-options");
 const warehousePlanStage = document.getElementById("warehouse-plan-stage");
 const warehousePlanPalletsElement = document.getElementById("warehouse-plan-pallets");
+const warehousePlanLabelsElement = document.getElementById("warehouse-plan-labels");
 const warehousePlanStatus = document.getElementById("warehouse-plan-status");
 const warehousePlanAddButton = document.getElementById("warehouse-plan-add");
+const warehousePlanTextAddButton = document.getElementById("warehouse-plan-text-add");
+const warehousePlanTextSmallerButton = document.getElementById("warehouse-plan-text-smaller");
+const warehousePlanTextLargerButton = document.getElementById("warehouse-plan-text-larger");
 const warehousePlanDeleteModeButton = document.getElementById("warehouse-plan-delete-mode");
 const warehousePlanInfoButton = document.getElementById("warehouse-plan-info-button");
 const warehousePlanColorOptions = document.getElementById("warehouse-plan-color-options");
@@ -102,6 +106,11 @@ const warehousePlanTotalArea = document.getElementById("warehouse-plan-total-are
 const warehousePlanUsedArea = document.getElementById("warehouse-plan-used-area");
 const warehousePlanFreeArea = document.getElementById("warehouse-plan-free-area");
 const warehousePlanInfoPalletCount = document.getElementById("warehouse-plan-info-pallet-count");
+const warehousePlanTextDialog = document.getElementById("warehouse-plan-text-dialog");
+const warehousePlanTextForm = document.getElementById("warehouse-plan-text-form");
+const warehousePlanTextInput = document.getElementById("warehouse-plan-text-input");
+const warehousePlanTextClose = document.getElementById("warehouse-plan-text-close");
+const warehousePlanTextCancel = document.getElementById("warehouse-plan-text-cancel");
 const warehouseDefinitions = [
     { number: 1, width: 42, height: 30 }, { number: 2, width: 42, height: 30 },
     { number: 3, width: 42, height: 30 }, { number: 4, width: 42, height: 30 },
@@ -121,8 +130,12 @@ const warehousePlanPalette = [
 ];
 let selectedWarehouseNumber = 1;
 let warehousePlanPallets = [];
+let warehousePlanLabels = [];
+let warehousePlanSelectedLabelId = "";
 let warehousePlanSelectedId = "";
 let warehousePlanAdding = false;
+let warehousePlanAddingLabel = false;
+let warehousePlanPendingLabelText = "";
 let warehousePlanDeleting = false;
 let warehousePlanCurrentColor = "";
 let warehousePlanSuppressClick = false;
@@ -132,6 +145,7 @@ let warehousePlanInfoDraft = null;
 let warehousePlanSubscription = null;
 let warehousePlanLoadVersion = 0;
 let warehousePlanDrag = null;
+let warehousePlanLabelDrag = null;
 const warehousePlanClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 function warehouseDefinition(number = selectedWarehouseNumber) {
@@ -157,6 +171,26 @@ function normalizeWarehousePallets(value, number = selectedWarehouseNumber) {
         x: warehousePlanClamp(Number(item.x) || 0, 0, maxX),
         y: warehousePlanClamp(Number(item.y) || 0, 0, maxY)
     }));
+}
+
+function normalizeWarehousePlanLabels(value) {
+    if (!Array.isArray(value)) return [];
+    return value.filter(item => item && typeof item.id === "string" && typeof item.text === "string")
+        .slice(0, 500)
+        .map(item => ({
+            id: item.id.slice(0, 80),
+            text: item.text.trim().slice(0, 100),
+            fontSize: warehousePlanClamp(Number(item.fontSize) || 16, 9, 40),
+            x: warehousePlanClamp(Number(item.x) || 0, 0, 100),
+            y: warehousePlanClamp(Number(item.y) || 0, 0, 100)
+        }))
+        .filter(item => item.text);
+}
+
+function warehousePlanLabelTransform(x, y) {
+    const translateX = x < 14 ? "0" : x > 86 ? "-100%" : "-50%";
+    const translateY = y < 12 ? "0" : y > 88 ? "-100%" : "-50%";
+    return `translate(${translateX},${translateY})`;
 }
 
 function newWarehousePlanRecordId(prefix = "record") {
@@ -532,6 +566,7 @@ function renderWarehousePlan() {
     const topMargin = (100 / viewHeight) * 100;
     const bottomMargin = (130 / viewHeight) * 100;
     warehousePlanPalletsElement.style.inset = `${topMargin}% ${horizontalMargin}% ${bottomMargin}% ${horizontalMargin}%`;
+    warehousePlanLabelsElement.style.inset = warehousePlanPalletsElement.style.inset;
     warehousePlanPlacementHint.style.top = `calc(${topMargin}% + 8px)`;
     warehousePlanStage.style.setProperty("--grid-step-x", `${(6 / warehouse.width) * 100}%`);
     warehousePlanStage.style.setProperty("--grid-step-y", `${(6 / warehouse.height) * 100}%`);
@@ -562,25 +597,53 @@ function renderWarehousePlan() {
         warehousePlanPalletsElement.append(button);
     });
 
+    warehousePlanLabelsElement.replaceChildren();
+    warehousePlanLabels.forEach(label => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "warehouse-plan-label";
+        button.dataset.labelId = label.id;
+        button.classList.toggle("is-selected", label.id === warehousePlanSelectedLabelId);
+        button.textContent = label.text;
+        button.style.left = `${label.x}%`;
+        button.style.top = `${label.y}%`;
+        button.style.fontSize = `${label.fontSize}px`;
+        button.style.transform = warehousePlanLabelTransform(label.x, label.y);
+        button.title = "Sürüşdürüb yerini dəyişin";
+        button.setAttribute("aria-label", `${label.text}. Yerini dəyişmək üçün sürüşdürün`);
+        warehousePlanLabelsElement.append(button);
+    });
+
     warehousePlanAddButton.classList.toggle("is-placing", warehousePlanAdding);
     warehousePlanAddButton.innerHTML = warehousePlanAdding
         ? '<span aria-hidden="true">✓</span> Yadda saxla'
         : '<span aria-hidden="true">＋</span> Palet əlavə et';
-    warehousePlanAddButton.disabled = !currentAuthUser || warehousePlanDeleting;
+    warehousePlanAddButton.disabled = !currentAuthUser || warehousePlanDeleting || warehousePlanAddingLabel;
+    warehousePlanTextAddButton.classList.toggle("is-placing", warehousePlanAddingLabel);
+    warehousePlanTextAddButton.innerHTML = warehousePlanAddingLabel
+        ? '<span aria-hidden="true">×</span> Ləğv et'
+        : '<span aria-hidden="true">T</span> Mətn əlavə et';
+    warehousePlanTextAddButton.disabled = !currentAuthUser || warehousePlanAdding || warehousePlanDeleting;
+    const canResizeLabel = Boolean(currentAuthUser && warehousePlanSelectedLabelId && !warehousePlanAdding && !warehousePlanAddingLabel && !warehousePlanDeleting);
+    warehousePlanTextSmallerButton.disabled = !canResizeLabel;
+    warehousePlanTextLargerButton.disabled = !canResizeLabel;
     warehousePlanDeleteModeButton.classList.toggle("is-deleting", warehousePlanDeleting);
     warehousePlanDeleteModeButton.innerHTML = warehousePlanDeleting
         ? '<span aria-hidden="true">✓</span> Yadda saxla'
-        : '<span aria-hidden="true">−</span> Palet sil';
-    warehousePlanDeleteModeButton.disabled = !currentAuthUser || warehousePlanAdding;
-    warehousePlanInfoButton.disabled = !currentAuthUser || warehousePlanAdding || warehousePlanDeleting;
-    warehousePlanPickerToggle.disabled = warehousePlanAdding || warehousePlanDeleting;
-    warehousePlanHomeButton.disabled = warehousePlanAdding || warehousePlanDeleting;
+        : '<span aria-hidden="true">−</span> Palet / yazı sil';
+    warehousePlanDeleteModeButton.disabled = !currentAuthUser || warehousePlanAdding || warehousePlanAddingLabel;
+    warehousePlanInfoButton.disabled = !currentAuthUser || warehousePlanAdding || warehousePlanAddingLabel || warehousePlanDeleting;
+    warehousePlanPickerToggle.disabled = warehousePlanAdding || warehousePlanAddingLabel || warehousePlanDeleting;
+    warehousePlanHomeButton.disabled = warehousePlanAdding || warehousePlanAddingLabel || warehousePlanDeleting;
     warehousePlanColorOptions.hidden = !warehousePlanAdding;
-    warehousePlanPlacementHint.hidden = !warehousePlanAdding;
-    warehousePlanPlacementHint.textContent = warehousePlanCurrentColor
-        ? `“${warehousePlanColor(warehousePlanCurrentColor).label}” rəngli paleti yerləşdirmək üçün boş yerə toxunun`
-        : "Əvvəl rəngli palet seçin";
-    warehousePlanStage.classList.toggle("is-placing", warehousePlanAdding);
+    warehousePlanPlacementHint.hidden = !warehousePlanAdding && !warehousePlanAddingLabel;
+    warehousePlanPlacementHint.textContent = warehousePlanAddingLabel
+        ? `“${warehousePlanPendingLabelText}” yazısını qoymaq istədiyiniz yerə toxunun`
+        : warehousePlanCurrentColor
+            ? `“${warehousePlanColor(warehousePlanCurrentColor).label}” rəngli paleti yerləşdirmək üçün boş yerə toxunun`
+            : "Əvvəl rəngli palet seçin";
+    warehousePlanStage.classList.toggle("is-placing", warehousePlanAdding || warehousePlanAddingLabel);
+    warehousePlanStage.classList.toggle("is-placing-text", warehousePlanAddingLabel);
     warehousePlanStage.classList.toggle("is-deleting", warehousePlanDeleting);
     renderWarehousePlanInfo();
     renderWarehousePlanColorOptions();
@@ -620,6 +683,13 @@ function saveWarehousePlan() {
             x: pallet.x,
             y: pallet.y
         })),
+        labels: warehousePlanLabels.map(label => ({
+            id: label.id,
+            text: label.text,
+            fontSize: label.fontSize,
+            x: label.x,
+            y: label.y
+        })),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedBy: currentAuthUser.uid
     };
@@ -646,12 +716,16 @@ function loadWarehousePlan(number) {
     const loadVersion = ++warehousePlanLoadVersion;
     selectedWarehouseNumber = number;
     warehousePlanSelectedId = "";
+    warehousePlanSelectedLabelId = "";
     warehousePlanAdding = false;
+    warehousePlanAddingLabel = false;
+    warehousePlanPendingLabelText = "";
     warehousePlanDeleting = false;
     warehousePlanCurrentColor = "";
     warehousePlanInfoEditing = false;
     warehousePlanInfoDraft = null;
     warehousePlanPallets = [];
+    warehousePlanLabels = [];
     warehousePlanInfo = { companies: [] };
     renderWarehousePlan();
     if (!firebaseDb || !currentAuthUser) {
@@ -663,10 +737,12 @@ function loadWarehousePlan(number) {
     warehousePlanStatus.dataset.state = "loading";
     warehousePlanSubscription = warehousePlanDocumentRef(number).onSnapshot({ includeMetadataChanges: true }, snapshot => {
         if (loadVersion !== warehousePlanLoadVersion || selectedWarehouseNumber !== number) return;
-        if (warehousePlanAdding || warehousePlanDeleting || warehousePlanInfoEditing) return;
+        if (warehousePlanAdding || warehousePlanAddingLabel || warehousePlanDeleting || warehousePlanInfoEditing || warehousePlanLabelDrag) return;
         const data = snapshot.exists ? snapshot.data() : {};
         const storedPallets = Array.isArray(data.pallets) ? data.pallets : [];
         warehousePlanPallets = normalizeWarehousePallets(storedPallets, number) || [];
+        warehousePlanLabels = normalizeWarehousePlanLabels(data.labels);
+        if (!warehousePlanLabels.some(label => label.id === warehousePlanSelectedLabelId)) warehousePlanSelectedLabelId = "";
         warehousePlanInfo = normalizeWarehousePlanInfo(data, storedPallets);
         renderWarehousePlan();
         if (snapshot.metadata.hasPendingWrites) {
@@ -713,7 +789,7 @@ warehousePlanPickerToggle.addEventListener("click", () => {
 warehousePlanPickerOptions.addEventListener("click", event => {
     const button = event.target.closest("[data-warehouse-number]");
     if (!button) return;
-    if (warehousePlanAdding || warehousePlanDeleting) {
+    if (warehousePlanAdding || warehousePlanAddingLabel || warehousePlanDeleting) {
         warehousePlanStatus.textContent = "Anbarı dəyişməzdən əvvəl həmin rejimin “Yadda saxla” düyməsinə basın.";
         warehousePlanStatus.dataset.state = "error";
         closeWarehousePicker();
@@ -740,6 +816,43 @@ warehousePlanAddButton.addEventListener("click", () => {
     warehousePlanStatus.textContent = "Rəng seçin, paletləri planda yerləşdirin; bitirəndə “Yadda saxla” düyməsinə basın.";
     warehousePlanStatus.dataset.state = "placing";
 });
+function closeWarehousePlanTextDialog() {
+    warehousePlanTextDialog.close();
+    warehousePlanTextForm.reset();
+}
+warehousePlanTextAddButton.addEventListener("click", () => {
+    if (!currentAuthUser || warehousePlanAdding || warehousePlanDeleting) return;
+    if (warehousePlanAddingLabel) {
+        warehousePlanAddingLabel = false;
+        warehousePlanPendingLabelText = "";
+        renderWarehousePlan();
+        warehousePlanStatus.textContent = "Mətn yerləşdirmə ləğv edildi.";
+        warehousePlanStatus.dataset.state = "saved";
+        return;
+    }
+    warehousePlanTextInput.value = "";
+    warehousePlanTextDialog.showModal();
+    window.setTimeout(() => warehousePlanTextInput.focus(), 0);
+});
+warehousePlanTextForm.addEventListener("submit", event => {
+    event.preventDefault();
+    const text = warehousePlanTextInput.value.trim().slice(0, 100);
+    if (!text) {
+        warehousePlanTextInput.focus();
+        return;
+    }
+    closeWarehousePlanTextDialog();
+    warehousePlanPendingLabelText = text;
+    warehousePlanAddingLabel = true;
+    renderWarehousePlan();
+    warehousePlanStatus.textContent = `“${text}” yazısını yerləşdirmək üçün çertyojda istədiyiniz yerə toxunun.`;
+    warehousePlanStatus.dataset.state = "placing";
+});
+warehousePlanTextClose.addEventListener("click", closeWarehousePlanTextDialog);
+warehousePlanTextCancel.addEventListener("click", closeWarehousePlanTextDialog);
+warehousePlanTextDialog.addEventListener("click", event => {
+    if (event.target === warehousePlanTextDialog) closeWarehousePlanTextDialog();
+});
 warehousePlanColorOptions.addEventListener("click", event => {
     const button = event.target.closest("[data-palette-id]");
     if (!button || !warehousePlanAdding) return;
@@ -749,6 +862,17 @@ warehousePlanColorOptions.addEventListener("click", event => {
     warehousePlanStatus.textContent = `${warehousePlanColor(warehousePlanCurrentColor).label} seçildi. Paletləri yerləşdirmək üçün planda boş yerlərə toxunun.`;
     warehousePlanStatus.dataset.state = "placing";
 });
+function resizeSelectedWarehousePlanLabel(amount) {
+    const label = warehousePlanLabels.find(item => item.id === warehousePlanSelectedLabelId);
+    if (!label || !currentAuthUser || warehousePlanAdding || warehousePlanAddingLabel || warehousePlanDeleting) return;
+    const nextSize = warehousePlanClamp(label.fontSize + amount, 9, 40);
+    if (nextSize === label.fontSize) return;
+    label.fontSize = nextSize;
+    renderWarehousePlan();
+    void saveWarehousePlan();
+}
+warehousePlanTextSmallerButton.addEventListener("click", () => resizeSelectedWarehousePlanLabel(-2));
+warehousePlanTextLargerButton.addEventListener("click", () => resizeSelectedWarehousePlanLabel(2));
 warehousePlanInfoButton.addEventListener("click", openWarehousePlanInfo);
 function closeWarehousePlanInfoDialog() {
     warehousePlanInfoEditing = false;
@@ -857,6 +981,40 @@ warehousePlanStage.addEventListener("click", event => {
         warehousePlanSuppressClick = false;
         return;
     }
+    if (warehousePlanAddingLabel) {
+        const rect = warehousePlanLabelsElement.getBoundingClientRect();
+        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return;
+        const id = `anbar${String(selectedWarehouseNumber).padStart(2, "0")}-label-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        warehousePlanLabels.push({
+            id,
+            text: warehousePlanPendingLabelText,
+            fontSize: 16,
+            x: warehousePlanClamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100),
+            y: warehousePlanClamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100)
+        });
+        warehousePlanSelectedLabelId = id;
+        warehousePlanSelectedId = "";
+        warehousePlanAddingLabel = false;
+        warehousePlanPendingLabelText = "";
+        renderWarehousePlan();
+        void saveWarehousePlan();
+        return;
+    }
+    const labelButton = event.target.closest("[data-label-id]");
+    if (labelButton) {
+        if (warehousePlanDeleting) {
+            warehousePlanLabels = warehousePlanLabels.filter(item => item.id !== labelButton.dataset.labelId);
+            if (warehousePlanSelectedLabelId === labelButton.dataset.labelId) warehousePlanSelectedLabelId = "";
+            renderWarehousePlan();
+            warehousePlanStatus.textContent = "Yazı silindi. Başqa yazı və ya palet də silib, “Yadda saxla” basın.";
+            warehousePlanStatus.dataset.state = "deleting";
+        } else if (warehousePlanSelectedLabelId !== labelButton.dataset.labelId) {
+            warehousePlanSelectedLabelId = labelButton.dataset.labelId;
+            warehousePlanSelectedId = "";
+            renderWarehousePlan();
+        }
+        return;
+    }
     const palletButton = event.target.closest("[data-pallet-id]");
     if (palletButton) {
         if (warehousePlanDeleting) {
@@ -875,6 +1033,7 @@ warehousePlanStage.addEventListener("click", event => {
         }
         if (!warehousePlanAdding) {
             warehousePlanSelectedId = palletButton.dataset.palletId;
+            warehousePlanSelectedLabelId = "";
             renderWarehousePlan();
         }
         return;
@@ -910,6 +1069,20 @@ warehousePlanStage.addEventListener("pointerdown", event => {
     try { button.setPointerCapture(event.pointerId); } catch (_) {}
     event.preventDefault();
 });
+warehousePlanStage.addEventListener("pointerdown", event => {
+    const button = event.target.closest("[data-label-id]");
+    if (!button || event.button !== 0 || warehousePlanAdding || warehousePlanAddingLabel || warehousePlanDeleting) return;
+    const label = warehousePlanLabels.find(item => item.id === button.dataset.labelId);
+    if (!label) return;
+    warehousePlanSelectedLabelId = label.id;
+    warehousePlanSelectedId = "";
+    warehousePlanLabelsElement.querySelectorAll("[data-label-id]").forEach(item => item.classList.toggle("is-selected", item === button));
+    warehousePlanTextSmallerButton.disabled = !currentAuthUser;
+    warehousePlanTextLargerButton.disabled = !currentAuthUser;
+    warehousePlanLabelDrag = { pointerId: event.pointerId, element: button, label, startX: event.clientX, startY: event.clientY, x: label.x, y: label.y, moved: false };
+    try { button.setPointerCapture(event.pointerId); } catch (_) {}
+    event.preventDefault();
+});
 warehousePlanStage.addEventListener("pointermove", event => {
     const drag = warehousePlanDrag;
     if (!drag || drag.pointerId !== event.pointerId) return;
@@ -925,6 +1098,21 @@ warehousePlanStage.addEventListener("pointermove", event => {
     drag.element.style.top = `${drag.pallet.y}%`;
     drag.element.classList.add("is-dragging");
 });
+warehousePlanStage.addEventListener("pointermove", event => {
+    const drag = warehousePlanLabelDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const rect = warehousePlanLabelsElement.getBoundingClientRect();
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+    drag.moved = true;
+    drag.label.x = warehousePlanClamp(drag.x + (dx / rect.width) * 100, 0, 100);
+    drag.label.y = warehousePlanClamp(drag.y + (dy / rect.height) * 100, 0, 100);
+    drag.element.style.left = `${drag.label.x}%`;
+    drag.element.style.top = `${drag.label.y}%`;
+    drag.element.style.transform = warehousePlanLabelTransform(drag.label.x, drag.label.y);
+    drag.element.classList.add("is-dragging");
+});
 function finishWarehousePlanDrag(event) {
     const drag = warehousePlanDrag;
     if (!drag || (event && drag.pointerId !== event.pointerId)) return;
@@ -938,8 +1126,21 @@ function finishWarehousePlanDrag(event) {
 }
 warehousePlanStage.addEventListener("pointerup", finishWarehousePlanDrag);
 warehousePlanStage.addEventListener("pointercancel", finishWarehousePlanDrag);
+function finishWarehousePlanLabelDrag(event) {
+    const drag = warehousePlanLabelDrag;
+    if (!drag || (event && drag.pointerId !== event.pointerId)) return;
+    warehousePlanLabelDrag = null;
+    drag.element.classList.remove("is-dragging");
+    if (drag.moved) {
+        warehousePlanSuppressClick = true;
+        window.setTimeout(() => { warehousePlanSuppressClick = false; }, 0);
+        void saveWarehousePlan();
+    }
+}
+warehousePlanStage.addEventListener("pointerup", finishWarehousePlanLabelDrag);
+warehousePlanStage.addEventListener("pointercancel", finishWarehousePlanLabelDrag);
 warehousePlanDeleteModeButton.addEventListener("click", () => {
-    if (!currentAuthUser || warehousePlanAdding) return;
+    if (!currentAuthUser || warehousePlanAdding || warehousePlanAddingLabel) return;
     if (warehousePlanDeleting) {
         warehousePlanDeleting = false;
         warehousePlanSelectedId = "";
@@ -948,13 +1149,14 @@ warehousePlanDeleteModeButton.addEventListener("click", () => {
         return;
     }
     warehousePlanSelectedId = "";
+    warehousePlanSelectedLabelId = "";
     warehousePlanDeleting = true;
     renderWarehousePlan();
-    warehousePlanStatus.textContent = "Silmək istədiyiniz paletlərə toxunun. Bitirib saxlamaq üçün həmin düyməyə yenidən basın.";
+    warehousePlanStatus.textContent = "Silmək istədiyiniz palet və ya yazılara toxunun. Bitirib saxlamaq üçün həmin düyməyə yenidən basın.";
     warehousePlanStatus.dataset.state = "deleting";
 });
 warehousePlanHomeButton.addEventListener("click", () => {
-    if (warehousePlanAdding || warehousePlanDeleting) return;
+    if (warehousePlanAdding || warehousePlanAddingLabel || warehousePlanDeleting) return;
     stopWarehousePlanSubscription();
     showView("home");
 });
