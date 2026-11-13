@@ -13,12 +13,12 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Offline PWA shell. This is the same worker used by Firebase notifications.
-const LIMAN_CACHE_NAME = "liman-app-shell-v65";
+const LIMAN_CACHE_NAME = "liman-app-shell-v66";
 const LIMAN_APP_BASE = self.registration.scope;
 const LIMAN_APP_FILES = [
     "./",
     "index.html",
-    "style.css?v=202",
+    "style.css?v=203",
     "app-config.js?v=9",
     "script.js?v=101",
     "english-words.js?v=2",
@@ -102,7 +102,22 @@ self.addEventListener("fetch", event => {
     const isLocal = url.origin === self.location.origin;
     const isStaticCdn = LIMAN_STATIC_CDN_HOSTS.has(url.hostname);
     if (!isLocal && !isStaticCdn) return;
-
+    // CSS: əvvəl şəbəkədən təzəsini al; yalnız internet olmadıqda son keşi işlət.
+    if (isLocal && request.destination === "style") {
+        event.respondWith((async () => {
+            const cache = await caches.open(LIMAN_CACHE_NAME);
+            const cached = await cache.match(request)
+                || await cache.match(request, { ignoreSearch: true });
+            try {
+                const response = await fetch(new Request(request, { cache: "no-store" }));
+                if (response.ok) await cache.put(request, response.clone());
+                return response;
+            } catch (_) {
+                return cached || Response.error();
+            }
+        })());
+        return;
+    }
     event.respondWith((async () => {
         const cache = await caches.open(LIMAN_CACHE_NAME);
         const cached = await cache.match(request)
