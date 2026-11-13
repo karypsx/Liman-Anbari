@@ -13,12 +13,12 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Offline PWA shell. This is the same worker used by Firebase notifications.
-const LIMAN_CACHE_NAME = "liman-app-shell-v66";
+const LIMAN_CACHE_NAME = "liman-app-shell-v67";
 const LIMAN_APP_BASE = self.registration.scope;
 const LIMAN_APP_FILES = [
     "./",
     "index.html",
-    "style.css?v=203",
+    "style.css?v=204",
     "app-config.js?v=9",
     "script.js?v=101",
     "english-words.js?v=2",
@@ -68,7 +68,13 @@ const LIMAN_CDN_FILES = [
 self.addEventListener("install", event => {
     event.waitUntil((async () => {
         const cache = await caches.open(LIMAN_CACHE_NAME);
-        await cache.addAll(LIMAN_APP_FILES);
+        // Bir fayl tapılmasa belə install uğursuz olmasın (əvvəl addAll bütün worker-i sındırırdı).
+        await Promise.allSettled(LIMAN_APP_FILES.map(async url => {
+            try {
+                const response = await fetch(url, { cache: "reload" });
+                if (response.ok) await cache.put(url, response);
+            } catch (_) {}
+        }));
         await Promise.allSettled(LIMAN_CDN_FILES.map(async url => {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 7000);
