@@ -4879,18 +4879,6 @@ body.home-screen:not(.english-practice-screen) .login-placeholder.is-signed-in #
     -webkit-text-fill-color: transparent;
     text-shadow: 0 0 4px rgba(189, 235, 249, .34);
 }
-body.home-screen .login-placeholder.is-signed-in #login-placeholder-label::after {
-    content: "❄";
-    display: inline-block;
-    margin-left: 4px;
-    color: #69aee2;
-    -webkit-text-fill-color: #69aee2;
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 1;
-    vertical-align: 1px;
-    text-shadow: 0 1px 5px rgba(105, 174, 226, .28);
-}
 
 /* Açılış ekranında yüngül yağan qar və altda yumşaq qar yığıntısı. */
 #splash-screen.opening-screen .opening-snowflake {
@@ -4959,4 +4947,37 @@ body.home-screen .login-placeholder.is-signed-in #login-placeholder-label::after
     pointer-events: none;
     transform: rotate(-20deg);
     transform-origin: 25% 75%;
+}
+
+/* Mobil başlıq: loqonu və yazını avatarla toqquşmayacaq ölçüyə sal. */
+@media (max-width: 600px) {
+    body.home-screen .top-label {
+        left: 10px;
+        right: clamp(184px, 52.3vw, 264px);
+        gap: 4px;
+    }
+    body.home-screen .top-label-brand { width: 36px; height: 36px; }
+    body.home-screen .top-label-icon { width: 40px; height: 40px; }
+    body.home-screen .top-label-copy { gap: 2px; }
+    body.home-screen .top-label-title {
+        gap: 3px;
+        font-size: clamp(18px, 5.4vw, 24px);
+        letter-spacing: -.9px;
+        white-space: nowrap;
+    }
+    body.home-screen .top-label-subtitle {
+        max-width: 100%;
+        overflow: hidden;
+        font-size: clamp(5px, 1.3vw, 6px);
+        letter-spacing: .35px;
+        text-overflow: ellipsis;
+    }
+}
+
+@media (max-width: 340px) {
+    body.home-screen .top-label { right: 172px; gap: 3px; }
+    body.home-screen .top-label-brand { width: 32px; height: 32px; }
+    body.home-screen .top-label-icon { width: 36px; height: 36px; }
+    body.home-screen .top-label-title { gap: 2px; font-size: 16px; }
+    body.home-screen .top-label-subtitle { font-size: 4.5px; letter-spacing: .2px; }
 }
