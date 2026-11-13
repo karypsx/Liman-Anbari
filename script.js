@@ -5450,7 +5450,7 @@ function registerLimanOfflineWorker() {
     navigator.serviceWorker.register(workerUrl.href, {
         scope: workerScope,
         updateViaCache: "none"
-    }).catch(error => console.warn("Offline tətbiq yaddaşı aktiv olmadı:", error));
+    }).then(registration => registration.update()).catch(error => console.warn("Offline tətbiq yaddaşı aktiv olmadı:", error));
 }
 
 registerLimanOfflineWorker();
