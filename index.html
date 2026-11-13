@@ -6,14 +6,21 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=167">
+    <link rel="stylesheet" href="style.css?v=200">
     <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Unbounded:wght@200..900&display=swap" rel="stylesheet">
+
+
+
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="vendor/jszip.min.js"></script>
+    
 </head>
 <body>
     <div id="splash-screen" class="splash-screen boot-screen opening-screen" role="status" aria-label="Liman Anbarı işə düşür">
@@ -24,6 +31,16 @@
             <span class="opening-streak opening-streak-two"></span>
             <span class="opening-streak opening-streak-three"></span>
             <span class="opening-streak opening-streak-four"></span>
+            <i class="opening-snowflake opening-snowflake-1">❄</i>
+            <i class="opening-snowflake opening-snowflake-2">❄</i>
+            <i class="opening-snowflake opening-snowflake-3">❄</i>
+            <i class="opening-snowflake opening-snowflake-4">❄</i>
+            <i class="opening-snowflake opening-snowflake-5">❄</i>
+            <i class="opening-snowflake opening-snowflake-6">❄</i>
+            <i class="opening-snowflake opening-snowflake-7">❄</i>
+            <i class="opening-snowflake opening-snowflake-8">❄</i>
+            <span class="opening-snowbank"></span>
+
         </div>
         <header class="opening-topline" aria-hidden="true">
             <span class="opening-brand">LİMAN <i></i> ƏMƏLİYYAT PLATFORMASI</span>
@@ -59,9 +76,15 @@
     </div>
     <main class="container">
         <div class="top-label">
-    <span class="top-label-brand" aria-hidden="true"><img class="top-label-icon" src="images/app-mark.png" alt=""></span>
-    <span class="top-label-title">Anbar İdarəetməsi</span>
+    <span class="top-label-brand" aria-hidden="true"><img class="top-label-icon" src="images/liman-anbari-mark.svg" alt=""></span>
+    <span class="top-label-copy">
+        <span class="top-label-title"><strong class="top-label-word-liman">Liman</strong><strong class="top-label-word-anbari">Anbarı</strong></span>
+        <span class="top-label-subtitle">ANBAR İDARƏETMƏ SİSTEMİ</span>
+    </span>
 </div>
+        <time class="dashboard-date dashboard-date-desktop" aria-label="Bugünün tarixi">
+            <span class="dashboard-date-copy"><span class="dashboard-date-value"></span><span class="dashboard-date-separator" aria-hidden="true">·</span><span class="dashboard-date-weekday"></span></span>
+        </time>
         <div id="menu-backdrop" class="menu-backdrop" hidden></div>
         <div class="app-menu-wrap">
             <div id="account-control" class="account-control">
@@ -73,18 +96,9 @@
             <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Menyunu aç" aria-expanded="false" aria-controls="app-menu">
                 <span></span><span></span><span></span>
             </button>
-            <button id="port-map-open-mobile" class="dashboard-map-button dashboard-map-button-mobile" type="button" aria-label="Liman xəritəsini aç" aria-haspopup="dialog" aria-controls="port-map-dialog">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
-                <span>Xəritə</span>
-            </button>
-            <button id="maray-water-open-mobile" class="dashboard-map-button dashboard-map-button-mobile maray-water-open" type="button" aria-label="Məray Su qaimələrini aç">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.3 6 11a6 6 0 1 1-12 0c0-4.7 6-11 6-11Z"></path><path d="M9 15a3 3 0 0 0 3 3"></path></svg>
-                <span>Məray Su</span>
-            </button>
-            <button id="area-count-open-mobile" class="dashboard-map-button dashboard-map-button-mobile area-count-open" type="button" aria-label="Ərazi sayımını aç">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16H7z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
-                <span>Sayım</span>
-            </button>
+            
+            
+            
             <nav id="app-menu" class="app-menu" aria-label="Əsas menyu" hidden>
                 <div class="app-menu-heading">
                     <div><span class="app-menu-kicker">LİMAN ANBARI</span><strong>Bölmələr</strong></div>
@@ -141,28 +155,15 @@
 
         <section id="home-view" class="view">
             <section class="home-dashboard" aria-label="Günün paneli">
-                <div class="dashboard-topline">
-                    <div class="dashboard-date-wrap">
-                        <div class="dashboard-kicker-row">
-                            <time id="dashboard-date" class="dashboard-date"></time>
-                            <button id="port-map-open" class="dashboard-map-button" type="button" aria-label="Liman xəritəsini aç" aria-haspopup="dialog" aria-controls="port-map-dialog">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
-                                <span>Xəritə</span>
-                            </button>
-                            <button id="area-count-open" class="dashboard-map-button area-count-open" type="button" aria-label="Ərazi sayımını aç">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16H7z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
-                                <span>Ərazi sayımı</span>
-                            </button>
-                            <button id="maray-water-open" class="dashboard-map-button maray-water-open" type="button" aria-label="Məray Su qaimələrini aç">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.3 6 11a6 6 0 1 1-12 0c0-4.7 6-11 6-11Z"></path><path d="M9 15a3 3 0 0 0 3 3"></path></svg>
-                                <span>Məray Su</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                
                 <div class="dashboard-insight-grid">
                     <section class="dashboard-daily-summary" aria-label="Günün icmalı">
-                        <h2 class="dashboard-title">Günün icmalı</h2>
+                        <div class="dashboard-title-row">
+    <h2 class="dashboard-title">Günün icmalı</h2>
+    <time id="dashboard-date" class="dashboard-date dashboard-date-mobile" aria-label="Bugünün tarixi">
+        <span class="dashboard-date-copy"><span id="dashboard-date-value" class="dashboard-date-value"></span><span class="dashboard-date-separator" aria-hidden="true">·</span><span id="dashboard-date-weekday" class="dashboard-date-weekday"></span></span>
+    </time>
+</div>
                         <div class="dashboard-stats" aria-label="Bu günün paylama xülasəsi">
                             <div class="dashboard-stat"><strong id="dashboard-record-count">—</strong><span>paylama qeydi</span></div>
                             <div class="dashboard-stat"><strong id="dashboard-quantity-total">—</strong><span>verilən miqdar</span></div>
@@ -178,52 +179,87 @@
                     </section>
                 </div>
             </section>
-            <div class="home-launch-actions">
-                <div class="home-actions-heading">
-                    <span>GÜNDƏLİK ƏMƏLİYYATLAR</span>
-                    <h2>İş alətləri</h2>
-                </div>
-                <button id="home-area-measurement" class="home-scan-launch" type="button">
-                    <span class="home-scan-launch-icon home-area-launch-icon" aria-hidden="true"><img src="images/menu-area2.png" alt=""></span>
-                    <span class="home-scan-launch-copy">
-                        <span class="home-scan-kicker">ƏRAZİ QEYDLƏRİ</span>
-                        <strong>Sahə ölçümü</strong>
-                        <small>Ölçüləri hesabla və qeydə al</small>
-                    </span>
-                    <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
-                </button>
-                <button id="start-scan" class="home-scan-launch" type="button">
-                    <span class="home-scan-launch-icon" aria-hidden="true"><img src="images/scan-icon.png" alt=""></span>
-                    <span class="home-scan-launch-copy">
-                        <span class="home-scan-kicker">SÜRƏTLİ AXTARIŞ</span>
-                        <strong>Rəfi skan et</strong>
-                        <small>QR kodu oxudub malın yerini tap</small>
-                    </span>
-                    <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
-                </button>
-                <button id="home-issue-goods" class="home-scan-launch home-issue-launch" type="button">
-                    <span class="home-scan-launch-icon home-issue-launch-icon" aria-hidden="true">
-                        <img src="images/mal-ver-icon.png" alt="">
-                    </span>
-                    <span class="home-scan-launch-copy">
-                        <span class="home-scan-kicker">ANBARDAN TƏHVİL</span>
-                        <strong>Stok siyahısı</strong>
-                        <small>Buradan mal təhvil verə bilərsiniz</small>
-                    </span>
-                    <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
-                </button>
-                <button id="home-warehouse-plan" class="home-scan-launch home-warehouse-launch" type="button">
-                    <span class="home-scan-launch-icon home-warehouse-launch-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" focusable="false"><path d="M3 20V8l9-5 9 5v12"></path><path d="M7 20v-7h10v7M9 16h2m2 0h2M5 9h14"></path></svg>
-                    </span>
-                    <span class="home-scan-launch-copy">
-                        <span class="home-scan-kicker">PALET YERLƏŞİMİ</span>
-                        <strong>Anbar planı</strong>
-                        <small>13 anbarın planını aç və malları yerləşdir</small>
-                    </span>
-                    <span class="home-scan-launch-arrow" aria-hidden="true">↗</span>
-                </button>
-            </div>
+           <div class="home-launch-actions">
+    <div class="home-actions-heading">
+        <span>GÜNDƏLİK ƏMƏLİYYATLAR</span>
+        <h2>İş alətləri</h2>
+    </div>
+    <div class="home-quick-tools" aria-label="Sürətli keçidlər">
+        <button id="port-map-open" class="dashboard-map-button" type="button" aria-label="Liman xəritəsini aç" aria-haspopup="dialog" aria-controls="port-map-dialog">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
+                                <span>Xəritə</span>
+                            </button>
+        <button id="area-count-open" class="dashboard-map-button area-count-open" type="button" aria-label="Ərazi sayımını aç">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16H7z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+                                <span>Ərazi sayımı</span>
+                            </button>
+        <button id="maray-water-open" class="dashboard-map-button maray-water-open" type="button" aria-label="Məray Su qaimələrini aç">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.3 6 11a6 6 0 1 1-12 0c0-4.7 6-11 6-11Z"></path><path d="M9 15a3 3 0 0 0 3 3"></path></svg>
+                                <span>Məray Su</span>
+                            </button>
+    
+        <button id="port-map-open-mobile" class="dashboard-map-button dashboard-map-button-mobile" type="button" aria-label="Liman xəritəsini aç" aria-haspopup="dialog" aria-controls="port-map-dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"></path><path d="M9 3v15m6-12v15"></path></svg>
+                <span>Xəritə</span>
+            </button>
+        <button id="area-count-open-mobile" class="dashboard-map-button dashboard-map-button-mobile area-count-open" type="button" aria-label="Ərazi sayımını aç">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16H7z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+                <span>Sayım</span>
+            </button>
+        <button id="maray-water-open-mobile" class="dashboard-map-button dashboard-map-button-mobile maray-water-open" type="button" aria-label="Məray Su qaimələrini aç">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.3 6 11a6 6 0 1 1-12 0c0-4.7 6-11 6-11Z"></path><path d="M9 15a3 3 0 0 0 3 3"></path></svg>
+                <span>Məray Su</span>
+            </button>
+    </div>
+    
+    <button id="home-area-measurement" class="home-scan-launch" type="button">
+        <span class="home-scan-frost" aria-hidden="true"></span>
+        <span class="home-scan-launch-icon home-area-launch-icon" aria-hidden="true"><img src="images/menu-area2.png" alt=""></span>
+        <span class="home-scan-launch-copy">
+            <span class="home-scan-kicker">ƏRAZİ QEYDLƏRİ</span>
+            <strong>Sahə ölçümü</strong>
+            <small>Ölçüləri hesabla və qeydə al</small>
+        </span>
+        <span class="home-scan-launch-arrow" aria-hidden="true"><img src="images/arrow-right.png" alt=""></span>
+    </button>
+    
+    <button id="start-scan" class="home-scan-launch" type="button">
+        <span class="home-scan-frost" aria-hidden="true"></span>
+        <span class="home-scan-launch-icon" aria-hidden="true"><img src="images/scan-icon.png" alt=""></span>
+        <span class="home-scan-launch-copy">
+            <span class="home-scan-kicker">SÜRƏTLİ AXTARIŞ</span>
+            <strong>Rəfi skan et</strong>
+            <small>QR kodu oxudub malın yerini tap</small>
+        </span>
+        <span class="home-scan-launch-arrow" aria-hidden="true"><img src="images/arrow-right.png" alt=""></span>
+    </button>
+    
+    <button id="home-issue-goods" class="home-scan-launch home-issue-launch" type="button">
+        <span class="home-scan-frost" aria-hidden="true"></span>
+        <span class="home-scan-launch-icon home-issue-launch-icon" aria-hidden="true">
+            <img src="images/mal-ver-icon.png" alt="">
+        </span>
+        <span class="home-scan-launch-copy">
+            <span class="home-scan-kicker">ANBARDAN TƏHVİL</span>
+            <strong>Stok siyahısı</strong>
+            <small>Buradan mal təhvil verə bilərsiniz</small>
+        </span>
+        <span class="home-scan-launch-arrow" aria-hidden="true"><img src="images/arrow-right.png" alt=""></span>
+    </button>
+    
+    <button id="home-warehouse-plan" class="home-scan-launch home-warehouse-launch" type="button">
+        <span class="home-scan-frost" aria-hidden="true"></span>
+        <span class="home-scan-launch-icon home-warehouse-launch-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M3 20V8l9-5 9 5v12"></path><path d="M7 20v-7h10v7M9 16h2m2 0h2M5 9h14"></path></svg>
+        </span>
+        <span class="home-scan-launch-copy">
+            <span class="home-scan-kicker">PALET YERLƏŞİMİ</span>
+            <strong>Anbar planı</strong>
+            <small>13 anbarın planını aç və malları yerləşdir</small>
+        </span>
+        <span class="home-scan-launch-arrow" aria-hidden="true"><img src="images/arrow-right.png" alt=""></span>
+    </button>
+</div>
             <div class="home-lists-grid">
                 <div class="home-lists-intro">
                     <h2>Gündəlik nəzarət</h2>
@@ -849,7 +885,7 @@
     </main>
     <dialog id="port-map-dialog" class="port-map-dialog" aria-label="Liman ərazisinin xəritəsi">
         <button id="port-map-close" class="port-map-close" type="button" aria-label="Xəritəni bağla">×</button>
-        <img class="port-map-full" src="images/liman-xerite-xetler.png" alt="Liman ərazisinin xəritəsi">
+        <img class="port-map-full" src="images/liman-xerite-qara.png?v=2" alt="Liman ərazisinin xəritəsi">
     </dialog>
     <dialog id="area-record-dialog" class="area-record-dialog" aria-labelledby="area-dialog-title">
         <div class="area-record-dialog-panel">
@@ -881,7 +917,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=96"></script>
+    <script src="script.js?v=100"></script>
     <script src="english-words.js?v=2"></script>
 </body>
 </html>

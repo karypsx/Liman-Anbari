@@ -13,18 +13,22 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Offline PWA shell. This is the same worker used by Firebase notifications.
-const LIMAN_CACHE_NAME = "liman-app-shell-v34";
+const LIMAN_CACHE_NAME = "liman-app-shell-v60";
 const LIMAN_APP_BASE = self.registration.scope;
 const LIMAN_APP_FILES = [
     "./",
     "index.html",
-    "style.css?v=167",
+    "style.css?v=200",
     "app-config.js?v=9",
-    "script.js?v=96",
+    "script.js?v=100",
     "english-words.js?v=2",
     "manifest.json",
     "images/liman-logo-splash.png",
     "images/app-mark.png",
+    "images/santa-hat.svg",
+    "images/header-snow.svg",
+    "images/footer-snowman.svg",
+    "images/ice-cursor.svg",
     "images/ikon-192.png",
     "images/ikon-512.png",
     "images/ikoon-192.png",
@@ -39,7 +43,7 @@ const LIMAN_APP_FILES = [
     "images/menu-about.png",
     "images/scan-icon.png",
     "images/mal-ver-icon.png",
-    "images/liman-xerite-xetler.png",
+    "images/liman-xerite-qara.png?v=2",
     "vendor/jszip.min.js"
 ].map(path => new URL(path, LIMAN_APP_BASE).href);
 
@@ -113,6 +117,22 @@ self.addEventListener("fetch", event => {
                 return cached || await cache.match(LIMAN_APP_BASE)
                     || await cache.match(new URL("index.html", LIMAN_APP_BASE).href)
                     || Response.error();
+            }
+        }
+
+        if (isLocal) {
+            // Tətbiqin öz faylları (CSS, JS, şəkillər): həmişə əvvəl serverdən yoxlanır,
+            // internet yoxdursa və ya 4 saniyə cavab gəlmirsə keşdəki nüsxə verilir.
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 4000);
+            try {
+                const response = await fetch(request, { cache: "no-cache", signal: controller.signal });
+                if (response.ok) await cache.put(request, response.clone());
+                return response;
+            } catch (_) {
+                return cached || Response.error();
+            } finally {
+                clearTimeout(timer);
             }
         }
 

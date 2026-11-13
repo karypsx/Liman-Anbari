@@ -1239,7 +1239,9 @@ const distributionSearchInput = document.getElementById("distribution-search-inp
 const distributionSearchClear = document.getElementById("distribution-search-clear");
 const journalMatchCount = document.getElementById("journal-match-count");
 const recentDistributionList = document.getElementById("recent-distribution-list");
-const dashboardDate = document.getElementById("dashboard-date");
+const dashboardDates = document.querySelectorAll(".dashboard-date");
+const dashboardDateWeekdays = document.querySelectorAll(".dashboard-date-weekday");
+const dashboardDateValues = document.querySelectorAll(".dashboard-date-value");
 const dashboardOldestList = document.getElementById("dashboard-oldest-list");
 const portMapDialog = document.getElementById("port-map-dialog");
 const portMapOpenButton = document.getElementById("port-map-open");
@@ -5271,9 +5273,18 @@ function updateDashboardDate() {
         void loadDistributionJournal();
     }
     dashboardDayKey = dayKey;
-    const day = String(now.getDate()).padStart(2, "0");
+    const weekdayNamesAz = ["Bazar", "Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə"];
+    const weekdayLabel = weekdayNamesAz[now.getDay()];
+        const day = String(now.getDate()).padStart(2, "0");
     const month = String(now.getMonth() + 1).padStart(2, "0");
-    dashboardDate.textContent = `${day}.${month}.${now.getFullYear()}`;
+    const dateLabel = `${day}.${month}.${now.getFullYear()}`;
+    dashboardDateWeekdays.forEach((element) => { element.textContent = weekdayLabel; });
+    dashboardDateValues.forEach((element) => { element.textContent = dateLabel; });
+    const dateTime = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+    dashboardDates.forEach((element) => {
+        element.dateTime = dateTime;
+        element.setAttribute("aria-label", dateLabel + ", " + weekdayLabel);
+    });
 }
 
 function renderRecentMessage(message) {
