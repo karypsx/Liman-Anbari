@@ -4939,3 +4939,24 @@ body.home-screen .login-placeholder.is-signed-in #login-placeholder-label::after
 @media (prefers-reduced-motion: reduce) {
     #splash-screen.opening-screen .opening-snowflake { animation: none; opacity: .4; transform: none; }
 }
+
+/* Açılış ekranında Şaxta baba papağı birbaşa “Liman” sözünün L hərfinə oturur. */
+.opening-copy h1 .opening-title-liman {
+    position: relative;
+    display: inline-block;
+    color: inherit;
+}
+.opening-copy h1 .opening-title-liman::before {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    top: -.2em;
+    left: -.12em;
+    width: .48em;
+    height: .39em;
+    background: url("images/santa-hat.svg") center / contain no-repeat;
+    filter: drop-shadow(0 2px 2px rgba(23, 36, 61, .18));
+    pointer-events: none;
+    transform: rotate(-20deg);
+    transform-origin: 25% 75%;
+}
