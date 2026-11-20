@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=205">
+    <link rel="stylesheet" href="style.css?v=206">
     <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,7 +88,7 @@
         <div id="menu-backdrop" class="menu-backdrop" hidden></div>
         <div class="app-menu-wrap">
             <div id="account-control" class="account-control">
-                <button id="notification-button" class="header-icon-button" type="button" aria-label="Bildirişlər" title="Bildirişlər"><img src="images/notification.png" alt=""></button>
+                
                 <button id="login-placeholder" class="login-placeholder" type="button" aria-controls="account-logout-menu" aria-expanded="false"><span id="account-current-avatar" class="account-current-avatar" aria-hidden="true" hidden></span><span id="login-placeholder-label">Daxil ol</span></button>
                 <div id="account-logout-menu" class="account-logout-menu" role="menu" hidden>
                     <button id="account-logout-button" class="account-logout-button" type="button" role="menuitem">Çıxış</button>
@@ -696,69 +696,41 @@
         </section>
 
         <section id="about-view" class="view about-view" hidden>
-            <div class="about-page-kicker"><span class="dashboard-live-dot"></span> LİMAN ANBARI · TƏTBİQ</div>
+            <div class="about-page-kicker"><span class="dashboard-live-dot"></span> LİMAN ANBARI <span class="about-kicker-divider">/</span> HAQQINDA</div>
             <div class="about-card">
                 <div class="about-hero">
-                    <div class="about-icon" aria-hidden="true">i</div>
-                    <p class="about-kicker">TƏTBİQ HAQQINDA</p>
+                    <div class="about-hero-topline"><span class="about-icon" aria-hidden="true">LA</span><span class="about-status"><i></i> İŞ ÜÇÜN HAZIRDIR</span></div>
+                    <p class="about-kicker">ANBAR İDARƏETMƏ PLATFORMASI</p>
                     <h2>Liman Anbarı</h2>
-                    <p class="about-intro">QR ilə rəf axtarışı, sahə ölçüsü, su təhvil qeydləri, xatırlatma və paylama əməliyyatlarını bir yerdə idarə etmək üçün hazırlanıb.</p>
-                    <span class="about-version">Versiya <strong>1.81.3</strong></span>
+                    <p class="about-intro">Anbar ehtiyatlarından sahə qeydlərinə, paylamadan gündəlik xatırlatmalara qədər əsas iş prosesləri bir mərkəzdə.</p>
+                    <div class="about-hero-meta"><span class="about-version">VERSİYA <strong>2.2.0</strong></span><span class="about-meta-caption">Bakı · Azərbaycan</span></div>
                 </div>
                 <section class="about-feature-section" aria-labelledby="about-features-title">
-                    <div class="about-section-heading">
-                        <div>
-                            <span class="about-label">GÜNDƏLİK İŞ ÜÇÜN</span>
-                            <h3 id="about-features-title">Tətbiqin imkanları</h3>
-                        </div>
-                        <span class="about-feature-count" aria-hidden="true">05</span>
-                    </div>
+                    <div class="about-section-heading"><div><span class="about-label">İŞ AXINLARI</span><h3 id="about-features-title">Tətbiqin imkanları</h3></div><span class="about-feature-count">12 <small>İMKAN</small></span></div>
                     <div class="about-feature-grid">
-                        <article class="about-feature-card">
-                            <span class="about-feature-icon" aria-hidden="true">⌗</span>
-                            <div><h4>QR ilə rəf axtarışı</h4><p>Rəf kodunu oxudub oradakı malları və mövcud sayını görün.</p></div>
-                        </article>
-                        <article class="about-feature-card">
-                            <span class="about-feature-icon" aria-hidden="true">▤</span>
-                            <div><h4>Paylama jurnalı</h4><p>Verilən malları, miqdarları, tarixləri və alan işçiləri izləyin.</p></div>
-                        </article>
-                        <article class="about-feature-card">
-                            <span class="about-feature-icon" aria-hidden="true">⌕</span>
-                            <div><h4>Rahat axtarış</h4><p>Mal adına, koda, işçiyə, şöbəyə və tarixə görə axtarın.</p></div>
-                        </article>
-                        <article class="about-feature-card">
-                            <span class="about-feature-icon" aria-hidden="true">◷</span>
-                            <div><h4>Canlı günün icmalı</h4><p>Saatı, tarixi və bugünkü paylama sayını izləyin; yeni gün başlayanda icmal yenilənir.</p></div>
-                        </article>
-                        <article class="about-feature-card">
-                            <span class="about-feature-icon" aria-hidden="true">⏰</span>
-                            <div><h4>Xatırlatmalar</h4><p>Vacib işləri qeyd edin; bildirişlər 10 dəq, 5 dəq qalmış və vaxtında gəlsin.</p></div>
-                        </article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">⌗</span><div><h4>QR ilə rəf axtarışı</h4><p>Rəf kodunu skan edin, mal adlarını, kodları, yerləşdiyi yeri və mövcud qalığı tapın.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">⌕</span><div><h4>Stok siyahısı və axtarış</h4><p>Anbar mallarına baxın, ad və kodla axtarın, mövcud qalıqları yoxlayın.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">↗</span><div><h4>Mal təhvili və paylama jurnalı</h4><p>Miqdar, şöbə, alan şəxs və tarixlə təhvili qeyd edin; paylama tarixçəsini axtarıb izləyin.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">▤</span><div><h4>Aylıq hesabatlar</h4><p>Paylama və digər iş qeydlərini aylıq hesabatlarda nəzərdən keçirin.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">⌖</span><div><h4>Anbar planı və liman xəritəsi</h4><p>Anbar planına baxın, qeydlər və işarələr əlavə edin, ərazi xəritəsini açın.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">▱</span><div><h4>Sahə ölçümü və sayımı</h4><p>Ərazi ölçülərini hesablayın, sayım qeydləri aparın və saxlanmış nəticələrə baxın.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">◷</span><div><h4>Sahə nəzarəti</h4><p>Sahədə uzun müddət qalan malları və gündəlik əməliyyatları izləyin.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">♧</span><div><h4>Məray Su qeydləri</h4><p>Su təhvil qeydlərini tarix, miqdar və qəbul edən şəxslə qeyd edin.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">⏰</span><div><h4>Xatırlatmalar və bildirişlər</h4><p>Vacib işləri vaxtı ilə yadda saxlayın və cihaz bildirişləri alın.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">◉</span><div><h4>Hesab və giriş icazələri</h4><p>Şəxsi hesabla daxil olun, profil avatarı seçin; admin qeydiyyat sorğularını idarə etsin.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">W</span><div><h4>Word Shuffle</h4><p>İngilis sözlərini düzərək qısa cümlə oyunları ilə məşq edin.</p></div></article>
+                        <article class="about-feature-card"><span class="about-feature-icon" aria-hidden="true">◷</span><div><h4>Günün icmalı</h4><p>Ana səhifədə tarix, saat və gündəlik paylama göstəricilərinə baxın.</p></div></article>
                     </div>
-                    <p class="about-feature-note">Jurnalı açanda və ya “Yenilə” düyməsinə basanda qeydləri təzələyin.</p>
                 </section>
                 <div class="about-details">
-                    <div class="about-detail">
-                        <span class="about-detail-icon" aria-hidden="true">✦</span>
-                        <div><span class="about-label">HAZIRLANMA İLİ</span><strong>2026</strong></div>
-                    </div>
-                    <div class="about-detail">
-                        <span class="about-detail-icon" aria-hidden="true">↻</span>
-                        <div><span class="about-label">SON YENİLƏNMƏ</span><strong>15 oktyabr 2026</strong></div>
-                    </div>
-                    <div class="about-detail">
-                        <span class="about-detail-icon" aria-hidden="true">♙</span>
-                        <div><span class="about-label">HAZIRLAYAN</span><strong>Ceyhun</strong></div>
-                    </div>
-                    <div class="about-purpose">
-                        <span class="about-label">MƏQSƏD</span>
-                        <p>Rəf axtarışını, sahə ölçülərini, vacib xatırlatmaları və paylama tarixçəsini bir tətbiqdə toplamaq.</p>
-                    </div>
+                    <div class="about-detail"><span class="about-detail-icon" aria-hidden="true">✦</span><div><span class="about-label">HAZIRLANMA İLİ</span><strong>2026</strong></div></div>
+                    <div class="about-detail"><span class="about-detail-icon" aria-hidden="true">↻</span><div><span class="about-label">SON YENİLƏNMƏ</span><strong>19 noyabr 2026</strong></div></div>
+                    <div class="about-detail"><span class="about-detail-icon" aria-hidden="true">♙</span><div><span class="about-label">HAZIRLAYAN</span><strong>Ceyhun</strong></div></div>
+                    <div class="about-purpose"><span class="about-label">MƏQSƏD</span><p>Anbar və sahə əməliyyatlarını aydın, əlçatan və vahid iş mühitində idarə etməyə kömək etmək.</p></div>
                 </div>
             </div>
             <button id="about-home" class="secondary-button" type="button">Ana səhifəyə qayıt</button>
         </section>
-
         <section id="monthly-report-view" class="view monthly-report-view" hidden>
             <div class="monthly-report-heading">
                 <div class="monthly-report-kicker"><span class="dashboard-live-dot"></span> MAL GİRİŞİ</div>
@@ -848,7 +820,7 @@
             <footer class="app-footer">
             <span>© 2026 Liman Anbarı</span>
             <span class="footer-credit">Hazırlayan: Ceyhun · QR ilə rəf axtarışı</span>
-            <span class="footer-version">Versiya 1.81.3</span>
+            <span class="footer-version">Versiya 2.2.0</span>
         </footer>
         <dialog id="warehouse-plan-info-dialog" class="warehouse-plan-dialog" aria-labelledby="warehouse-plan-info-title">
             <div class="warehouse-plan-dialog-heading">
@@ -897,7 +869,18 @@
             <div id="area-record-dialog-content" class="area-record-dialog-content"></div>
         </div>
     </dialog>
-    <button id="message-button" class="floating-message-button" type="button" aria-label="Mesaj yaz"><img src="images/message.png" alt=""><span>Mesaj yaz</span></button>
+    <button id="notification-button" class="header-icon-button" type="button" aria-label="Bildirişlər" title="Bildirişlər"><img src="images/notification.png" alt=""></button>
+    <aside id="message-panel" class="message-panel" aria-label="Mesajlar" hidden>
+        <header class="message-panel-header">
+            <div class="message-panel-brand"><span class="message-panel-mark"><img src="images/message.png" alt=""></span><div><span>ÜNSİYYƏT</span><h2>Mesajlar</h2></div></div>
+            <button id="message-panel-close" class="message-panel-close" type="button" aria-label="Mesaj pəncərəsini bağla">×</button>
+        </header>
+        <label class="message-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="İstifadəçi axtar" aria-label="İstifadəçi axtar" disabled></label>
+        <div class="message-panel-section-title"><span>İSTİFADƏÇİLƏR</span></div>
+        <div class="message-coming-soon"><span class="message-coming-soon-icon" aria-hidden="true">✉</span><p>Çox yaxında mesaj bölməsi aktiv olacaq</p></div>
+        <div class="message-compose-preview"><input id="message-draft-input" type="text" placeholder="Mesaj yaz..." aria-label="Mesaj yaz" autocomplete="off"><button type="button" disabled aria-label="Göndərmək tezliklə aktiv olacaq">↑</button></div>
+    </aside>
+    <button id="message-button" class="floating-message-button" type="button" aria-label="Mesaj yaz" aria-controls="message-panel" aria-expanded="false"><img src="images/message.png" alt=""><span>Mesaj yaz</span></button>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     <dialog id="issue-goods-dialog" class="issue-goods-dialog">
         <form id="issue-goods-form" class="issue-goods-form">
@@ -919,7 +902,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=102"></script>
+    <script src="script.js?v=103"></script>
     <script src="english-words.js?v=2"></script>
 </body>
 </html>

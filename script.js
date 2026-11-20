@@ -5477,4 +5477,14 @@ document.addEventListener("visibilitychange", () => {
 const notificationButton = document.getElementById("notification-button");
 const messageButton = document.getElementById("message-button");
 notificationButton?.addEventListener("click", () => showActionToast("Çox yaxında"));
-messageButton?.addEventListener("click", () => showActionToast("Çox yaxında"));
+const messagePanel = document.getElementById("message-panel");
+const messagePanelClose = document.getElementById("message-panel-close");
+function setMessagePanelOpen(open) {
+    messagePanel.hidden = !open;
+    messageButton.setAttribute("aria-expanded", String(open));
+}
+messageButton?.addEventListener("click", () => setMessagePanelOpen(messagePanel.hidden));
+messagePanelClose?.addEventListener("click", () => setMessagePanelOpen(false));
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && messagePanel && !messagePanel.hidden) setMessagePanelOpen(false);
+});
