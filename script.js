@@ -5473,3 +5473,8 @@ document.addEventListener("visibilitychange", () => {
         }
     }
 });
+
+const notificationButton = document.getElementById("notification-button");
+const messageButton = document.getElementById("message-button");
+notificationButton?.addEventListener("click", () => showActionToast("Çox yaxında"));
+messageButton?.addEventListener("click", () => showActionToast("Çox yaxında"));
