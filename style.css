@@ -4989,3 +4989,18 @@ body.home-screen:not(.english-practice-screen) .login-placeholder.is-signed-in #
 .floating-message-button img { display:block; width:23px; height:23px; object-fit:contain; }
 .floating-message-button:hover, .floating-message-button:focus-visible { outline:none; filter:brightness(1.08); transform:translateY(-2px); }
 .floating-message-button:active { transform:scale(.97); }
+
+/* Yenilənmiş dairəvi ikon düymələri */
+.header-icon-button { position:relative; width:44px; height:44px; padding:10px; border:1px solid rgba(125,190,255,.28); border-radius:50%; background:linear-gradient(145deg,rgba(31,48,75,.98),rgba(19,29,48,.96)); box-shadow:0 7px 20px rgba(11,24,48,.24),inset 0 1px rgba(255,255,255,.12); transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease; }
+.header-icon-button::after { position:absolute; top:7px; right:7px; width:8px; height:8px; border:2px solid #17243a; border-radius:50%; background:#ff6680; content:""; box-shadow:0 0 10px rgba(255,102,128,.55); }
+.header-icon-button:hover,.header-icon-button:focus-visible { transform:translateY(-2px); border-color:rgba(153,210,255,.62); background:linear-gradient(145deg,#31517e,#1f3558); box-shadow:0 10px 24px rgba(24,66,125,.3),inset 0 1px rgba(255,255,255,.15); }
+.header-icon-button:active { transform:scale(.95); }
+.floating-message-button { width:68px; height:68px; min-height:68px; justify-content:center; gap:0; padding:0; border:1px solid rgba(255,255,255,.46); border-radius:50%; color:#fff; background:linear-gradient(145deg,#39d7c4 0%,#387af5 52%,#8758ed 100%); box-shadow:0 12px 32px rgba(64,91,222,.36),inset 0 2px 2px rgba(255,255,255,.38); transition:transform .2s ease,box-shadow .2s ease,filter .2s ease; }
+.floating-message-button img { width:29px; height:29px; filter:drop-shadow(0 2px 3px rgba(18,34,88,.24)); }
+.floating-message-button span { position:absolute; right:76px; padding:8px 12px; border:1px solid rgba(255,255,255,.12); border-radius:10px; color:#f8fbff; background:rgba(20,29,54,.94); box-shadow:0 5px 16px rgba(12,20,44,.2); font-size:12px; white-space:nowrap; opacity:0; pointer-events:none; transform:translateX(5px); transition:opacity .16s ease,transform .16s ease; }
+.floating-message-button:hover,.floating-message-button:focus-visible { transform:translateY(-3px) scale(1.04); border-color:rgba(255,255,255,.7); box-shadow:0 16px 38px rgba(64,91,222,.46),inset 0 2px 2px rgba(255,255,255,.44); }
+.floating-message-button:hover span,.floating-message-button:focus-visible span { opacity:1; transform:translateX(0); }
+.floating-message-button:active { transform:scale(.96); }
+@media (max-width:699px) { .header-icon-button { display:none !important; } }
+@media (min-width:700px) { .header-icon-button { display:grid; } }
+@media (prefers-reduced-motion:reduce) { .header-icon-button,.floating-message-button,.floating-message-button span { transition:none; } }
