@@ -1,13 +1,13 @@
-MESAJLAŞMA VƏ OXUNMAMIŞ MESAJLAR
+MESAJLAŞMA, FAYL VƏ BİLDİRİŞ QURASDIRMASI
 
-Firebase Console → Firestore Database → Rules bölməsində mövcud qaydaları bu layihədəki firestore.rules faylının tam mətni ilə əvəz edib Publish edin. Bu fayl əvvəl göndərdiyiniz users, reminders, tokens və warehousePlans qaydalarını saxlayır; chatProfiles, chats, messages və unreadCounts qaydalarını əlavə edir.
+1. Firebase Console → Firestore Database → Rules bölməsində bu qovluqdakı firestore.rules faylının tam mətnini yayımlayın.
 
-Yeni söhbətin açılması, mesaj oxuma/göndərmə və oxunmamış sayğac üçün Firestore qaydalarının yayımlanması vacibdir.
+2. Fayl yaddaşı üçün bu qovluqdakı SUPABASE-QURASDIRMA.txt təlimatını izləyin. Fayl yükləmək üçün Firebase Storage Rules lazım deyil.
 
-Mesaj gələndə telefon/brauzer push bildirişi üçün Firebase Cloud Function-ı da yayımlayın. Layihə qovluğunda terminal açın və:
+3. Mesaj push bildirişi istəyəndə Firebase CLI ilə aşağıdakı qaydaları və funksiyanı yayımlayın:
 
-    firebase deploy --only functions:sendChatMessageNotification
+    firebase deploy --only firestore:rules,functions:sendChatMessageNotification
 
-Hər istifadəçi bildiriş almaq istədiyi cihazda tətbiqin Xatırlatmalar bölməsindən bildiriş icazəsini aktiv etməlidir. Tətbiq həmin cihazın FCM tokenini users/{uid}/tokens altına yazır.
+Cloud Function yayımlamaq Firebase Blaze planı/billing hesabı tələb edə bilər. Bu, Supabase fayl yaddaşından ayrıdır. Funksiya yayımlanmayıbsa, söhbət və oxunmamış sayğaclar işləyir, amma tətbiq bağlı olanda push bildirişi göndərilmir.
 
-Bildirişə basanda tətbiq açılır və göndərənin söhbətinə keçir. Mesaj ikonunun qırmızı nişanında bütün söhbətlər üzrə oxunmamış mesajların cəmi görünür; söhbəti açanda say azalır.
+Mesaj panelinin nişanı bütün söhbətlər üzrə oxunmamışların cəmini, istifadəçi siyahısındakı qırmızı dairə isə həmin şəxsdən gələn oxunmamışların sayını göstərir. Söhbəti oxuyanda həmin şəxsin sayğacı sıfırlanır.

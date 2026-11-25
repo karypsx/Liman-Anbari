@@ -5239,3 +5239,47 @@ body.about-screen .about-purpose p { color:#536782; }
 
 /* Panel açıq olmayanda gizlətmə atributu display:grid qaydasından üstün olmalıdır. */
 .message-panel[hidden] { display:none !important; }
+
+/* Emoji, fayl qoşması və mesaj bildirişi */
+.message-panel-header-actions { display:flex; align-items:center; gap:7px; }
+.message-notification-enable { display:inline-flex; flex:none; align-items:center; justify-content:center; width:66px; min-width:0; height:28px; padding:2px 4px; border:1px solid #e2e8f1; border-radius:8px; color:#657793; background:#fff; font-size:7.5px; font-weight:700; line-height:1.05; letter-spacing:-.1px; text-align:center; white-space:normal; cursor:pointer; }
+.message-notification-enable[hidden] { display:none !important; }
+.message-notification-enable:hover,.message-notification-enable:focus-visible { outline:none; border-color:#cbd8ed; background:#f3f6fc; }
+.message-notification-enable.is-enabled { border-color:#b9e6cc; color:#137b48; background:#effaf3; }
+.message-notification-enable:disabled { cursor:not-allowed; opacity:.5; }
+.message-compose-preview { position:relative; display:flex; flex:none; flex-direction:column; align-items:stretch; gap:6px; min-height:0; padding:6px; }
+.message-compose-tools { display:flex; align-items:center; gap:6px; min-width:0; }
+.message-compose-tool { display:grid; flex:none; width:30px; height:30px; place-items:center; padding:0; border:1px solid #e0e7f2; border-radius:8px; color:#536b91; background:#fff; font-size:15px; cursor:pointer; }
+.message-compose-tool:hover,.message-compose-tool:focus-visible { outline:none; border-color:#b9c9e5; background:#f3f6fc; }
+.message-compose-tool:disabled { cursor:not-allowed; opacity:.45; }
+#message-attach-button { font-size:20px; font-weight:650; line-height:1; }
+.message-file-preview { display:flex; align-items:center; gap:9px; min-width:0; min-height:49px; padding:7px 9px; border:1px solid #d9e4f5; border-radius:11px; color:#526b91; background:linear-gradient(135deg,#f8fbff,#f1f5fc); box-shadow:0 3px 10px rgba(41,70,112,.06); }
+.message-file-preview[hidden] { display:none !important; }
+.message-file-preview-icon { display:grid; flex:none; width:32px; height:32px; place-items:center; border-radius:9px; color:#386eaf; background:linear-gradient(145deg,#e2efff,#e9e8ff); font-size:15px; }
+.message-file-preview-copy { display:grid; flex:1; min-width:0; gap:3px; }
+.message-file-preview-copy strong { overflow:hidden; color:#344966; font-size:10px; font-weight:750; text-overflow:ellipsis; white-space:nowrap; }
+.message-file-preview-copy small { color:#8493a9; font-size:8px; }
+.message-file-preview button { display:grid; flex:none; width:25px; height:25px; place-items:center; padding:0; border:1px solid #e5eaf2; border-radius:8px; color:#7a879a; background:#fff; font-size:17px; line-height:1; cursor:pointer; }
+.message-file-preview button:hover,.message-file-preview button:focus-visible { outline:none; color:#a83347; background:#ffecef; }
+.message-file-preview button:disabled { cursor:not-allowed; opacity:.45; }
+.message-compose-preview input { flex:1; min-width:0; padding:0 3px; border:0; outline:0; color:#344966; background:transparent; font:inherit; font-size:11px; user-select:text; -webkit-user-select:text; }
+.message-compose-preview input:disabled { color:#9aa6b7; }
+.message-compose-status { padding:2px 4px; color:#627694; font-size:9px; line-height:1.35; overflow-wrap:anywhere; }
+.message-compose-status.is-error { color:#b13e50; }
+.message-emoji-picker { position:absolute; z-index:5; right:0; bottom:calc(100% + 7px); display:grid; grid-template-columns:repeat(8,minmax(30px,1fr)); gap:3px; width:min(300px,calc(100vw - 48px)); max-height:190px; padding:8px; overflow:auto; border:1px solid #dce5f2; border-radius:12px; background:#fff; box-shadow:0 12px 32px rgba(30,49,80,.2); }
+.message-emoji-choice { display:grid; width:30px; height:30px; place-items:center; padding:0; border:0; border-radius:7px; background:transparent; font-size:19px; cursor:pointer; }
+.message-emoji-choice:hover,.message-emoji-choice:focus-visible { outline:none; background:#edf3ff; }
+.message-attachment { display:inline-flex; align-items:center; max-width:100%; margin-top:5px; padding:6px 8px; overflow:hidden; border:1px solid #dce5f3; border-radius:8px; color:#365e9d; background:rgba(255,255,255,.72); font-size:10px; text-decoration:none; text-overflow:ellipsis; white-space:nowrap; }
+.message-attachment:hover { border-color:#aebfe0; text-decoration:underline; }
+.message-attachment.is-error { color:#a44150; }
+#message-compose-form { gap:8px; padding:8px; border:1px solid #dce5f1; border-radius:14px; background:linear-gradient(145deg,#fff,#f8faff); box-shadow:0 5px 16px rgba(36,58,91,.08); }
+#message-thread { overscroll-behavior:contain; scroll-behavior:smooth; }
+#message-send-button { display:inline-flex; flex:none; align-items:center; justify-content:center; gap:6px; min-width:78px; height:34px; padding:0 11px; border:1px solid rgba(255,255,255,.65); border-radius:11px; color:#fff; background:linear-gradient(135deg,#3678e8,#6558d9 60%,#8b51cf); box-shadow:0 4px 12px rgba(86,92,204,.3),inset 0 1px 2px rgba(255,255,255,.35); font-size:9px; font-weight:800; letter-spacing:.15px; cursor:pointer; transition:transform .14s ease,box-shadow .14s ease,filter .14s ease; opacity:1; }
+#message-send-button:not(:disabled):hover { transform:translateY(-1px); filter:brightness(1.08); box-shadow:0 7px 16px rgba(86,92,204,.36),inset 0 1px 2px rgba(255,255,255,.4); }
+#message-send-button:not(:disabled):active { transform:translateY(0) scale(.96); filter:brightness(.96); }
+#message-send-button:focus-visible { outline:3px solid rgba(86,111,218,.28); outline-offset:2px; }
+#message-send-button:disabled { color:#fff; background:linear-gradient(135deg,#9fb2d8,#aaa0cf); box-shadow:0 2px 6px rgba(86,92,204,.14); opacity:.72; cursor:not-allowed; }
+.message-send-label { line-height:1; }
+.message-send-icon { font-size:13px; line-height:1; }
+@media (max-width:390px) { .message-compose-tool { width:27px; height:27px; } .message-compose-tools { gap:4px; } .message-emoji-picker { grid-template-columns:repeat(7,minmax(29px,1fr)); } }
+@media (max-width:370px) { .message-notification-enable { width:60px; height:26px; padding:2px 3px; font-size:7px; } }

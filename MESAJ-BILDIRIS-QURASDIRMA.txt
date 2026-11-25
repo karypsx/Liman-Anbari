@@ -1,16 +1,15 @@
 MESAJLAŞMA VƏ PUSH BİLDİRİŞ QURAŞDIRMASI
 
-1. Firestore qaydaları
-Firebase Console → Firestore Database → Rules bölməsində mövcud qaydaları bu qovluqdakı firestore.rules faylının tam mətni ilə əvəz edin və Publish basın. Fayl istifadəçi hesabları, xatırlatmalar, cihaz tokenləri, anbar planları və yeni mesajlaşma qaydalarını birlikdə saxlayır.
+1. Firebase Console → Firestore Database → Rules bölməsində firestore.rules faylının tam mətnini yayımlayın.
 
-2. Mesaj push bildirişi üçün Cloud Function
-Layihənin əsas qovluğunda terminal açın və işlədin:
+2. Faylların Supabase-ə yüklənməsi üçün SUPABASE-QURASDIRMA.txt faylındakı addımları tamamlayın. Firebase Storage Rules lazım deyil.
+
+3. Push bildirişi üçün layihənin əsas qovluğunda terminal açıb işlədin:
 
     firebase deploy --only firestore:rules,functions:sendChatMessageNotification
 
-Firebase CLI hesabında bu layihənin seçildiyini yoxlayın; .firebaserc-də limananbari layihəsi qeyd olunub. Funksiya yeni mesaj yarananda alıcının qeydiyyatdan keçmiş cihaz tokenlərinə FCM bildirişi göndərir.
+Firebase CLI hesabında limananbari layihəsinin seçildiyini yoxlayın. Cloud Function yayımlamaq Firebase Blaze planı/billing hesabı tələb edə bilər. Supabase fayl yaddaşı bundan ayrıdır.
 
-3. Cihaz icazəsi
-Bildiriş gəlməsi üçün hər hesab öz cihazında tətbiqin Xatırlatmalar bölməsindən bildiriş icazəsini aktiv etməlidir. Bu, cihazın FCM tokenini hesaba bağlayır. İcazəsiz cihazda mesaj yenə çatda görünür və qırmızı oxunmamış sayğac artır, amma push bildirişi gəlmir.
+4. Hər cihazda mesaj panelinin başlığındakı zəng düyməsinə basıb bildiriş icazəsini aktiv edin. İcazə verilməsə mesaj yenə söhbətdə görünür və qırmızı oxunmamış sayğac artır, amma push gəlmir.
 
-İstifadəçi siyahısı panelin solunda görünür; istifadəçini seçəndə söhbət sağda açılır. Söhbəti açmaq həmin söhbətin oxunmamış sayını sıfırlayır. Push bildirişinə basanda göndərənlə söhbət açılır.
+İstifadəçi siyahısındakı qırmızı nişan həmin şəxsdən gələn oxunmamış mesajların sayını göstərir. Push bildirişinə basanda göndərənlə söhbət açılır.

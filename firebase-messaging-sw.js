@@ -13,14 +13,14 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Offline PWA shell. This is the same worker used by Firebase notifications.
-const LIMAN_CACHE_NAME = "liman-app-shell-v74";
+const LIMAN_CACHE_NAME = "liman-app-shell-v87";
 const LIMAN_APP_BASE = self.registration.scope;
 const LIMAN_APP_FILES = [
     "./",
     "index.html",
-    "style.css?v=209",
-    "app-config.js?v=9",
-    "script.js?v=108",
+    "style.css?v=216",
+    "app-config.js?v=10",
+    "script.js?v=117",
     "english-words.js?v=2",
     "manifest.json",
     "images/liman-logo-splash.png",
@@ -53,6 +53,7 @@ const LIMAN_APP_FILES = [
 // Apps Script requests and Firebase data requests are deliberately excluded.
 const LIMAN_STATIC_CDN_HOSTS = new Set([
     "www.gstatic.com",
+    "cdn.jsdelivr.net",
     "unpkg.com",
     "cdnjs.cloudflare.com",
     "cdn.sheetjs.com"
@@ -64,7 +65,8 @@ const LIMAN_CDN_FILES = [
     "https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js",
     "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js",
     "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js",
-    "https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"
+    "https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js",
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ];
 
 self.addEventListener("install", event => {

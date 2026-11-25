@@ -9,9 +9,14 @@ window.APP_CONFIG = {
         apiKey: "AIzaSyD3ihduuP6neOrQzU4i33jYV9Cup_PkPGQ",
         authDomain: "limananbari.firebaseapp.com",
         projectId: "limananbari",
-        storageBucket: "limananbari.firebasestorage.app",
         messagingSenderId: "17127953994",
         appId: "1:17127953994:web:b63b5774f42d894df938b3"
+    },
+    // Supabase Storage üçün project URL və Publishable key-i daxil edin.
+    // Secret/service_role açarını heç vaxt bura yazmayın.
+    supabaseStorage: {
+        url: "https://ceraukeiamozvwxfctwa.supabase.co",
+        publishableKey: "sb_publishable_YecMe9jIwGMR8BoKWF4ICg_QqQpCy5g"
     },
     firebaseVapidPublicKey: "BGS8Sp1oxxiFtu2uB5OPk9M_g8Kp2Nd9aaSADgCKnd2bqh7I_N76k4EOwBNGVJT_vJgkNrF2TUDxaID8zOmzkpY",
     // Yeni, təsdiqlənmiş hesabı yoxlayan Apps Script Web App URL-ni burada yerləşdirin.

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=209">
+    <link rel="stylesheet" href="style.css?v=216">
     <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -873,7 +873,10 @@
     <aside id="message-panel" class="message-panel" aria-label="Mesajlar" hidden>
         <header class="message-panel-header">
             <div class="message-panel-brand"><span class="message-panel-mark"><img src="images/message.png" alt=""></span><div><span>ÜNSİYYƏT</span><h2>Mesajlar</h2></div></div>
-            <button id="message-panel-close" class="message-panel-close" type="button" aria-label="Mesaj pəncərəsini bağla">×</button>
+            <div class="message-panel-header-actions">
+                <button id="message-notification-enable" class="message-notification-enable" type="button" aria-label="Mesaj bildirişlərini aktiv et" title="Bu cihazda mesaj bildirişlərini aktiv et">Bildirişlərə icazə ver</button>
+                <button id="message-panel-close" class="message-panel-close" type="button" aria-label="Mesaj pəncərəsini bağla">×</button>
+            </div>
         </header>
         <section id="message-directory-view" class="message-directory-view">
             <label class="message-search"><span aria-hidden="true">⌕</span><input id="message-user-search" type="search" placeholder="İstifadəçi axtar" aria-label="İstifadəçi axtar"></label>
@@ -888,8 +891,25 @@
             </header>
             <div id="message-thread" class="message-thread" role="log" aria-live="polite" aria-relevant="additions"></div>
             <form id="message-compose-form" class="message-compose-preview">
-                <input id="message-draft-input" type="text" placeholder="Mesaj yaz..." aria-label="Mesaj yaz" autocomplete="off" maxlength="1000" disabled>
-                <button id="message-send-button" type="submit" aria-label="Mesajı göndər" disabled>↑</button>
+                <div id="message-emoji-picker" class="message-emoji-picker" role="group" aria-label="Emoji seçin" hidden></div>
+                <div id="message-file-preview" class="message-file-preview" hidden>
+                    <span class="message-file-preview-icon" aria-hidden="true">📎</span>
+                    <span class="message-file-preview-copy">
+                        <strong id="message-file-preview-name"></strong>
+                        <small id="message-file-preview-size"></small>
+                    </span>
+                    <button id="message-file-remove" type="button" aria-label="Seçilmiş faylı sil" title="Faylı çıxar">×</button>
+                </div>
+                <div class="message-compose-tools">
+                    <button id="message-emoji-toggle" class="message-compose-tool" type="button" aria-label="Emoji seç" title="Emoji seç" disabled>😊</button>
+                    <button id="message-attach-button" class="message-compose-tool" type="button" aria-label="Fayl əlavə et" title="Fayl əlavə et (15 MB-a qədər)" disabled>+</button>
+                    <input id="message-file-input" class="message-file-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.zip,.rar,.7z" tabindex="-1" hidden>
+                    <input id="message-draft-input" type="text" placeholder="Mesaj yaz..." aria-label="Mesaj yaz" autocomplete="off" maxlength="1000" disabled>
+                    <button id="message-send-button" type="submit" aria-label="Mesajı göndər" title="Mesaj və faylı göndər" disabled>
+                        <span class="message-send-label">Göndər</span><span class="message-send-icon" aria-hidden="true">➤</span>
+                    </button>
+                </div>
+                <div id="message-compose-status" class="message-compose-status" role="status" aria-live="polite" hidden></div>
             </form>
         </section>
     </aside>
@@ -910,12 +930,13 @@
             <div class="issue-goods-dialog-actions"><button id="issue-goods-cancel" class="secondary-button" type="button">Ləğv et</button><button id="issue-goods-submit" class="primary-button" type="submit">Təhvil ver <span aria-hidden="true">→</span></button></div>
         </form>
     </dialog>
-    <script src="app-config.js?v=9"></script>
+    <script src="app-config.js?v=10"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=108"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js?v=117"></script>
     <script src="english-words.js?v=2"></script>
 </body>
 </html>

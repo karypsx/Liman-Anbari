@@ -1,0 +1,41 @@
+LIMAN ANBARI · PULSUZ SUPABASE FAYL YADDAŞI
+
+Bu quraşdırma söhbət mesajlarını və istifadəçi hesablarını Firestore-da saxlayır. Yalnız fayllar Supabase Storage-a yüklənir. Firebase Storage/Billing qoşulmur.
+
+SUPABASE PANELİNDƏ
+
+1. Organization yaradan pəncərədə Free ($0/month), Personal və Web app seçin.
+2. Organization açılandan sonra New project yaradın və yenə Free planını seçin. Verilənlər bazası şifrəsini özünüz saxlayın; heç kimə göndərməyin.
+3. Project hazır olanda Authentication → Sign In / Providers bölməsində Third-Party Auth hissəsini açın.
+4. Firebase inteqrasiyasını əlavə edin. Firebase Project ID: limananbari
+5. SQL Editor → New query açın. Bu qovluqdakı supabase-setup.sql faylının bütün mətnini yapışdırıb Run basın. Bu, private liman-chat-files bucket-i və giriş qaydalarını yaradır.
+6. Project → Connect bölməsindən Project URL və Publishable key-i götürün. Secret/service_role key-i götürməyin və paylaşmayın.
+
+TƏTBİQƏ QOŞMAQ
+
+1. app-config.js faylında supabaseStorage.url sətrinə Project URL-i yazın.
+2. supabaseStorage.publishableKey sətrinə Publishable key-i yazın.
+3. Dəyişiklikləri yadda saxlayın və tətbiqi yenidən yükləyin.
+
+MƏHDUDİYYƏTLƏR VƏ FAYL SİLMƏ
+
+- Tətbiqdə fayl başına limit 15 MB-dır.
+- Pulsuz planda ümumi fayl yeri 1 GB-dır. Bu, ömürlük yükləmə limiti deyil; saxlanan fayllar həmin yeri tutur.
+- Lazımsız faylı silmək üçün Supabase → Storage → liman-chat-files bölməsində faylı seçib Delete edin. Bu, storage yerini boşaldır. Firestore-dakı köhnə mesaj sətri qala bilər, amma silinmiş faylın linki artıq açılmayacaq.
+- Publishable key brauzerdə görünə bilər; bu normaldır. Faylların məxfiliyini SQL qaydaları təmin edir.
+- Firebase ID tokeninin rolu authenticated deyil, anon ola bilər. Bu qaydalar yalnız limananbari Firebase issuer-i və tokenin sub istifadəçi ID-sini qəbul edir; naməlum brauzer/API açarı təkbaşına fayl oxuya və ya yükləyə bilməz.
+
+TƏTBİQ BAĞLI OLANDA DA MESAJ BİLDİRİŞİ (FIREBASE BLAZE TƏLƏB ETMƏYƏN SUPABASE FUNCTION)
+
+Bu qovluqdakı supabase/functions/send-chat-push/index.ts function-u mesaj göndəriləndə çağırılır. O, Firebase ID tokenini doğrulayır, mesaj alanın qeydiyyatlı cihaz tokenlərini Firestore-dan oxuyur və FCM ilə bildiriş göndərir. Firebase service account açarı yalnız Supabase Function secret-də saxlanılır; heç vaxt app-config.js-ə və ya söhbətə qoymayın.
+
+Quraşdırma:
+1. Supabase → Edge Functions bölməsində send-chat-push adlı function yaradın. Bu qovluqdakı index.ts mətnini function redaktoruna köçürüb Deploy edin. Supabase function ayarında Verify JWT söndürülməlidir; function Firebase ID tokenini özü yoxlayır.
+2. Supabase → Edge Functions → Secrets bölməsində bu iki secret-i əlavə edin:
+   FIREBASE_PROJECT_ID = limananbari
+   FIREBASE_SERVICE_ACCOUNT_JSON = Firebase service account JSON faylının tam məzmunu
+3. JSON yaratmaq üçün Firebase Console → Project settings → Service accounts → Generate new private key. JSON faylını endirin. Onu heç kimə göndərməyin və tətbiq qovluğuna qoymayın; faylı açıb bütün məzmununu yalnız Supabase Secrets dəyərinə yapışdırın.
+4. Function deploy olunduqdan sonra yenilənmiş index.html, script.js və firebase-messaging-sw.js fayllarını saytda yerləşdirin. Hər istifadəçi tətbiqi bir dəfə yeniləyib açmalıdır; bundan sonra hər mesaj üçün refresh lazım deyil.
+5. Bildiriş alacaq hər cihazda istifadəçi tətbiqə daxil olub “Bildirişlərə icazə ver” düyməsinə bir dəfə basmalıdır. Cihaz FCM tokeni Firestore-da qeydiyyatdan keçməlidir.
+
+Qeyd: Service account private açarı Supabase serverində məxfi saxlanır və Firebase layihəsinə server icazəsi verir. Heç vaxt brauzer koduna, tətbiq ZIP-inə və ya söhbətə daxil etməyin. Bu üsulda Firebase Cloud Functions deploy edilmir; Blaze planı lazım deyil.

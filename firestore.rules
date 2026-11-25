@@ -146,6 +146,30 @@ service cloud.firestore {
           && newCounts.get(otherUid, 0) == oldCounts.get(otherUid, 0);
       }
 
+      function validMessageAttachment() {
+        let attachment = request.resource.data.attachment;
+        return attachment is map
+          && attachment.keys().hasOnly(["fileName", "contentType", "size", "storagePath"])
+          && attachment.keys().hasAll(["fileName", "contentType", "size", "storagePath"])
+          && attachment.fileName is string
+          && attachment.fileName.size() > 0
+          && attachment.fileName.size() <= 160
+          && attachment.contentType is string
+          && attachment.contentType in [
+            "image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif",
+            "application/pdf", "text/plain", "text/csv",
+            "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/zip", "application/x-zip-compressed", "application/vnd.rar", "application/x-rar-compressed", "application/x-7z-compressed"
+          ]
+          && attachment.size is int
+          && attachment.size > 0
+          && attachment.size <= 15728640
+          && attachment.storagePath is string
+          && attachment.storagePath.matches("^chats/" + chatId + "/[A-Za-z0-9_-]+_[A-Za-z0-9._-]+$");
+      }
+
       allow get: if isApprovedChatUser()
         && (!exists(/databases/$(database)/documents/chats/$(chatId))
           || (resource.data.participants is list
@@ -200,13 +224,14 @@ service cloud.firestore {
         allow get, list: if canAccessLimanChat(chatId);
 
         allow create: if canAccessLimanChat(chatId)
-          && request.resource.data.keys().hasOnly(["senderId", "recipientId", "text", "createdAt"])
+          && request.resource.data.keys().hasOnly(["senderId", "recipientId", "text", "createdAt", "attachment"])
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.recipientId in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
           && request.resource.data.recipientId != request.auth.uid
           && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 1000
+          && (request.resource.data.text.size() > 0 || ("attachment" in request.resource.data))
+          && (!("attachment" in request.resource.data) || validMessageAttachment())
           && request.resource.data.createdAt == request.time;
 
         allow update, delete: if false;

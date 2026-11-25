@@ -39,6 +39,8 @@ let reminders = [];
 let firebaseAuth = null;
 let firebaseDb = null;
 let firebaseMessaging = null;
+let supabaseClient = null;
+const SUPABASE_CHAT_BUCKET = "liman-chat-files";
 let currentAuthUser = null;
 let messageAuthPending = false;
 let reminderSubscription = null;
@@ -1526,6 +1528,7 @@ function initializeFirebaseAccount() {
         const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(config);
         firebaseAuth = firebase.auth();
         firebaseDb = firebase.firestore();
+        initializeSupabaseStorageClient();
         try {
             firebaseDb.enablePersistence({ synchronizeTabs: true }).catch(error => {
                 if (error.code !== "failed-precondition" && error.code !== "unimplemented") {
@@ -1644,6 +1647,7 @@ function initializeFirebaseAccount() {
             if (stateVersion !== authStateVersion) return;
             currentAuthUser = user;
             messageAuthPending = false;
+            refreshMessageNotificationButton();
             void syncMessageDirectoryProfile(user, approvedProfile || {});
             subscribeToMessageInbox();
             if (pendingChatRecipientUid) setMessagePanelOpen(true);
@@ -1684,9 +1688,34 @@ function initializeFirebaseAccount() {
     }
 }
 
+function initializeSupabaseStorageClient() {
+    const config = window.APP_CONFIG?.supabaseStorage;
+    if (!window.supabase?.createClient || !config?.url || !config?.publishableKey) {
+        supabaseClient = null;
+        return;
+    }
+    try {
+        supabaseClient = window.supabase.createClient(config.url, config.publishableKey, {
+            accessToken: async () => {
+                const user = firebaseAuth?.currentUser;
+                return user ? user.getIdToken(false) : null;
+            },
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+                detectSessionInUrl: false
+            }
+        });
+    } catch (error) {
+        supabaseClient = null;
+        console.warn("Supabase fayl yaddaşı qoşulmadı:", error);
+    }
+}
+
 async function handleForegroundPush(payload) {
     const data = payload?.data || {};
-    if (data.type === "chat" && selectedMessageProfile && currentAuthUser
+    if (data.type === "chat" && !messagePanel.hidden && !messageConversationView.hidden
+        && document.visibilityState === "visible" && selectedMessageProfile && currentAuthUser
         && messageChatId(currentAuthUser.uid, selectedMessageProfile.uid) === data.chatId) return;
     const title = data.title || payload?.notification?.title || "Liman Anbarı · Xatırlatma";
     const body = data.body || payload?.notification?.body || "Xatırlatma vaxtınız yaxınlaşır.";
@@ -1913,6 +1942,7 @@ async function syncPushToken(requestPermission = true) {
     pushTokenSyncing = true;
     pushTokenError = "";
     updateReminderPermissionState();
+    refreshMessageNotificationButton();
     try {
         let permission = Notification.permission;
         if (permission === "default" && requestPermission) permission = await Notification.requestPermission();
@@ -1943,6 +1973,7 @@ async function syncPushToken(requestPermission = true) {
     } finally {
         pushTokenSyncing = false;
         updateReminderPermissionState();
+        refreshMessageNotificationButton();
     }
 }
 
@@ -5501,8 +5532,28 @@ const messageThread = document.getElementById("message-thread");
 const messageComposeForm = document.getElementById("message-compose-form");
 const messageDraftInput = document.getElementById("message-draft-input");
 const messageSendButton = document.getElementById("message-send-button");
+const messageEmojiToggle = document.getElementById("message-emoji-toggle");
+const messageEmojiPicker = document.getElementById("message-emoji-picker");
+const messageAttachButton = document.getElementById("message-attach-button");
+const messageFileInput = document.getElementById("message-file-input");
+const messageFilePreview = document.getElementById("message-file-preview");
+const messageFilePreviewName = document.getElementById("message-file-preview-name");
+const messageFilePreviewSize = document.getElementById("message-file-preview-size");
+const messageFileRemoveButton = document.getElementById("message-file-remove");
+const messageComposeStatus = document.getElementById("message-compose-status");
+const messageNotificationButton = document.getElementById("message-notification-enable");
 const messageBackButton = document.getElementById("message-back-to-users");
 const messageUnreadBadge = document.getElementById("message-unread-badge");
+const MESSAGE_ATTACHMENT_MAX_BYTES = 15 * 1024 * 1024;
+const MESSAGE_ATTACHMENT_TYPES = Object.freeze([
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif",
+    "application/pdf", "text/plain", "text/csv",
+    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/zip", "application/x-zip-compressed", "application/vnd.rar", "application/x-rar-compressed", "application/x-7z-compressed"
+]);
+const MESSAGE_EMOJIS = ["😀", "😃", "😄", "😁", "😆", "🥹", "😂", "🤣", "😊", "😇", "🙂", "😉", "😍", "🥰", "😘", "😋", "😎", "🤗", "🤔", "😴", "😭", "😡", "👍", "👎", "👏", "🙏", "💪", "❤️", "💙", "💚", "🎉", "✅", "🔥", "⭐", "📦", "🚢"];
 let messageDirectoryProfiles = [];
 let messageDirectoryUnsubscribe = null;
 let messageThreadUnsubscribe = null;
@@ -5511,6 +5562,9 @@ let messageSendInProgress = false;
 let messageInboxUnsubscribe = null;
 let messageUnreadByUser = new Map();
 let messageUnreadTotal = 0;
+let messageInboxHasInitialSnapshot = false;
+let messageComposeReady = false;
+let pendingMessageFile = null;
 let pendingChatRecipientUid = new URLSearchParams(window.location.search).get("chat") || "";
 resetMessageAccountState();
 
@@ -5544,7 +5598,49 @@ function resetMessageInboxState() {
     messageInboxUnsubscribe = null;
     messageUnreadByUser = new Map();
     messageUnreadTotal = 0;
+    messageInboxHasInitialSnapshot = false;
     updateMessageUnreadBadge();
+}
+
+function isMessageConversationVisible(otherUid) {
+    return !messagePanel.hidden
+        && !messageConversationView.hidden
+        && document.visibilityState === "visible"
+        && selectedMessageProfile?.uid === otherUid;
+}
+
+async function showIncomingChatNotification(otherUid, chatId, chat) {
+    const senderName = messageDirectoryProfiles.find(profile => profile.uid === otherUid)?.displayName || "Yeni mesaj";
+    const preview = String(chat.lastMessage || "Yeni mesaj gəldi.").replace(/\s+/g, " ").slice(0, 120);
+    const unreadCount = Math.max(1, Number(chat.unreadCounts?.[currentAuthUser?.uid] || 1));
+    const body = unreadCount > 1 ? `${unreadCount} yeni mesaj · ${preview}` : preview;
+    const appUrl = new URL("./", document.baseURI);
+    appUrl.searchParams.set("chat", otherUid);
+    const title = `Liman Anbarı · ${senderName}`.slice(0, 100);
+    const iconUrl = new URL("images/ikoon-192.png", document.baseURI).href;
+
+    if ("Notification" in window && Notification.permission === "granted") {
+        try {
+            if ("serviceWorker" in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.showNotification(title, {
+                    body,
+                    icon: iconUrl,
+                    badge: iconUrl,
+                    tag: `liman-chat-${chatId}`,
+                    renotify: false,
+                    data: { url: appUrl.href, chatId }
+                });
+            } else {
+                new Notification(title, { body, icon: iconUrl, tag: `liman-chat-${chatId}` });
+            }
+            return;
+        } catch (error) {
+            console.warn("Yeni mesaj bildirişi göstərilmədi", error);
+        }
+    }
+
+    if (document.visibilityState === "visible") showActionToast(`💬 ${senderName}: ${body}`);
 }
 
 function subscribeToMessageInbox() {
@@ -5554,17 +5650,29 @@ function subscribeToMessageInbox() {
     messageInboxUnsubscribe = firebaseDb.collection("chats")
         .where("participants", "array-contains", uid)
         .onSnapshot(snapshot => {
-            messageUnreadByUser = new Map();
+            const previousUnreadByUser = messageUnreadByUser;
+            const nextUnreadByUser = new Map();
             messageUnreadTotal = 0;
             snapshot.docs.forEach(doc => {
                 const chat = doc.data();
                 const otherUid = (chat.participants || []).find(participant => participant !== uid);
                 const count = Math.max(0, Number(chat.unreadCounts?.[uid] || 0));
-                if (otherUid && count) messageUnreadByUser.set(otherUid, count);
+                if (otherUid && count) {
+                    nextUnreadByUser.set(otherUid, count);
+                    const previousCount = previousUnreadByUser.get(otherUid) || 0;
+                    if (messageInboxHasInitialSnapshot && count > previousCount
+                        && chat.lastMessageSenderId !== uid && !isMessageConversationVisible(otherUid)) {
+                        void showIncomingChatNotification(otherUid, doc.id, chat);
+                    }
+                }
                 messageUnreadTotal += count;
             });
+            messageUnreadByUser = nextUnreadByUser;
+            messageInboxHasInitialSnapshot = true;
             updateMessageUnreadBadge();
-            if (selectedMessageProfile && messageUnreadByUser.get(selectedMessageProfile.uid) > 0) {
+            if (!messagePanel.hidden && !messageConversationView.hidden
+                && document.visibilityState === "visible"
+                && selectedMessageProfile && messageUnreadByUser.get(selectedMessageProfile.uid) > 0) {
                 const activeChat = snapshot.docs.find(doc => doc.id === messageChatId(uid, selectedMessageProfile.uid));
                 if (activeChat) void markMessageChatRead(activeChat.ref);
             }
@@ -5576,7 +5684,9 @@ function subscribeToMessageInbox() {
 
 async function markMessageChatRead(chatRef) {
     if (!chatRef || !currentAuthUser) return;
+    if (messagePanel.hidden || messageConversationView.hidden || document.visibilityState !== "visible") return;
     const uid = currentAuthUser.uid;
+    if (!selectedMessageProfile || chatRef.id !== messageChatId(uid, selectedMessageProfile.uid)) return;
     if (!(messageUnreadByUser.get(selectedMessageProfile?.uid || "") > 0)) return;
     try {
         await chatRef.update({ [`unreadCounts.${uid}`]: 0 });
@@ -5601,6 +5711,17 @@ function resetMessageAccountState() {
     messageUserSearch.disabled = true;
     messageDraftInput.disabled = true;
     messageSendButton.disabled = true;
+    messageEmojiToggle.disabled = true;
+    messageAttachButton.disabled = true;
+    messageFileInput.value = "";
+    pendingMessageFile = null;
+    renderPendingMessageFile();
+    messageFileRemoveButton.disabled = true;
+    messageEmojiPicker.hidden = true;
+    messageComposeStatus.hidden = true;
+    messageComposeStatus.textContent = "";
+    messageComposeReady = false;
+    refreshMessageNotificationButton();
     setMessageDirectoryNotice("Mesajlaşmaq üçün hesabınıza daxil olun.");
 }
 
@@ -5698,6 +5819,7 @@ function renderMessageDirectory() {
         const unread = messageUnreadByUser.get(profile.uid) || 0;
         unreadBadge.textContent = unread > 99 ? "99+" : String(unread);
         unreadBadge.hidden = unread === 0;
+        unreadBadge.setAttribute("aria-label", `${unread} oxunmamış mesaj`);
         row.append(avatar, copy, unreadBadge);
         messageUsersList.append(row);
     });
@@ -5724,8 +5846,95 @@ function messageConversationErrorText(error) {
     return "Söhbət açıla bilmədi. İnterneti və Firestore mesaj qaydalarını yoxlayıb istifadəçini yenidən seçin.";
 }
 
+function refreshMessageNotificationButton() {
+    if (!messageNotificationButton) return;
+    const supported = "Notification" in window;
+    const permissionGranted = supported && Notification.permission === "granted";
+    const enabled = permissionGranted && pushTokenRegistered;
+    messageNotificationButton.hidden = permissionGranted;
+    messageNotificationButton.disabled = !currentAuthUser || pushTokenSyncing || !supported;
+    messageNotificationButton.classList.toggle("is-enabled", enabled);
+    messageNotificationButton.textContent = pushTokenSyncing ? "İcazə yoxlanır…" : "Bildirişlərə icazə ver";
+    messageNotificationButton.title = enabled
+        ? "Bu cihaz mesaj bildirişlərini alır"
+        : supported
+            ? "Bu cihazda mesaj bildirişlərini aktiv et"
+            : "Bu brauzer bildirişləri dəstəkləmir";
+    messageNotificationButton.setAttribute("aria-label", messageNotificationButton.title);
+}
+
+function setMessageComposerReady(ready) {
+    messageComposeReady = Boolean(ready);
+    messageDraftInput.disabled = !messageComposeReady || messageSendInProgress;
+    messageEmojiToggle.disabled = !messageComposeReady || messageSendInProgress;
+    messageAttachButton.disabled = !messageComposeReady || messageSendInProgress;
+    messageFileInput.disabled = !messageComposeReady || messageSendInProgress;
+    messageFileRemoveButton.disabled = !messageComposeReady || !pendingMessageFile || messageSendInProgress;
+    messageSendButton.disabled = !messageComposeReady || (!messageDraftInput.value.trim() && !pendingMessageFile) || messageSendInProgress;
+}
+
+function renderPendingMessageFile() {
+    if (!messageFilePreview || !messageFilePreviewName || !messageFilePreviewSize) return;
+    messageFilePreview.hidden = !pendingMessageFile;
+    messageFilePreviewName.textContent = pendingMessageFile?.name || "";
+    messageFilePreviewSize.textContent = pendingMessageFile ? `${formatMessageFileSize(pendingMessageFile.size)} · Göndərilməyə hazırdır` : "";
+    if (messageFileRemoveButton) messageFileRemoveButton.disabled = !messageComposeReady || !pendingMessageFile || messageSendInProgress;
+}
+
+function clearPendingMessageFile() {
+    pendingMessageFile = null;
+    if (messageFileInput) messageFileInput.value = "";
+    renderPendingMessageFile();
+    updateMessageComposeButtons();
+}
+
+function setMessageComposeStatus(text = "", isError = false) {
+    messageComposeStatus.textContent = text;
+    messageComposeStatus.classList.toggle("is-error", isError);
+    messageComposeStatus.hidden = !text;
+}
+
+function messageSendErrorText(error) {
+    const code = String(error?.code || "").toLowerCase();
+    const detail = String(error?.message || "").toLowerCase();
+    if (detail.includes("supabase fayl yaddaşı qoşulmayıb")) {
+        return "Fayl yaddaşı hələ qoşulmayıb. Supabase URL və Publishable key-i app-config.js faylına yazın.";
+    }
+    const status = Number(error?.status || error?.statusCode || 0);
+    if (code === "storage/unauthorized" || code === "storage/unauthenticated" || status === 401 || status === 403 || detail.includes("row-level security")) {
+        return "Supabase icazəsi yoxdur. Firebase girişi və Supabase Storage qaydalarını yoxlayın.";
+    }
+    if (status === 404 || detail.includes("bucket not found")) {
+        return "Supabase-də liman-chat-files yaddaş qovluğu tapılmadı. Quraşdırma qaydasını tətbiq edin.";
+    }
+    if (status === 413 || detail.includes("payload too large") || detail.includes("exceeded the maximum")) {
+        return "Fayl limiti aşılıb. 15 MB-dan kiçik fayl seçin.";
+    }
+    if (code === "permission-denied") {
+        return "Mesaj icazəsi yoxdur. Firebase Console-da Firestore → Rules qaydalarını yeniləyin.";
+    }
+    return error?.message || "Mesaj göndərilmədi. İnterneti və Supabase/Firebase qaydalarını yoxlayın.";
+}
+
+function formatMessageFileSize(bytes) {
+    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function safeMessageFileName(name) {
+    return String(name || "fayl").normalize("NFKC").replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120) || "fayl";
+}
+
+function updateMessageComposeButtons() {
+    setMessageComposerReady(messageComposeReady);
+}
+
 async function openMessageConversation(profile) {
     if (!currentAuthUser || !profile?.uid || profile.uid === currentAuthUser.uid) return;
+    if (selectedMessageProfile?.uid !== profile.uid) {
+        clearPendingMessageFile();
+        messageDraftInput.value = "";
+    }
     selectedMessageProfile = profile;
     messageDirectoryView.hidden = false;
     messagePanel.classList.add("has-conversation");
@@ -5737,8 +5946,8 @@ async function openMessageConversation(profile) {
     loading.className = "message-panel-status";
     loading.textContent = "Söhbət açılır…";
     messageThread.append(loading);
-    messageDraftInput.disabled = true;
-    messageSendButton.disabled = true;
+    setMessageComposerReady(false);
+    setMessageComposeStatus("");
     if (messageThreadUnsubscribe) messageThreadUnsubscribe();
     const chatId = messageChatId(currentAuthUser.uid, profile.uid);
     const chatRef = firebaseDb.collection("chats").doc(chatId);
@@ -5756,7 +5965,7 @@ async function openMessageConversation(profile) {
             });
         }
         if (selectedMessageProfile?.uid !== profile.uid) return;
-        messageDraftInput.disabled = false;
+        setMessageComposerReady(true);
         void markMessageChatRead(chatRef);
         messageThreadUnsubscribe = chatRef.collection("messages").orderBy("createdAt", "asc").limit(100)
             .onSnapshot(snapshot => {
@@ -5766,8 +5975,7 @@ async function openMessageConversation(profile) {
                 if (latest?.senderId !== currentAuthUser?.uid) void markMessageChatRead(chatRef);
             }, error => {
                 console.error("Mesajlar yüklənmədi", error);
-                messageDraftInput.disabled = true;
-                messageSendButton.disabled = true;
+                setMessageComposerReady(false);
                 messageThread.replaceChildren();
                 const errorNotice = document.createElement("div");
                 errorNotice.className = "message-panel-status is-error";
@@ -5776,14 +5984,59 @@ async function openMessageConversation(profile) {
             });
     } catch (error) {
         console.error("Söhbət açıla bilmədi", error);
-        messageDraftInput.disabled = true;
-        messageSendButton.disabled = true;
+        setMessageComposerReady(false);
         messageThread.replaceChildren();
         const errorNotice = document.createElement("div");
         errorNotice.className = "message-panel-status is-error";
         errorNotice.textContent = messageConversationErrorText(error);
         messageThread.append(errorNotice);
     }
+}
+
+function renderMessageAttachment(bubble, attachment, chatId) {
+    if (!attachment?.storagePath) return;
+    if (!attachment.storagePath.startsWith(`chats/${chatId}/`)) return;
+    const link = document.createElement("a");
+    link.className = "message-attachment";
+    link.href = "#";
+    link.textContent = `📎 ${attachment.fileName || "Faylı yüklə"} · ${formatMessageFileSize(Number(attachment.size) || 0)}`;
+    link.setAttribute("aria-label", `Faylı yüklə: ${attachment.fileName || "əlavə"}`);
+    bubble.append(link);
+    link.addEventListener("click", async event => {
+        event.preventDefault();
+        if (!supabaseClient || link.dataset.loading === "true") {
+            if (!supabaseClient) showActionToast("Fayl yaddaşı hələ qoşulmayıb.");
+            return;
+        }
+        link.dataset.loading = "true";
+        link.setAttribute("aria-busy", "true");
+        const originalText = link.textContent;
+        link.textContent = "Fayl yüklənir…";
+        link.classList.remove("is-error");
+        try {
+            const { data, error } = await supabaseClient.storage
+                .from(SUPABASE_CHAT_BUCKET)
+                .download(attachment.storagePath);
+            if (error) throw error;
+            const objectUrl = URL.createObjectURL(data);
+            const downloadLink = document.createElement("a");
+            downloadLink.href = objectUrl;
+            downloadLink.download = String(attachment.fileName || "fayl").replace(/[\\/:*?\"<>|]/g, "_").slice(0, 160);
+            document.body.append(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+            window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+            link.textContent = originalText;
+        } catch (error) {
+            console.warn("Söhbət faylı açıla bilmədi", error);
+            link.classList.add("is-error");
+            link.textContent = `Fayl açıla bilmədi: ${attachment.fileName || "əlavə"}`;
+            showActionToast("Fayl endirilmədi. Supabase icazəsini və faylın silinmədiyini yoxlayın.");
+        } finally {
+            delete link.dataset.loading;
+            link.removeAttribute("aria-busy");
+        }
+    });
 }
 
 function renderMessageThread(messages) {
@@ -5794,30 +6047,210 @@ function renderMessageThread(messages) {
         empty.textContent = "Bu söhbətdə hələ mesaj yoxdur. İlk mesajı siz yazın.";
         messageThread.append(empty);
     }
+    const chatId = selectedMessageProfile ? messageChatId(currentAuthUser.uid, selectedMessageProfile.uid) : "";
     messages.forEach(message => {
         const isMine = message.senderId === currentAuthUser?.uid;
         const bubble = document.createElement("div");
         bubble.className = `message-bubble${isMine ? " is-mine" : ""}`;
-        const body = document.createElement("p");
-        body.textContent = message.text || "";
+        if (message.text) {
+            const body = document.createElement("p");
+            body.textContent = message.text;
+            bubble.append(body);
+        }
+        if (message.attachment) renderMessageAttachment(bubble, message.attachment, chatId);
         const time = document.createElement("time");
         const date = message.createdAt?.toDate ? message.createdAt.toDate() : null;
         time.textContent = date ? date.toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "İndi";
-        bubble.append(body, time);
+        bubble.append(time);
         messageThread.append(bubble);
     });
     messageThread.scrollTop = messageThread.scrollHeight;
 }
 
+function buildMessageEmojiPicker() {
+    messageEmojiPicker.replaceChildren();
+    MESSAGE_EMOJIS.forEach(emoji => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "message-emoji-choice";
+        button.textContent = emoji;
+        button.setAttribute("aria-label", `Emoji ${emoji}`);
+        button.addEventListener("click", () => {
+            if (!messageComposeReady || messageSendInProgress) return;
+            const start = messageDraftInput.selectionStart ?? messageDraftInput.value.length;
+            const end = messageDraftInput.selectionEnd ?? start;
+            messageDraftInput.setRangeText(emoji, start, end, "end");
+            messageDraftInput.dispatchEvent(new Event("input", { bubbles: true }));
+            messageDraftInput.focus();
+            messageEmojiPicker.hidden = true;
+        });
+        messageEmojiPicker.append(button);
+    });
+}
+
+async function sendChatMessage(text, file = null) {
+    const cleanText = String(text || "").trim();
+    const recipient = selectedMessageProfile;
+    if ((!cleanText && !file) || !recipient || !currentAuthUser || !firebaseDb || messageSendInProgress) return;
+    if (file && file.size > MESSAGE_ATTACHMENT_MAX_BYTES) {
+        setMessageComposeStatus("Fayl 15 MB-dan böyükdür. Daha kiçik fayl seçin.", true);
+        messageFileInput.value = "";
+        return;
+    }
+    if (file && !MESSAGE_ATTACHMENT_TYPES.includes(file.type)) {
+        setMessageComposeStatus("Bu fayl formatı dəstəklənmir. Şəkil, PDF, Office sənədi, TXT və ya ZIP seçin.", true);
+        messageFileInput.value = "";
+        return;
+    }
+
+    messageSendInProgress = true;
+    updateMessageComposeButtons();
+    setMessageComposeStatus(file ? "Fayl yükləməyə hazırlanır…" : "");
+    const chatId = messageChatId(currentAuthUser.uid, recipient.uid);
+    const chatRef = firebaseDb.collection("chats").doc(chatId);
+    const messageRef = chatRef.collection("messages").doc();
+    let attachment = null;
+    let uploadedPath = "";
+    try {
+        if (file) {
+            if (!supabaseClient) throw new Error("Supabase fayl yaddaşı qoşulmayıb. app-config.js faylında Supabase URL və Publishable key lazımdır.");
+            const safeName = safeMessageFileName(file.name);
+            const storagePath = `chats/${chatId}/${currentAuthUser.uid}_${messageRef.id}_${safeName}`;
+            setMessageComposeStatus("Fayl Supabase-ə yüklənir…");
+            const { error } = await supabaseClient.storage
+                .from(SUPABASE_CHAT_BUCKET)
+                .upload(storagePath, file, { contentType: file.type, upsert: false });
+            if (error) throw error;
+            uploadedPath = storagePath;
+            attachment = {
+                fileName: String(file.name || "fayl").slice(0, 160),
+                contentType: file.type,
+                size: file.size,
+                storagePath
+            };
+        }
+
+        await firebaseDb.runTransaction(async transaction => {
+            const chatSnapshot = await transaction.get(chatRef);
+            if (!chatSnapshot.exists) throw new Error("Söhbət tapılmadı. İstifadəçini yenidən seçin.");
+            const chat = chatSnapshot.data();
+            const participants = chat.participants || [];
+            if (!participants.includes(currentAuthUser.uid) || !participants.includes(recipient.uid)) {
+                throw new Error("Bu söhbətə giriş icazəsi yoxdur.");
+            }
+            const unreadCounts = { ...(chat.unreadCounts || {}) };
+            unreadCounts[recipient.uid] = Number(unreadCounts[recipient.uid] || 0) + 1;
+            const serverTime = firebase.firestore.FieldValue.serverTimestamp();
+            const messageData = {
+                senderId: currentAuthUser.uid,
+                recipientId: recipient.uid,
+                text: cleanText.slice(0, 1000),
+                createdAt: serverTime
+            };
+            if (attachment) messageData.attachment = attachment;
+            transaction.set(messageRef, messageData);
+            const lastMessage = cleanText || (attachment ? `📎 ${attachment.fileName}` : "");
+            transaction.update(chatRef, {
+                lastMessage: lastMessage.slice(0, 1000),
+                lastMessageSenderId: currentAuthUser.uid,
+                unreadCounts,
+                updatedAt: serverTime
+            });
+        });
+        try {
+            await sendSupabaseChatPushNotification(chatId, messageRef.id);
+        } catch (pushError) {
+            console.warn("Supabase mesaj bildirişi göndərmədi; mesaj Firestore-da saxlanıb.", pushError);
+        }
+        messageDraftInput.value = "";
+        if (file && pendingMessageFile === file) pendingMessageFile = null;
+        renderPendingMessageFile();
+        setMessageComposeStatus("");
+        messageDraftInput.focus();
+    } catch (error) {
+        console.error("Mesaj göndərilmədi", error);
+        if (uploadedPath && supabaseClient) {
+            try {
+                const { error: deleteError } = await supabaseClient.storage
+                    .from(SUPABASE_CHAT_BUCKET)
+                    .remove([uploadedPath]);
+                if (deleteError) console.warn("Yarımçıq qalan fayl silinmədi", deleteError);
+            } catch (deleteError) {
+                console.warn("Yarımçıq qalan fayl silinmədi", deleteError);
+            }
+        }
+        const message = messageSendErrorText(error);
+        setMessageComposeStatus(message, true);
+        showActionToast(message);
+    } finally {
+        messageFileInput.value = "";
+        messageSendInProgress = false;
+        updateMessageComposeButtons();
+    }
+}
+
+async function sendSupabaseChatPushNotification(chatId, messageId) {
+    const config = window.APP_CONFIG?.supabaseStorage;
+    if (!currentAuthUser || !config?.url || !config?.publishableKey) return;
+    const firebaseToken = await currentAuthUser.getIdToken();
+    const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/send-chat-push`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            apikey: config.publishableKey,
+            Authorization: `Bearer ${firebaseToken}`
+        },
+        body: JSON.stringify({ chatId, messageId })
+    });
+    if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || `Supabase bildiriş xətası (${response.status}).`);
+    }
+}
+
+buildMessageEmojiPicker();
 messageButton?.addEventListener("click", () => setMessagePanelOpen(messagePanel.hidden));
 messagePanelClose?.addEventListener("click", () => setMessagePanelOpen(false));
+window.addEventListener("focus", refreshMessageNotificationButton);
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshMessageNotificationButton();
+});
+if (navigator.permissions?.query) {
+    navigator.permissions.query({ name: "notifications" })
+        .then(permissionStatus => permissionStatus.addEventListener("change", refreshMessageNotificationButton))
+        .catch(() => {});
+}
+refreshMessageNotificationButton();
+messageNotificationButton?.addEventListener("click", async () => {
+    if (!currentAuthUser) {
+        openAccountPage("login");
+        return;
+    }
+    if (Notification.permission === "denied") {
+        showActionToast("Bildiriş icazəsini brauzerin sayt ayarlarından açın.");
+        return;
+    }
+    try {
+        await syncPushToken(true);
+        refreshMessageNotificationButton();
+        showActionToast("Bu cihaz mesaj bildirişləri üçün qoşuldu.");
+    } catch (error) {
+        refreshMessageNotificationButton();
+        showActionToast(error.message || "Mesaj bildirişini qoşmaq olmadı.");
+    }
+});
 messageBackButton?.addEventListener("click", () => {
     if (messageThreadUnsubscribe) messageThreadUnsubscribe();
     messageThreadUnsubscribe = null;
     selectedMessageProfile = null;
+    clearPendingMessageFile();
+    messageDraftInput.value = "";
     messageConversationView.hidden = true;
     messagePanel.classList.remove("has-conversation");
     messageDirectoryView.hidden = false;
+    setMessageComposerReady(false);
+    setMessageComposeStatus("");
+    renderMessageDirectory();
 });
 messageUsersList?.addEventListener("click", event => {
     const row = event.target.closest("[data-message-user]");
@@ -5826,54 +6259,49 @@ messageUsersList?.addEventListener("click", event => {
     if (profile) void openMessageConversation(profile);
 });
 messageUserSearch?.addEventListener("input", renderMessageDirectory);
-messageDraftInput?.addEventListener("input", () => {
-    messageSendButton.disabled = !messageDraftInput.value.trim() || messageSendInProgress;
+messageDraftInput?.addEventListener("input", updateMessageComposeButtons);
+messageEmojiToggle?.addEventListener("click", () => {
+    messageEmojiPicker.hidden = !messageEmojiPicker.hidden;
 });
-messageComposeForm?.addEventListener("submit", async event => {
-    event.preventDefault();
-    const text = messageDraftInput.value.trim();
-    const recipient = selectedMessageProfile;
-    if (!text || !recipient || !currentAuthUser || !firebaseDb || messageSendInProgress) return;
-    messageSendInProgress = true;
-    messageSendButton.disabled = true;
-    try {
-        const chatId = messageChatId(currentAuthUser.uid, recipient.uid);
-        const chatRef = firebaseDb.collection("chats").doc(chatId);
-        const messageRef = chatRef.collection("messages").doc();
-        await firebaseDb.runTransaction(async transaction => {
-            const chatSnapshot = await transaction.get(chatRef);
-            if (!chatSnapshot.exists) throw new Error("Söhbət tapılmadı. İstifadəçini yenidən seçin.");
-            const participants = chatSnapshot.data().participants || [];
-            if (!participants.includes(currentAuthUser.uid) || !participants.includes(recipient.uid)) {
-                throw new Error("Bu söhbətə giriş icazəsi yoxdur.");
-            }
-            const unreadCounts = { ...(chatSnapshot.data().unreadCounts || {}) };
-            unreadCounts[recipient.uid] = Number(unreadCounts[recipient.uid] || 0) + 1;
-            const serverTime = firebase.firestore.FieldValue.serverTimestamp();
-            transaction.set(messageRef, {
-                senderId: currentAuthUser.uid,
-                recipientId: recipient.uid,
-                text: text.slice(0, 1000),
-                createdAt: serverTime
-            });
-            transaction.update(chatRef, {
-                lastMessage: text.slice(0, 1000),
-                lastMessageSenderId: currentAuthUser.uid,
-                unreadCounts,
-                updatedAt: serverTime
-            });
-        });
-        messageDraftInput.value = "";
-        messageSendButton.disabled = true;
-        messageDraftInput.focus();
-    } catch (error) {
-        console.error("Mesaj göndərilmədi", error);
-        showActionToast(error.message || "Mesaj göndərilmədi. Firestore qaydalarını yoxlayın.");
-    } finally {
-        messageSendInProgress = false;
-        messageSendButton.disabled = !messageDraftInput.value.trim();
+messageAttachButton?.addEventListener("click", () => messageFileInput.click());
+messageFileInput?.addEventListener("change", () => {
+    const file = messageFileInput.files?.[0];
+    messageFileInput.value = "";
+    if (!file) return;
+    pendingMessageFile = null;
+    renderPendingMessageFile();
+    if (file.size > MESSAGE_ATTACHMENT_MAX_BYTES) {
+        setMessageComposeStatus("Fayl 15 MB-dan böyükdür. Daha kiçik fayl seçin.", true);
+        updateMessageComposeButtons();
+        return;
     }
+    if (!MESSAGE_ATTACHMENT_TYPES.includes(file.type)) {
+        setMessageComposeStatus("Bu fayl formatı dəstəklənmir. Şəkil, PDF, Office sənədi, TXT və ya ZIP seçin.", true);
+        updateMessageComposeButtons();
+        return;
+    }
+    pendingMessageFile = file;
+    renderPendingMessageFile();
+    setMessageComposeStatus("Fayl əlavə olundu. İstəsəniz mesaj yazıb Göndər basın.");
+    updateMessageComposeButtons();
+    messageDraftInput.focus();
+});
+messageFileRemoveButton?.addEventListener("click", () => {
+    if (messageSendInProgress) return;
+    clearPendingMessageFile();
+    setMessageComposeStatus("");
+});
+messageComposeForm?.addEventListener("submit", event => {
+    event.preventDefault();
+    void sendChatMessage(messageDraftInput.value, pendingMessageFile);
+});
+document.addEventListener("click", event => {
+    if (messageComposeForm && !messageComposeForm.contains(event.target)) messageEmojiPicker.hidden = true;
 });
 document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !messageEmojiPicker.hidden) {
+        messageEmojiPicker.hidden = true;
+        return;
+    }
     if (event.key === "Escape" && messagePanel && !messagePanel.hidden) setMessagePanelOpen(false);
 });
