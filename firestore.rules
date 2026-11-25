@@ -1,0 +1,216 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.uid == "WvDIKF4R5SNNEGBpMy6oZdcA1Ub2";
+    }
+
+    function canUseAccountData(uid) {
+      return isAdmin()
+        || (signedIn()
+          && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/users/$(uid))
+          && get(/databases/$(database)/documents/users/$(uid)).data.status == "approved");
+    }
+
+    function isApprovedChatUser() {
+      return signedIn() && canUseAccountData(request.auth.uid);
+    }
+
+    function canPublishChatProfile(profileUid) {
+      return isAdmin()
+        || (signedIn()
+          && request.auth.uid == profileUid
+          && canUseAccountData(profileUid));
+    }
+
+    function canAccessLimanChat(chatId) {
+      return isApprovedChatUser()
+        && exists(/databases/$(database)/documents/chats/$(chatId))
+        && get(/databases/$(database)/documents/chats/$(chatId)).data.participants is list
+        && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+    }
+
+    match /users/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(["displayName", "email", "avatar", "status", "createdAt"])
+        && request.resource.data.keys().hasAll(["displayName", "email", "avatar", "status", "createdAt"])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 2
+        && request.resource.data.displayName.size() <= 80
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.avatar in ["box", "ship", "anchor", "vest", "crane", "clipboard"]
+        && request.resource.data.status == "pending"
+        && request.resource.data.createdAt is timestamp;
+
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["status", "approvedAt", "approvedBy"])
+        && request.resource.data.status in ["approved", "rejected"];
+
+      allow delete: if false;
+
+      match /reminders/{reminderId} {
+        allow read, write: if canUseAccountData(uid);
+      }
+
+      match /tokens/{tokenId} {
+        allow read, write: if canUseAccountData(uid);
+      }
+    }
+
+    match /warehousePlans/{warehouseId} {
+      function canUseWarehousePlans() {
+        return isAdmin()
+          || (signedIn()
+            && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == "approved");
+      }
+
+      function validWarehouseId() {
+        return warehouseId.matches("^(0[1-9]|1[0-3])$");
+      }
+
+      allow get: if canUseWarehousePlans() && validWarehouseId();
+
+      allow create, update: if canUseWarehousePlans()
+        && validWarehouseId()
+        && request.resource.data.keys().hasOnly([
+          "warehouseNumber", "totalAreaSqm", "companies",
+          "pallets", "labels", "updatedAt", "updatedBy"
+        ])
+        && request.resource.data.keys().hasAll([
+          "warehouseNumber", "totalAreaSqm", "companies",
+          "pallets", "labels", "updatedAt", "updatedBy"
+        ])
+        && request.resource.data.companies is list
+        && request.resource.data.companies.size() <= 3
+        && request.resource.data.pallets is list
+        && request.resource.data.pallets.size() <= 2000
+        && request.resource.data.labels is list
+        && request.resource.data.labels.size() <= 500
+        && request.resource.data.updatedBy == request.auth.uid;
+
+      allow list, delete: if false;
+    }
+
+    match /chatProfiles/{profileUid} {
+      allow get, list: if isApprovedChatUser()
+        && resource.data.status == "approved";
+
+      allow create, update: if canPublishChatProfile(profileUid)
+        && request.resource.data.keys().hasOnly(["displayName", "avatar", "status", "updatedAt"])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 2
+        && request.resource.data.displayName.size() <= 80
+        && request.resource.data.avatar in ["box", "ship", "anchor", "vest", "crane", "clipboard"]
+        && request.resource.data.status == "approved"
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    match /chats/{chatId} {
+      function validUnreadIncrement() {
+        let participants = resource.data.participants;
+        let recipientUid = participants[0] == request.auth.uid ? participants[1] : participants[0];
+        let oldCounts = resource.data.get("unreadCounts", {});
+        let newCounts = request.resource.data.unreadCounts;
+        let changed = newCounts.diff(oldCounts).affectedKeys();
+        return newCounts is map
+          && newCounts.keys().hasOnly(participants)
+          && changed.hasOnly([recipientUid])
+          && newCounts.get(recipientUid, 0) == oldCounts.get(recipientUid, 0) + 1
+          && newCounts.get(request.auth.uid, 0) == oldCounts.get(request.auth.uid, 0);
+      }
+
+      function validUnreadReset() {
+        let participants = resource.data.participants;
+        let otherUid = participants[0] == request.auth.uid ? participants[1] : participants[0];
+        let oldCounts = resource.data.get("unreadCounts", {});
+        let newCounts = request.resource.data.unreadCounts;
+        let changed = newCounts.diff(oldCounts).affectedKeys();
+        return newCounts is map
+          && newCounts.keys().hasOnly(participants)
+          && changed.hasOnly([request.auth.uid])
+          && newCounts.get(request.auth.uid, 0) == 0
+          && newCounts.get(otherUid, 0) == oldCounts.get(otherUid, 0);
+      }
+
+      allow get: if isApprovedChatUser()
+        && (!exists(/databases/$(database)/documents/chats/$(chatId))
+          || (resource.data.participants is list
+            && request.auth.uid in resource.data.participants));
+
+      allow list: if isApprovedChatUser()
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants;
+
+      allow create: if isApprovedChatUser()
+        && request.resource.data.keys().hasOnly([
+          "participants", "unreadCounts", "createdAt", "updatedAt",
+          "lastMessage", "lastMessageSenderId"
+        ])
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants[0] != request.resource.data.participants[1]
+        && exists(/databases/$(database)/documents/chatProfiles/$(request.resource.data.participants[0]))
+        && exists(/databases/$(database)/documents/chatProfiles/$(request.resource.data.participants[1]))
+        && get(/databases/$(database)/documents/chatProfiles/$(request.resource.data.participants[0])).data.status == "approved"
+        && get(/databases/$(database)/documents/chatProfiles/$(request.resource.data.participants[1])).data.status == "approved"
+        && request.resource.data.unreadCounts is map
+        && request.resource.data.unreadCounts.keys().hasOnly(request.resource.data.participants)
+        && request.resource.data.unreadCounts.get(request.resource.data.participants[0], 0) == 0
+        && request.resource.data.unreadCounts.get(request.resource.data.participants[1], 0) == 0
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.lastMessage == ""
+        && request.resource.data.lastMessageSenderId == "";
+
+      allow update: if isApprovedChatUser()
+        && resource.data.participants is list
+        && request.auth.uid in resource.data.participants
+        && request.resource.data.participants == resource.data.participants
+        && (
+          (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(["lastMessage", "lastMessageSenderId", "unreadCounts", "updatedAt"])
+            && request.resource.data.lastMessage is string
+            && request.resource.data.lastMessage.size() > 0
+            && request.resource.data.lastMessage.size() <= 1000
+            && request.resource.data.lastMessageSenderId == request.auth.uid
+            && request.resource.data.updatedAt == request.time
+            && validUnreadIncrement())
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["unreadCounts"])
+            && validUnreadReset())
+        );
+
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get, list: if canAccessLimanChat(chatId);
+
+        allow create: if canAccessLimanChat(chatId)
+          && request.resource.data.keys().hasOnly(["senderId", "recipientId", "text", "createdAt"])
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.recipientId in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && request.resource.data.recipientId != request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 1000
+          && request.resource.data.createdAt == request.time;
+
+        allow update, delete: if false;
+      }
+    }
+  }
+}

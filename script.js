@@ -40,6 +40,7 @@ let firebaseAuth = null;
 let firebaseDb = null;
 let firebaseMessaging = null;
 let currentAuthUser = null;
+let messageAuthPending = false;
 let reminderSubscription = null;
 let pushTokenRegistered = false;
 let pushTokenSyncing = false;
@@ -1542,6 +1543,9 @@ function initializeFirebaseAccount() {
 
             stopWarehousePlanSubscription();
             currentAuthUser = null;
+            messageAuthPending = Boolean(user);
+            resetMessageAccountState();
+            if (user) setMessageDirectoryNotice("Hesab yoxlanılır…");
             pushTokenRegistered = false;
             pushTokenSyncing = false;
             pushTokenError = "";
@@ -1556,6 +1560,7 @@ function initializeFirebaseAccount() {
             renderReminders();
 
             if (!user) {
+                messageAuthPending = false;
                 areaMeasurementRecords = [];
                 areaMeasurementsLoading = false;
                 areaMeasurementsCloudLoaded = false;
@@ -1638,6 +1643,11 @@ function initializeFirebaseAccount() {
 
             if (stateVersion !== authStateVersion) return;
             currentAuthUser = user;
+            messageAuthPending = false;
+            void syncMessageDirectoryProfile(user, approvedProfile || {});
+            subscribeToMessageInbox();
+            if (pendingChatRecipientUid) setMessagePanelOpen(true);
+            if (!messagePanel.hidden) subscribeToMessageDirectory();
             enqueueAreaCloudTask(synchronizeAreaMeasurementsOnStart);
             currentProfileAvatar = approvedProfile?.avatar || "box";
             updateAccountButton(user, currentProfileAvatar, approvedProfile?.displayName);
@@ -1676,6 +1686,8 @@ function initializeFirebaseAccount() {
 
 async function handleForegroundPush(payload) {
     const data = payload?.data || {};
+    if (data.type === "chat" && selectedMessageProfile && currentAuthUser
+        && messageChatId(currentAuthUser.uid, selectedMessageProfile.uid) === data.chatId) return;
     const title = data.title || payload?.notification?.title || "Liman Anbarı · Xatırlatma";
     const body = data.body || payload?.notification?.body || "Xatırlatma vaxtınız yaxınlaşır.";
     const appUrl = new URL("./", document.baseURI).href;
@@ -1691,7 +1703,7 @@ async function handleForegroundPush(payload) {
                 badge: iconUrl,
                 tag,
                 renotify: false,
-                data: { url: appUrl }
+                data: { url: data.url || appUrl }
             });
             return;
         }
@@ -5476,15 +5488,392 @@ document.addEventListener("visibilitychange", () => {
 
 const notificationButton = document.getElementById("notification-button");
 const messageButton = document.getElementById("message-button");
-notificationButton?.addEventListener("click", () => showActionToast("Çox yaxında"));
 const messagePanel = document.getElementById("message-panel");
 const messagePanelClose = document.getElementById("message-panel-close");
+const messageDirectoryView = document.getElementById("message-directory-view");
+const messageConversationView = document.getElementById("message-conversation-view");
+const messageDirectoryStatus = document.getElementById("message-directory-status");
+const messageUsersList = document.getElementById("message-users-list");
+const messageUserSearch = document.getElementById("message-user-search");
+const messageSelectedAvatar = document.getElementById("message-selected-avatar");
+const messageSelectedName = document.getElementById("message-selected-name");
+const messageThread = document.getElementById("message-thread");
+const messageComposeForm = document.getElementById("message-compose-form");
+const messageDraftInput = document.getElementById("message-draft-input");
+const messageSendButton = document.getElementById("message-send-button");
+const messageBackButton = document.getElementById("message-back-to-users");
+const messageUnreadBadge = document.getElementById("message-unread-badge");
+let messageDirectoryProfiles = [];
+let messageDirectoryUnsubscribe = null;
+let messageThreadUnsubscribe = null;
+let selectedMessageProfile = null;
+let messageSendInProgress = false;
+let messageInboxUnsubscribe = null;
+let messageUnreadByUser = new Map();
+let messageUnreadTotal = 0;
+let pendingChatRecipientUid = new URLSearchParams(window.location.search).get("chat") || "";
+resetMessageAccountState();
+
+notificationButton?.addEventListener("click", () => showActionToast("Çox yaxında"));
+
 function setMessagePanelOpen(open) {
     messagePanel.hidden = !open;
     messageButton.setAttribute("aria-expanded", String(open));
+    if (open) {
+        if (currentAuthUser) subscribeToMessageDirectory();
+        else if (messageAuthPending || firebaseAuth?.currentUser) setMessageDirectoryNotice("Hesab yoxlanılır…");
+        else setMessageDirectoryNotice("Mesajlaşmaq üçün hesabınıza daxil olun.");
+    }
 }
+
+function setMessageDirectoryNotice(message, isError = false) {
+    messageDirectoryStatus.textContent = message;
+    messageDirectoryStatus.classList.toggle("is-error", isError);
+    messageDirectoryStatus.hidden = false;
+}
+
+function updateMessageUnreadBadge() {
+    const count = Math.max(0, messageUnreadTotal);
+    messageUnreadBadge.hidden = count === 0;
+    messageUnreadBadge.textContent = count > 99 ? "99+" : String(count);
+    messageButton.setAttribute("aria-label", count ? `Mesaj yaz, ${count} oxunmamış mesaj` : "Mesaj yaz");
+}
+
+function resetMessageInboxState() {
+    if (messageInboxUnsubscribe) messageInboxUnsubscribe();
+    messageInboxUnsubscribe = null;
+    messageUnreadByUser = new Map();
+    messageUnreadTotal = 0;
+    updateMessageUnreadBadge();
+}
+
+function subscribeToMessageInbox() {
+    if (!firebaseDb || !currentAuthUser) return;
+    if (messageInboxUnsubscribe) messageInboxUnsubscribe();
+    const uid = currentAuthUser.uid;
+    messageInboxUnsubscribe = firebaseDb.collection("chats")
+        .where("participants", "array-contains", uid)
+        .onSnapshot(snapshot => {
+            messageUnreadByUser = new Map();
+            messageUnreadTotal = 0;
+            snapshot.docs.forEach(doc => {
+                const chat = doc.data();
+                const otherUid = (chat.participants || []).find(participant => participant !== uid);
+                const count = Math.max(0, Number(chat.unreadCounts?.[uid] || 0));
+                if (otherUid && count) messageUnreadByUser.set(otherUid, count);
+                messageUnreadTotal += count;
+            });
+            updateMessageUnreadBadge();
+            if (selectedMessageProfile && messageUnreadByUser.get(selectedMessageProfile.uid) > 0) {
+                const activeChat = snapshot.docs.find(doc => doc.id === messageChatId(uid, selectedMessageProfile.uid));
+                if (activeChat) void markMessageChatRead(activeChat.ref);
+            }
+            if (!messageDirectoryView.hidden) renderMessageDirectory();
+        }, error => {
+            console.error("Oxunmamış mesajların sayı yüklənmədi", error);
+        });
+}
+
+async function markMessageChatRead(chatRef) {
+    if (!chatRef || !currentAuthUser) return;
+    const uid = currentAuthUser.uid;
+    if (!(messageUnreadByUser.get(selectedMessageProfile?.uid || "") > 0)) return;
+    try {
+        await chatRef.update({ [`unreadCounts.${uid}`]: 0 });
+    } catch (error) {
+        console.warn("Mesaj oxunmuş kimi işarələnmədi", error);
+    }
+}
+function resetMessageAccountState() {
+    resetMessageInboxState();
+    if (messageDirectoryUnsubscribe) messageDirectoryUnsubscribe();
+    if (messageThreadUnsubscribe) messageThreadUnsubscribe();
+    messageDirectoryUnsubscribe = null;
+    messageThreadUnsubscribe = null;
+    messagePanel.classList.remove("has-conversation");
+    messageDirectoryProfiles = [];
+    selectedMessageProfile = null;
+    messageUsersList.replaceChildren();
+    messageThread.replaceChildren();
+    messageDirectoryView.hidden = false;
+    messageConversationView.hidden = true;
+    messageUserSearch.value = "";
+    messageUserSearch.disabled = true;
+    messageDraftInput.disabled = true;
+    messageSendButton.disabled = true;
+    setMessageDirectoryNotice("Mesajlaşmaq üçün hesabınıza daxil olun.");
+}
+
+function messageChatId(firstUid, secondUid) {
+    return [String(firstUid), String(secondUid)].sort().join("__");
+}
+
+function subscribeToMessageDirectory() {
+    if (!firebaseDb || !currentAuthUser) {
+        setMessageDirectoryNotice("Mesajlaşmaq üçün hesabınıza daxil olun.");
+        return;
+    }
+    if (messageDirectoryUnsubscribe) return;
+    messageUserSearch.disabled = false;
+    setMessageDirectoryNotice("İstifadəçilər yüklənir…");
+    messageDirectoryUnsubscribe = firebaseDb.collection("chatProfiles")
+        .where("status", "==", "approved")
+        .onSnapshot(snapshot => {
+            messageDirectoryProfiles = snapshot.docs
+                .map(doc => ({ uid: doc.id, ...doc.data() }))
+                .filter(profile => profile.uid !== currentAuthUser?.uid)
+                .sort((a, b) => String(a.displayName || "").localeCompare(String(b.displayName || ""), "az"));
+            renderMessageDirectory();
+        }, error => {
+            console.error("Mesaj istifadəçiləri yüklənmədi", error);
+            setMessageDirectoryNotice("İstifadəçiləri yükləmək olmadı. Firestore mesaj qaydalarını yoxlayın.", true);
+        });
+}
+
+async function syncMessageDirectoryProfile(user, profile) {
+    if (!firebaseDb || !user?.uid) return;
+    const displayNameCandidate = String(profile.displayName || user.displayName || user.email?.split("@")[0] || "İstifadəçi").trim().slice(0, 80);
+    const profileData = {
+        displayName: displayNameCandidate.length >= 2 ? displayNameCandidate : "İstifadəçi",
+        avatar: profileAvatars[profile.avatar] ? profile.avatar : "box",
+        status: "approved",
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+        await firebaseDb.collection("chatProfiles").doc(user.uid).set(profileData, { merge: true });
+    } catch (error) {
+        console.warn("Mesajlar üçün profil yazılmadı. Firestore qaydalarını tətbiq edin.", error);
+    }
+    if (user.uid !== LIMAN_ADMIN_UID) return;
+    try {
+        const approvedUsers = await firebaseDb.collection("users").where("status", "==", "approved").get();
+        const legacyProfiles = approvedUsers.docs.filter(doc => doc.id !== user.uid);
+        for (let offset = 0; offset < legacyProfiles.length; offset += 400) {
+            const batch = firebaseDb.batch();
+            legacyProfiles.slice(offset, offset + 400).forEach(doc => {
+                const data = doc.data();
+                const legacyName = String(data.displayName || "İstifadəçi").trim().slice(0, 80);
+                batch.set(firebaseDb.collection("chatProfiles").doc(doc.id), {
+                    displayName: legacyName.length >= 2 ? legacyName : "İstifadəçi",
+                    avatar: profileAvatars[data.avatar] ? data.avatar : "box",
+                    status: "approved",
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            });
+            await batch.commit();
+        }
+    } catch (error) {
+        console.warn("Mövcud hesabların mesaj siyahısı yenilənmədi", error);
+    }
+}
+function renderMessageDirectory() {
+    const query = messageUserSearch.value.trim().toLocaleLowerCase("az");
+    const profiles = messageDirectoryProfiles.filter(profile =>
+        String(profile.displayName || "İstifadəçi").toLocaleLowerCase("az").includes(query)
+    );
+    messageUsersList.replaceChildren();
+    messageDirectoryStatus.hidden = profiles.length > 0;
+    if (!profiles.length) {
+        setMessageDirectoryNotice(query ? "Axtarışa uyğun istifadəçi tapılmadı." : "Hələ başqa təsdiqlənmiş hesab yoxdur.");
+        return;
+    }
+    profiles.forEach(profile => {
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "message-user-row";
+        row.dataset.messageUser = profile.uid;
+        const avatar = document.createElement("span");
+        avatar.className = "message-user-avatar";
+        avatar.setAttribute("aria-hidden", "true");
+        renderProfileAvatar(avatar, profile.avatar);
+        const copy = document.createElement("span");
+        copy.className = "message-user-copy";
+        const name = document.createElement("strong");
+        name.textContent = profile.displayName || "İstifadəçi";
+        const subtitle = document.createElement("small");
+        subtitle.textContent = "Mesaj yazmaq üçün seçin";
+        copy.append(name, subtitle);
+        const unreadBadge = document.createElement("span");
+        unreadBadge.className = "message-user-unread";
+        const unread = messageUnreadByUser.get(profile.uid) || 0;
+        unreadBadge.textContent = unread > 99 ? "99+" : String(unread);
+        unreadBadge.hidden = unread === 0;
+        row.append(avatar, copy, unreadBadge);
+        messageUsersList.append(row);
+    });
+    if (pendingChatRecipientUid) {
+        const pendingProfile = profiles.find(profile => profile.uid === pendingChatRecipientUid);
+        if (pendingProfile) {
+            pendingChatRecipientUid = "";
+            history.replaceState(null, "", `${window.location.pathname}${window.location.hash}`);
+            void openMessageConversation(pendingProfile);
+        }
+    }}
+
+function messageConversationErrorText(error) {
+    const code = String(error?.code || "").toLowerCase();
+    if (code === "permission-denied") {
+        return "Firebase icazəsi rədd edildi. Firebase Console → Firestore → Rules bölməsində layihənin firestore.rules faylını yayımlayın.";
+    }
+    if (code === "unavailable" || code === "network-request-failed") {
+        return "İnternet bağlantısı olmadığından söhbət açılmadı. Bağlantını yoxlayıb istifadəçini yenidən seçin.";
+    }
+    if (code === "unauthenticated") {
+        return "Hesaba giriş bitib. Tətbiqə yenidən daxil olun.";
+    }
+    return "Söhbət açıla bilmədi. İnterneti və Firestore mesaj qaydalarını yoxlayıb istifadəçini yenidən seçin.";
+}
+
+async function openMessageConversation(profile) {
+    if (!currentAuthUser || !profile?.uid || profile.uid === currentAuthUser.uid) return;
+    selectedMessageProfile = profile;
+    messageDirectoryView.hidden = false;
+    messagePanel.classList.add("has-conversation");
+    messageConversationView.hidden = false;
+    messageSelectedName.textContent = profile.displayName || "İstifadəçi";
+    renderProfileAvatar(messageSelectedAvatar, profile.avatar);
+    messageThread.replaceChildren();
+    const loading = document.createElement("div");
+    loading.className = "message-panel-status";
+    loading.textContent = "Söhbət açılır…";
+    messageThread.append(loading);
+    messageDraftInput.disabled = true;
+    messageSendButton.disabled = true;
+    if (messageThreadUnsubscribe) messageThreadUnsubscribe();
+    const chatId = messageChatId(currentAuthUser.uid, profile.uid);
+    const chatRef = firebaseDb.collection("chats").doc(chatId);
+    try {
+        const chatSnapshot = await chatRef.get();
+        if (!chatSnapshot.exists) {
+            const participants = [currentAuthUser.uid, profile.uid].sort();
+            await chatRef.set({
+                participants,
+                unreadCounts: { [participants[0]]: 0, [participants[1]]: 0 },
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessage: "",
+                lastMessageSenderId: ""
+            });
+        }
+        if (selectedMessageProfile?.uid !== profile.uid) return;
+        messageDraftInput.disabled = false;
+        void markMessageChatRead(chatRef);
+        messageThreadUnsubscribe = chatRef.collection("messages").orderBy("createdAt", "asc").limit(100)
+            .onSnapshot(snapshot => {
+                const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderMessageThread(messages);
+                const latest = messages[messages.length - 1];
+                if (latest?.senderId !== currentAuthUser?.uid) void markMessageChatRead(chatRef);
+            }, error => {
+                console.error("Mesajlar yüklənmədi", error);
+                messageDraftInput.disabled = true;
+                messageSendButton.disabled = true;
+                messageThread.replaceChildren();
+                const errorNotice = document.createElement("div");
+                errorNotice.className = "message-panel-status is-error";
+                errorNotice.textContent = messageConversationErrorText(error);
+                messageThread.append(errorNotice);
+            });
+    } catch (error) {
+        console.error("Söhbət açıla bilmədi", error);
+        messageDraftInput.disabled = true;
+        messageSendButton.disabled = true;
+        messageThread.replaceChildren();
+        const errorNotice = document.createElement("div");
+        errorNotice.className = "message-panel-status is-error";
+        errorNotice.textContent = messageConversationErrorText(error);
+        messageThread.append(errorNotice);
+    }
+}
+
+function renderMessageThread(messages) {
+    messageThread.replaceChildren();
+    if (!messages.length) {
+        const empty = document.createElement("div");
+        empty.className = "message-thread-empty";
+        empty.textContent = "Bu söhbətdə hələ mesaj yoxdur. İlk mesajı siz yazın.";
+        messageThread.append(empty);
+    }
+    messages.forEach(message => {
+        const isMine = message.senderId === currentAuthUser?.uid;
+        const bubble = document.createElement("div");
+        bubble.className = `message-bubble${isMine ? " is-mine" : ""}`;
+        const body = document.createElement("p");
+        body.textContent = message.text || "";
+        const time = document.createElement("time");
+        const date = message.createdAt?.toDate ? message.createdAt.toDate() : null;
+        time.textContent = date ? date.toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" }) : "İndi";
+        bubble.append(body, time);
+        messageThread.append(bubble);
+    });
+    messageThread.scrollTop = messageThread.scrollHeight;
+}
+
 messageButton?.addEventListener("click", () => setMessagePanelOpen(messagePanel.hidden));
 messagePanelClose?.addEventListener("click", () => setMessagePanelOpen(false));
+messageBackButton?.addEventListener("click", () => {
+    if (messageThreadUnsubscribe) messageThreadUnsubscribe();
+    messageThreadUnsubscribe = null;
+    selectedMessageProfile = null;
+    messageConversationView.hidden = true;
+    messagePanel.classList.remove("has-conversation");
+    messageDirectoryView.hidden = false;
+});
+messageUsersList?.addEventListener("click", event => {
+    const row = event.target.closest("[data-message-user]");
+    if (!row) return;
+    const profile = messageDirectoryProfiles.find(item => item.uid === row.dataset.messageUser);
+    if (profile) void openMessageConversation(profile);
+});
+messageUserSearch?.addEventListener("input", renderMessageDirectory);
+messageDraftInput?.addEventListener("input", () => {
+    messageSendButton.disabled = !messageDraftInput.value.trim() || messageSendInProgress;
+});
+messageComposeForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const text = messageDraftInput.value.trim();
+    const recipient = selectedMessageProfile;
+    if (!text || !recipient || !currentAuthUser || !firebaseDb || messageSendInProgress) return;
+    messageSendInProgress = true;
+    messageSendButton.disabled = true;
+    try {
+        const chatId = messageChatId(currentAuthUser.uid, recipient.uid);
+        const chatRef = firebaseDb.collection("chats").doc(chatId);
+        const messageRef = chatRef.collection("messages").doc();
+        await firebaseDb.runTransaction(async transaction => {
+            const chatSnapshot = await transaction.get(chatRef);
+            if (!chatSnapshot.exists) throw new Error("Söhbət tapılmadı. İstifadəçini yenidən seçin.");
+            const participants = chatSnapshot.data().participants || [];
+            if (!participants.includes(currentAuthUser.uid) || !participants.includes(recipient.uid)) {
+                throw new Error("Bu söhbətə giriş icazəsi yoxdur.");
+            }
+            const unreadCounts = { ...(chatSnapshot.data().unreadCounts || {}) };
+            unreadCounts[recipient.uid] = Number(unreadCounts[recipient.uid] || 0) + 1;
+            const serverTime = firebase.firestore.FieldValue.serverTimestamp();
+            transaction.set(messageRef, {
+                senderId: currentAuthUser.uid,
+                recipientId: recipient.uid,
+                text: text.slice(0, 1000),
+                createdAt: serverTime
+            });
+            transaction.update(chatRef, {
+                lastMessage: text.slice(0, 1000),
+                lastMessageSenderId: currentAuthUser.uid,
+                unreadCounts,
+                updatedAt: serverTime
+            });
+        });
+        messageDraftInput.value = "";
+        messageSendButton.disabled = true;
+        messageDraftInput.focus();
+    } catch (error) {
+        console.error("Mesaj göndərilmədi", error);
+        showActionToast(error.message || "Mesaj göndərilmədi. Firestore qaydalarını yoxlayın.");
+    } finally {
+        messageSendInProgress = false;
+        messageSendButton.disabled = !messageDraftInput.value.trim();
+    }
+});
 document.addEventListener("keydown", event => {
     if (event.key === "Escape" && messagePanel && !messagePanel.hidden) setMessagePanelOpen(false);
 });

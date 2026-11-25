@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#edf0f5">
     <title>Liman Anbarı</title>
     <link rel="preload" as="image" href="images/liman-logo-splash.png" fetchpriority="high">
-    <link rel="stylesheet" href="style.css?v=206">
+    <link rel="stylesheet" href="style.css?v=209">
     <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -875,12 +875,25 @@
             <div class="message-panel-brand"><span class="message-panel-mark"><img src="images/message.png" alt=""></span><div><span>ÜNSİYYƏT</span><h2>Mesajlar</h2></div></div>
             <button id="message-panel-close" class="message-panel-close" type="button" aria-label="Mesaj pəncərəsini bağla">×</button>
         </header>
-        <label class="message-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="İstifadəçi axtar" aria-label="İstifadəçi axtar" disabled></label>
-        <div class="message-panel-section-title"><span>İSTİFADƏÇİLƏR</span></div>
-        <div class="message-coming-soon"><span class="message-coming-soon-icon" aria-hidden="true">✉</span><p>Çox yaxında mesaj bölməsi aktiv olacaq</p></div>
-        <div class="message-compose-preview"><input id="message-draft-input" type="text" placeholder="Mesaj yaz..." aria-label="Mesaj yaz" autocomplete="off"><button type="button" disabled aria-label="Göndərmək tezliklə aktiv olacaq">↑</button></div>
+        <section id="message-directory-view" class="message-directory-view">
+            <label class="message-search"><span aria-hidden="true">⌕</span><input id="message-user-search" type="search" placeholder="İstifadəçi axtar" aria-label="İstifadəçi axtar"></label>
+            <div id="message-directory-status" class="message-panel-status" role="status">İstifadəçilər yüklənir…</div>
+            <div id="message-users-list" class="message-user-list" aria-label="Təsdiqlənmiş istifadəçilər"></div>
+        </section>
+        <section id="message-conversation-view" class="message-conversation-view" hidden>
+            <header class="message-conversation-header">
+                <button id="message-back-to-users" class="message-back-button" type="button" aria-label="İstifadəçilərə qayıt">‹</button>
+                <span id="message-selected-avatar" class="message-user-avatar"></span>
+                <div><strong id="message-selected-name"></strong><small>Söhbət</small></div>
+            </header>
+            <div id="message-thread" class="message-thread" role="log" aria-live="polite" aria-relevant="additions"></div>
+            <form id="message-compose-form" class="message-compose-preview">
+                <input id="message-draft-input" type="text" placeholder="Mesaj yaz..." aria-label="Mesaj yaz" autocomplete="off" maxlength="1000" disabled>
+                <button id="message-send-button" type="submit" aria-label="Mesajı göndər" disabled>↑</button>
+            </form>
+        </section>
     </aside>
-    <button id="message-button" class="floating-message-button" type="button" aria-label="Mesaj yaz" aria-controls="message-panel" aria-expanded="false"><img src="images/message.png" alt=""><span>Mesaj yaz</span></button>
+    <button id="message-button" class="floating-message-button" type="button" aria-label="Mesaj yaz" aria-controls="message-panel" aria-expanded="false"><img src="images/message.png" alt=""><span>Mesaj yaz</span><span id="message-unread-badge" class="message-unread-badge" aria-label="Oxunmamış mesajlar" hidden></span></button>
     <div id="action-toast" class="action-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     <dialog id="issue-goods-dialog" class="issue-goods-dialog">
         <form id="issue-goods-form" class="issue-goods-form">
@@ -902,7 +915,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
-    <script src="script.js?v=103"></script>
+    <script src="script.js?v=108"></script>
     <script src="english-words.js?v=2"></script>
 </body>
 </html>

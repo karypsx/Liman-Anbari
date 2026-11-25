@@ -5168,3 +5168,74 @@ body.about-screen .about-purpose p { color:#536782; }
 .header-icon-button::after { display:none !important; content:none !important; }
 .header-icon-button img { display:block !important; width:28px; height:28px; object-fit:contain; opacity:1 !important; visibility:visible !important; filter:none !important; }
 
+
+/* İşlək hesablararası mesaj paneli */
+.message-panel { display:flex; flex-direction:column; width:min(380px,calc(100vw - 112px)); height:min(560px,calc(100dvh - 32px)); max-height:calc(100dvh - 32px); padding:15px; overflow:hidden; border-radius:10px; }
+.message-panel-header { flex:none; }
+.message-directory-view,.message-conversation-view { display:flex; flex:1; flex-direction:column; min-height:0; }
+.message-panel-status { padding:12px 7px; color:#73839b; font-size:11px; line-height:1.5; text-align:center; }
+.message-panel-status.is-error { color:#a44150; }
+.message-user-list { display:grid; align-content:start; gap:6px; min-height:0; padding:2px 2px 8px; overflow:auto; }
+.message-user-row { width:100%; border:1px solid transparent; color:inherit; text-align:left; cursor:pointer; transition:background .15s ease,border-color .15s ease,transform .15s ease; }
+.message-user-row:hover,.message-user-row:focus-visible { outline:none; border-color:#dce5f4; background:#f2f6ff; transform:translateY(-1px); }
+.message-user-avatar { overflow:hidden; position:relative; }
+.message-user-avatar > span,.message-user-avatar > img { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; object-fit:cover; }
+.message-user-avatar > span { display:grid; place-items:center; color:#fff; background:linear-gradient(145deg,#7797d8,#6974b5); font-size:13px; font-weight:800; }
+.message-user-avatar > img { z-index:1; }
+.message-user-copy { flex:1; }
+.message-user-copy strong { font-size:11px; }
+.message-user-copy small { font-size:9px; }
+.message-conversation-header { display:flex; flex:none; align-items:center; gap:9px; padding:0 0 10px; border-bottom:1px solid #e9edf4; }
+.message-back-button { display:grid; flex:none; width:30px; height:30px; place-items:center; border:1px solid #e3e9f2; border-radius:8px; color:#526987; background:#f7f9fd; font-size:24px; cursor:pointer; }
+.message-conversation-header > div { display:grid; min-width:0; gap:3px; }
+.message-conversation-header strong { overflow:hidden; color:#2b3e5b; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+.message-conversation-header small { color:#8391a6; font-size:9px; }
+.message-conversation-header .message-user-avatar { width:34px; height:34px; }
+.message-thread { display:flex; flex:1; flex-direction:column; align-items:flex-start; gap:8px; min-height:0; padding:12px 2px; overflow:auto; }
+.message-thread-empty { align-self:center; margin:auto; color:#8997aa; font-size:10px; line-height:1.5; text-align:center; }
+.message-bubble { max-width:84%; padding:8px 10px 6px; border:1px solid #e4e9f1; border-radius:10px 10px 10px 3px; color:#344966; background:#fff; box-shadow:0 2px 7px rgba(31,55,90,.045); }
+.message-bubble.is-mine { align-self:flex-end; border-color:#d6e3fb; border-radius:10px 10px 3px 10px; color:#2d4671; background:linear-gradient(135deg,#eef4ff,#f1efff); }
+.message-bubble p { margin:0; overflow-wrap:anywhere; font-size:11px; line-height:1.45; user-select:text; -webkit-user-select:text; }
+.message-bubble time { display:block; margin-top:4px; color:#8a97a9; font-size:8px; text-align:right; }
+.message-compose-preview { flex:none; margin-top:0; }
+.message-compose-preview input { flex:1; min-width:0; padding:0; border:0; outline:0; color:#344966; background:transparent; font:inherit; font-size:11px; user-select:text; -webkit-user-select:text; }
+.message-compose-preview input:disabled { color:#9aa6b7; }
+.message-compose-preview input::placeholder { color:#9aa6b7; opacity:1; }
+.message-compose-preview button:disabled { opacity:.55; filter:grayscale(.35); }
+.message-compose-preview button:not(:disabled) { background:linear-gradient(135deg,#3678e8,#6558d9 60%,#8b51cf); box-shadow:0 4px 12px rgba(86,92,204,.3),inset 0 1px 2px rgba(255,255,255,.35); opacity:1; }
+@media (max-width:520px) { .message-panel { right:88px; bottom:16px; width:min(340px,calc(100vw - 100px)); height:min(68dvh,540px); max-height:calc(100dvh - 32px); padding:12px; } }
+@media (max-width:370px) { .message-panel { right:76px; width:calc(100vw - 88px); padding:10px; } }
+
+/* Söhbət siyahısı solda, yazışma sağda və oxunmamış sayğacı */
+.floating-message-button { position:fixed; }
+.message-unread-badge { position:absolute; top:-6px; right:-6px; display:grid; min-width:22px; height:22px; place-items:center; padding:0 5px; border:2px solid #fff; border-radius:999px; color:#fff; background:linear-gradient(145deg,#f04452,#d91f36); box-shadow:0 3px 10px rgba(192,27,52,.35); font-size:9px; font-weight:850; line-height:1; }
+.message-panel { display:grid !important; grid-template-columns:190px minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); gap:0; width:min(650px,calc(100vw - 116px)); height:min(560px,calc(100dvh - 32px)); max-height:calc(100dvh - 32px); padding:15px; overflow:hidden; border-radius:10px; }
+.message-panel:not(.has-conversation) { grid-template-columns:minmax(0,1fr); width:min(330px,calc(100vw - 112px)); }
+.message-panel-header { grid-column:1/-1; margin-bottom:12px; }
+.message-directory-view { grid-column:1; grid-row:2; min-height:0; padding-right:11px; border-right:1px solid #e6ebf3; }
+.message-panel:not(.has-conversation) .message-directory-view { grid-column:1; padding-right:0; border-right:0; }
+.message-conversation-view { grid-column:2; grid-row:2; min-height:0; padding-left:12px; }
+.message-panel:not(.has-conversation) .message-conversation-view { display:none !important; }
+.message-user-list { gap:5px; }
+.message-user-row { display:flex; align-items:center; min-height:54px; padding:7px; border:1px solid transparent; border-radius:9px; box-shadow:none; }
+.message-user-row:hover,.message-user-row:focus-visible { border-color:#dce5f4; background:#f2f6ff; }
+.message-user-avatar { width:34px; height:34px; border-radius:9px; }
+.message-user-copy { gap:3px; }
+.message-user-copy strong { font-size:10px; }
+.message-user-copy small { font-size:8px; }
+.message-user-unread { display:grid; flex:none; min-width:19px; height:19px; place-items:center; margin-left:auto; padding:0 4px; border-radius:999px; color:#fff; background:#df3348; font-size:8px; font-weight:850; }
+.message-conversation-header { min-height:45px; }
+.message-thread { gap:8px; padding:10px 3px; }
+.message-panel-status { margin:auto; }
+.message-panel:not(.has-conversation) .message-user-list { max-height:390px; }
+.message-back-button { display:none; }
+@media (max-width:620px) {
+    .message-panel,.message-panel:not(.has-conversation) { right:12px; bottom:92px; width:min(440px,calc(100vw - 24px)); height:min(570px,calc(100dvh - 120px)); max-height:calc(100dvh - 120px); padding:13px; grid-template-columns:minmax(0,1fr); }
+    .message-panel.has-conversation .message-directory-view { display:none !important; }
+    .message-panel.has-conversation .message-conversation-view { grid-column:1; grid-row:2; padding-left:0; }
+    .message-back-button { display:grid; }
+}
+.floating-message-button .message-unread-badge { top:-6px; right:-6px; width:auto; min-width:22px; height:22px; margin:0; padding:0 5px; border:2px solid #fff; border-radius:999px; color:#fff; background:linear-gradient(145deg,#f04452,#d91f36); box-shadow:0 3px 10px rgba(192,27,52,.35); font-size:9px; font-weight:850; line-height:1; opacity:1; transform:none; }
+
+/* Panel açıq olmayanda gizlətmə atributu display:grid qaydasından üstün olmalıdır. */
+.message-panel[hidden] { display:none !important; }

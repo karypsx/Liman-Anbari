@@ -13,18 +13,20 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Offline PWA shell. This is the same worker used by Firebase notifications.
-const LIMAN_CACHE_NAME = "liman-app-shell-v68";
+const LIMAN_CACHE_NAME = "liman-app-shell-v74";
 const LIMAN_APP_BASE = self.registration.scope;
 const LIMAN_APP_FILES = [
     "./",
     "index.html",
-    "style.css?v=205",
+    "style.css?v=209",
     "app-config.js?v=9",
-    "script.js?v=102",
+    "script.js?v=108",
     "english-words.js?v=2",
     "manifest.json",
     "images/liman-logo-splash.png",
     "images/app-mark.png",
+    "images/notification.png",
+    "images/message.png",
     "images/santa-hat.svg",
     "images/header-snow.svg",
     "images/footer-snowman.svg",
@@ -182,8 +184,8 @@ messaging.onBackgroundMessage(payload => {
     if (payload.notification) return;
 
     const data = payload.data || {};
-    const title = data.title || payload.notification?.title || "Liman Anbarı · Xatırlatma";
-    const body = data.body || payload.notification?.body || "Xatırlatma vaxtınız yaxınlaşır.";
+    const title = data.title || payload.notification?.title || "Liman Anbarı · Bildiriş";
+    const body = data.body || payload.notification?.body || "Yeni bildirişiniz var.";
     const appPath = "/Liman-Anbari/";
 
     return self.registration.showNotification(title, {
@@ -192,7 +194,7 @@ messaging.onBackgroundMessage(payload => {
         badge: `${appPath}images/ikoon-192.png`,
         tag: data.tag || `liman-reminder-${data.reminderId || Date.now()}-${data.slot || "notice"}`,
         renotify: false,
-        data: { url: appPath }
+        data: { url: data.url || appPath, chatId: data.chatId || "" }
     });
 });
 
@@ -203,6 +205,7 @@ self.addEventListener("notificationclick", event => {
         const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
         for (const client of windows) {
             if (client.url.startsWith(self.location.origin) && "focus" in client) {
+                if (client.url !== targetUrl && "navigate" in client) await client.navigate(targetUrl);
                 await client.focus();
                 return;
             }

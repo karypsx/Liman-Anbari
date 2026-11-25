@@ -1,0 +1,16 @@
+MESAJLAŞMA VƏ PUSH BİLDİRİŞ QURAŞDIRMASI
+
+1. Firestore qaydaları
+Firebase Console → Firestore Database → Rules bölməsində mövcud qaydaları bu qovluqdakı firestore.rules faylının tam mətni ilə əvəz edin və Publish basın. Fayl istifadəçi hesabları, xatırlatmalar, cihaz tokenləri, anbar planları və yeni mesajlaşma qaydalarını birlikdə saxlayır.
+
+2. Mesaj push bildirişi üçün Cloud Function
+Layihənin əsas qovluğunda terminal açın və işlədin:
+
+    firebase deploy --only firestore:rules,functions:sendChatMessageNotification
+
+Firebase CLI hesabında bu layihənin seçildiyini yoxlayın; .firebaserc-də limananbari layihəsi qeyd olunub. Funksiya yeni mesaj yarananda alıcının qeydiyyatdan keçmiş cihaz tokenlərinə FCM bildirişi göndərir.
+
+3. Cihaz icazəsi
+Bildiriş gəlməsi üçün hər hesab öz cihazında tətbiqin Xatırlatmalar bölməsindən bildiriş icazəsini aktiv etməlidir. Bu, cihazın FCM tokenini hesaba bağlayır. İcazəsiz cihazda mesaj yenə çatda görünür və qırmızı oxunmamış sayğac artır, amma push bildirişi gəlmir.
+
+İstifadəçi siyahısı panelin solunda görünür; istifadəçini seçəndə söhbət sağda açılır. Söhbəti açmaq həmin söhbətin oxunmamış sayını sıfırlayır. Push bildirişinə basanda göndərənlə söhbət açılır.
