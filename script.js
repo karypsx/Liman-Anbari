@@ -5679,7 +5679,9 @@ function subscribeToMessageInbox() {
             if (!messageDirectoryView.hidden) renderMessageDirectory();
         }, error => {
             console.error("Oxunmamış mesajların sayı yüklənmədi", error);
-            showActionToast("Canlı mesaj sayğacı yenilənmədi. Firestore Rules və internet bağlantısını yoxlayın.");
+            const code = String(error?.code || "unknown");
+            const details = String(error?.message || "").replace(/\s+/g, " ").slice(0, 110);
+            showActionToast(`Sayğac xətası (${code})${details ? ` · ${details}` : ""}`);
         });
 }
 
