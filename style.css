@@ -5209,6 +5209,7 @@ body.about-screen .about-purpose p { color:#536782; }
 /* Söhbət siyahısı solda, yazışma sağda və oxunmamış sayğacı */
 .floating-message-button { position:fixed; }
 .message-unread-badge { position:absolute; top:-6px; right:-6px; display:grid; min-width:22px; height:22px; place-items:center; padding:0 5px; border:2px solid #fff; border-radius:999px; color:#fff; background:linear-gradient(145deg,#f04452,#d91f36); box-shadow:0 3px 10px rgba(192,27,52,.35); font-size:9px; font-weight:850; line-height:1; }
+  .message-unread-badge[hidden],.message-user-unread[hidden] { display:none !important; }
 .message-panel { display:grid !important; grid-template-columns:190px minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); gap:0; width:min(650px,calc(100vw - 116px)); height:min(560px,calc(100dvh - 32px)); max-height:calc(100dvh - 32px); padding:15px; overflow:hidden; border-radius:10px; }
 .message-panel:not(.has-conversation) { grid-template-columns:minmax(0,1fr); width:min(330px,calc(100vw - 112px)); }
 .message-panel-header { grid-column:1/-1; margin-bottom:12px; }

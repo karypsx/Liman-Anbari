@@ -1,15 +1,24 @@
-MESAJLAŞMA VƏ PUSH BİLDİRİŞ QURAŞDIRMASI
+LIMAN ANBARI · MESAJ PUSH BİLDİRİŞİ
 
-1. Firebase Console → Firestore Database → Rules bölməsində firestore.rules faylının tam mətnini yayımlayın.
+Bu qovluqda Supabase Edge Function mənbə kodu var: supabase/functions/send-chat-push/index.ts. Firebase Cloud Functions deploy etmək lazım deyil.
 
-2. Faylların Supabase-ə yüklənməsi üçün SUPABASE-QURASDIRMA.txt faylındakı addımları tamamlayın. Firebase Storage Rules lazım deyil.
+1. FIRESTORE QAYDASI
+Firebase Console → Firestore Database → Rules bölməsində firestore.rules faylının tam mətnini yayımlayın. Bu qayda mesajı oxuyanda unreadCounts sayını sıfırlamağa icazə verir.
 
-3. Push bildirişi üçün layihənin əsas qovluğunda terminal açıb işlədin:
+2. SUPABASE FUNCTION
+Supabase → Edge Functions → send-chat-push bölməsində function-u deploy edin. Yeni function yaradanda bu qovluqdakı index.ts mətnindən istifadə edin. Verify JWT söndürülməlidir: function Firebase ID tokenini özü yoxlayır.
 
-    firebase deploy --only firestore:rules,functions:sendChatMessageNotification
+Supabase → Edge Functions → Secrets-də bu secret-lər olmalıdır:
+FIREBASE_PROJECT_ID = limananbari
+FIREBASE_SERVICE_ACCOUNT_JSON = Firebase Service Accounts-dan endirilmiş JSON-un tam mətni
 
-Firebase CLI hesabında limananbari layihəsinin seçildiyini yoxlayın. Cloud Function yayımlamaq Firebase Blaze planı/billing hesabı tələb edə bilər. Supabase fayl yaddaşı bundan ayrıdır.
+JSON private açardır. Onu yalnız Supabase Secrets sahəsində saxlayın; söhbətə, GitHub-a, app-config.js-ə və ZIP-ə daxil etməyin.
 
-4. Hər cihazda mesaj panelinin başlığındakı zəng düyməsinə basıb bildiriş icazəsini aktiv edin. İcazə verilməsə mesaj yenə söhbətdə görünür və qırmızı oxunmamış sayğac artır, amma push gəlmir.
+3. BİLDİRİŞ İCAZƏSİ
+Bildiriş alacaq hər kompüter/brauzerdə istifadəçi Liman Anbarına daxil olub “Bildirişlərə icazə ver” düyməsinə bir dəfə basmalıdır. Hər cihazın FCM tokeni ayrıca qeydiyyata alınır.
 
-İstifadəçi siyahısındakı qırmızı nişan həmin şəxsdən gələn oxunmamış mesajların sayını göstərir. Push bildirişinə basanda göndərənlə söhbət açılır.
+4. TƏTBİQİ BİR DƏFƏ YENİLƏ
+index.html, script.js, style.css və firebase-messaging-sw.js fayllarını GitHub Pages-ə yayımlayın. Hər istifadəçi tətbiqi bir dəfə Ctrl+F5 ilə yeniləməlidir. Bundan sonra mesaj başına əl ilə yeniləmə lazım deyil.
+
+5. İŞLƏMƏSƏ
+Supabase → Edge Functions → send-chat-push → Logs bölməsində son çağırışa baxın. no_registered_device alıcının cihazında bildiriş icazəsi/tokeni olmadığını bildirir. Heç bir çağırış görünmürsə, tətbiqin yeni script.js faylı GitHub Pages-ə yayımlanmayıb və ya köhnə keş işləyir.

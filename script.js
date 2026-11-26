@@ -5679,21 +5679,45 @@ function subscribeToMessageInbox() {
             if (!messageDirectoryView.hidden) renderMessageDirectory();
         }, error => {
             console.error("Oxunmamış mesajların sayı yüklənmədi", error);
+            showActionToast("Canlı mesaj sayğacı yenilənmədi. Firestore Rules və internet bağlantısını yoxlayın.");
         });
 }
 
-async function markMessageChatRead(chatRef) {
+async function markMessageChatRead(chatRef, force = false) {
     if (!chatRef || !currentAuthUser) return;
     if (messagePanel.hidden || messageConversationView.hidden || document.visibilityState !== "visible") return;
     const uid = currentAuthUser.uid;
     if (!selectedMessageProfile || chatRef.id !== messageChatId(uid, selectedMessageProfile.uid)) return;
-    if (!(messageUnreadByUser.get(selectedMessageProfile?.uid || "") > 0)) return;
+    const otherUid = selectedMessageProfile.uid;
+    const oldCount = messageUnreadByUser.get(otherUid) || 0;
+    if (!force && oldCount <= 0) return;
+    if (oldCount > 0) {
+        messageUnreadByUser.delete(otherUid);
+        messageUnreadTotal = [...messageUnreadByUser.values()].reduce((total, count) => total + count, 0);
+        updateMessageUnreadBadge();
+        if (!messageDirectoryView.hidden) renderMessageDirectory();
+    }
     try {
         await chatRef.update({ [`unreadCounts.${uid}`]: 0 });
     } catch (error) {
         console.warn("Mesaj oxunmuş kimi işarələnmədi", error);
+        if (error?.code === "permission-denied") {
+            showActionToast("Oxunmamış sayğacı sıfırlanmadı. Firebase Console → Firestore → Rules qaydalarını yeniləyin.");
+        } else {
+            showActionToast("Mesaj oxunmuş kimi işarələnmədi. İnterneti yoxlayın.");
+        }
     }
 }
+
+function resumeMessageRealtime() {
+    if (!firebaseDb || !currentAuthUser) return;
+    subscribeToMessageInbox();
+    if (!messagePanel.hidden && !messageConversationView.hidden && selectedMessageProfile) {
+        const chatRef = firebaseDb.collection("chats").doc(messageChatId(currentAuthUser.uid, selectedMessageProfile.uid));
+        void markMessageChatRead(chatRef, true);
+    }
+}
+
 function resetMessageAccountState() {
     resetMessageInboxState();
     if (messageDirectoryUnsubscribe) messageDirectoryUnsubscribe();
@@ -5966,7 +5990,7 @@ async function openMessageConversation(profile) {
         }
         if (selectedMessageProfile?.uid !== profile.uid) return;
         setMessageComposerReady(true);
-        void markMessageChatRead(chatRef);
+        void markMessageChatRead(chatRef, true);
         messageThreadUnsubscribe = chatRef.collection("messages").orderBy("createdAt", "asc").limit(100)
             .onSnapshot(snapshot => {
                 const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -6158,9 +6182,15 @@ async function sendChatMessage(text, file = null) {
             });
         });
         try {
-            await sendSupabaseChatPushNotification(chatId, messageRef.id);
+            const pushResult = await sendSupabaseChatPushNotification(chatId, messageRef.id);
+            if (pushResult?.reason === "no_registered_device") {
+                showActionToast("Mesaj göndərildi, amma alıcının cihazında bildiriş icazəsi qoşulmayıb.");
+            } else if (pushResult?.failed > 0 && pushResult?.sent === 0) {
+                showActionToast("Mesaj göndərildi, amma push bildirişi göndərilmədi. Supabase Function Logs bölməsini yoxlayın.");
+            }
         } catch (pushError) {
             console.warn("Supabase mesaj bildirişi göndərmədi; mesaj Firestore-da saxlanıb.", pushError);
+            showActionToast(`Mesaj göndərildi, amma bildiriş alınmadı: ${String(pushError?.message || "server xətası").slice(0, 120)}`);
         }
         messageDraftInput.value = "";
         if (file && pendingMessageFile === file) pendingMessageFile = null;
@@ -6191,7 +6221,9 @@ async function sendChatMessage(text, file = null) {
 
 async function sendSupabaseChatPushNotification(chatId, messageId) {
     const config = window.APP_CONFIG?.supabaseStorage;
-    if (!currentAuthUser || !config?.url || !config?.publishableKey) return;
+    if (!currentAuthUser || !config?.url || !config?.publishableKey) {
+        throw new Error("Supabase push ayarları tapılmadı.");
+    }
     const firebaseToken = await currentAuthUser.getIdToken();
     const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/send-chat-push`, {
         method: "POST",
@@ -6202,18 +6234,23 @@ async function sendSupabaseChatPushNotification(chatId, messageId) {
         },
         body: JSON.stringify({ chatId, messageId })
     });
+    const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-        const result = await response.json().catch(() => ({}));
         throw new Error(result.error || `Supabase bildiriş xətası (${response.status}).`);
     }
+    return result;
 }
 
 buildMessageEmojiPicker();
 messageButton?.addEventListener("click", () => setMessagePanelOpen(messagePanel.hidden));
 messagePanelClose?.addEventListener("click", () => setMessagePanelOpen(false));
 window.addEventListener("focus", refreshMessageNotificationButton);
+window.addEventListener("online", resumeMessageRealtime);
 document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") refreshMessageNotificationButton();
+    if (document.visibilityState === "visible") {
+        refreshMessageNotificationButton();
+        resumeMessageRealtime();
+    }
 });
 if (navigator.permissions?.query) {
     navigator.permissions.query({ name: "notifications" })
