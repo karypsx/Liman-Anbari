@@ -5562,7 +5562,7 @@ let messageSendInProgress = false;
 let messageInboxUnsubscribe = null;
 let messageUnreadByUser = new Map();
 let messageUnreadTotal = 0;
-let messageInboxHasInitialSnapshot = false;
+let messageInboxGeneration = 0;
 let messageComposeReady = false;
 let pendingMessageFile = null;
 let pendingChatRecipientUid = new URLSearchParams(window.location.search).get("chat") || "";
@@ -5594,11 +5594,11 @@ function updateMessageUnreadBadge() {
 }
 
 function resetMessageInboxState() {
+    messageInboxGeneration += 1;
     if (messageInboxUnsubscribe) messageInboxUnsubscribe();
     messageInboxUnsubscribe = null;
     messageUnreadByUser = new Map();
     messageUnreadTotal = 0;
-    messageInboxHasInitialSnapshot = false;
     updateMessageUnreadBadge();
 }
 
@@ -5647,42 +5647,88 @@ function subscribeToMessageInbox() {
     if (!firebaseDb || !currentAuthUser) return;
     if (messageInboxUnsubscribe) messageInboxUnsubscribe();
     const uid = currentAuthUser.uid;
-    messageInboxUnsubscribe = firebaseDb.collection("chats")
-        .where("participants", "array-contains", uid)
+    const generation = ++messageInboxGeneration;
+    const chatUnsubscribes = new Map();
+    const isCurrentSubscription = () => generation === messageInboxGeneration
+        && currentAuthUser?.uid === uid;
+
+    const directoryUnsubscribe = firebaseDb.collection("chatProfiles")
+        .where("status", "==", "approved")
         .onSnapshot(snapshot => {
-            const previousUnreadByUser = messageUnreadByUser;
-            const nextUnreadByUser = new Map();
-            messageUnreadTotal = 0;
-            snapshot.docs.forEach(doc => {
-                const chat = doc.data();
-                const otherUid = (chat.participants || []).find(participant => participant !== uid);
-                const count = Math.max(0, Number(chat.unreadCounts?.[uid] || 0));
-                if (otherUid && count) {
-                    nextUnreadByUser.set(otherUid, count);
-                    const previousCount = previousUnreadByUser.get(otherUid) || 0;
-                    if (messageInboxHasInitialSnapshot && count > previousCount
-                        && chat.lastMessageSenderId !== uid && !isMessageConversationVisible(otherUid)) {
-                        void showIncomingChatNotification(otherUid, doc.id, chat);
-                    }
-                }
-                messageUnreadTotal += count;
-            });
-            messageUnreadByUser = nextUnreadByUser;
-            messageInboxHasInitialSnapshot = true;
-            updateMessageUnreadBadge();
-            if (!messagePanel.hidden && !messageConversationView.hidden
-                && document.visibilityState === "visible"
-                && selectedMessageProfile && messageUnreadByUser.get(selectedMessageProfile.uid) > 0) {
-                const activeChat = snapshot.docs.find(doc => doc.id === messageChatId(uid, selectedMessageProfile.uid));
-                if (activeChat) void markMessageChatRead(activeChat.ref);
+            if (!isCurrentSubscription()) return;
+            const profiles = snapshot.docs
+                .map(doc => ({ uid: doc.id, ...doc.data() }))
+                .filter(profile => profile.uid !== uid && profile.status === "approved");
+            const profileUids = new Set(profiles.map(profile => profile.uid));
+
+            for (const [otherUid, unsubscribe] of chatUnsubscribes) {
+                if (profileUids.has(otherUid)) continue;
+                unsubscribe();
+                chatUnsubscribes.delete(otherUid);
+                messageUnreadByUser.delete(otherUid);
             }
+
+            messageDirectoryProfiles = profiles.sort((a, b) =>
+                String(a.displayName || "").localeCompare(String(b.displayName || ""), "az"));
+            for (const profile of profiles) {
+                if (chatUnsubscribes.has(profile.uid)) continue;
+                let hasInitialSnapshot = false;
+                const chatId = messageChatId(uid, profile.uid);
+                const chatRef = firebaseDb.collection("chats").doc(chatId);
+                const unsubscribe = chatRef.onSnapshot(chatSnapshot => {
+                    if (!isCurrentSubscription() || !chatUnsubscribes.has(profile.uid)) return;
+                    const chat = chatSnapshot.exists ? chatSnapshot.data() : null;
+                    const participants = Array.isArray(chat?.participants) ? chat.participants : [];
+                    const isParticipant = participants.includes(uid) && participants.includes(profile.uid);
+                    const count = isParticipant
+                        ? Math.max(0, Number(chat?.unreadCounts?.[uid] || 0))
+                        : 0;
+                    const previousCount = messageUnreadByUser.get(profile.uid) || 0;
+                    const shouldNotify = hasInitialSnapshot && count > previousCount
+                        && chat?.lastMessageSenderId !== uid
+                        && !isMessageConversationVisible(profile.uid);
+                    hasInitialSnapshot = true;
+
+                    if (count > 0) messageUnreadByUser.set(profile.uid, count);
+                    else messageUnreadByUser.delete(profile.uid);
+                    messageUnreadTotal = [...messageUnreadByUser.values()]
+                        .reduce((total, unread) => total + unread, 0);
+                    updateMessageUnreadBadge();
+                    if (shouldNotify) void showIncomingChatNotification(profile.uid, chatId, chat);
+
+                    if (!messagePanel.hidden && !messageConversationView.hidden
+                        && document.visibilityState === "visible"
+                        && selectedMessageProfile?.uid === profile.uid && count > 0) {
+                        void markMessageChatRead(chatRef);
+                    }
+                    if (!messageDirectoryView.hidden) renderMessageDirectory();
+                }, error => {
+                    if (!isCurrentSubscription() || !chatUnsubscribes.has(profile.uid)) return;
+                    console.error(`Söhbət sayğacı oxunmadı (${chatId})`, error);
+                    const code = String(error?.code || "unknown");
+                    const details = String(error?.message || "").replace(/\s+/g, " ").slice(0, 110);
+                    showActionToast(`Sayğac xətası (${code}) · ${profile.displayName || profile.uid}${details ? ` · ${details}` : ""}`);
+                });
+                chatUnsubscribes.set(profile.uid, unsubscribe);
+            }
+
+            messageUnreadTotal = [...messageUnreadByUser.values()]
+                .reduce((total, unread) => total + unread, 0);
+            updateMessageUnreadBadge();
             if (!messageDirectoryView.hidden) renderMessageDirectory();
         }, error => {
+            if (!isCurrentSubscription()) return;
             console.error("Oxunmamış mesajların sayı yüklənmədi", error);
             const code = String(error?.code || "unknown");
             const details = String(error?.message || "").replace(/\s+/g, " ").slice(0, 110);
             showActionToast(`Sayğac xətası (${code})${details ? ` · ${details}` : ""}`);
         });
+
+    messageInboxUnsubscribe = () => {
+        directoryUnsubscribe();
+        chatUnsubscribes.forEach(unsubscribe => unsubscribe());
+        chatUnsubscribes.clear();
+    };
 }
 
 async function markMessageChatRead(chatRef, force = false) {
